@@ -1,9 +1,23 @@
 import { defineConfig } from "astro/config";
 import mdx from "@astrojs/mdx";
 import sitemap from "@astrojs/sitemap";
-import tailwind from "@astrojs/tailwind";
+import compress from "astro-compress";
+import partytown from "@astrojs/partytown";
+import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
-  site: "https://astro-nano-demo.vercel.app",
-  integrations: [mdx(), sitemap(), tailwind()],
+  site: "http://melgammal.com",
+  integrations: [
+    mdx(),
+    sitemap(),
+    compress(),
+    partytown({
+      config: {
+        forward: ["dataLayer.push"],
+      },
+    }),
+  ],
+  vite: {
+    plugins: [tailwindcss()],
+  },
 });
