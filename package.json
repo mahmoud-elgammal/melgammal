@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@astrojs/check": "^0.9.4",
-    "@astrojs/cloudflare": "^12.6.0",
+    "@astrojs/cloudflare": "^12.6.6",
     "@astrojs/image": "^0.18.0",
     "@astrojs/mdx": "^4.3.0",
     "@astrojs/partytown": "^2.1.4",
@@ -28,7 +28,7 @@
     "@tailwindcss/vite": "^4.1.10",
     "@typescript-eslint/eslint-plugin": "^8.34.1",
     "@typescript-eslint/parser": "^8.34.1",
-    "astro": "^5.10.0",
+    "astro": "^5.13.1",
     "astro-compress": "^2.3.8",
     "astro-icon": "^1.1.5",
     "astro-seo": "^0.8.4",
