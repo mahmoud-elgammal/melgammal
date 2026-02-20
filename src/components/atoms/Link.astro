@@ -1,0 +1,62 @@
+---
+type Props = {
+  href: string;
+  external?: boolean;
+  underline?: boolean;
+  class?: string;
+};
+
+const {
+  href,
+  external,
+  underline = true,
+  class: className,
+  ...rest
+} = Astro.props;
+---
+
+<a
+  href={href}
+  target={external ? "_blank" : "_self"}
+  class:list={["link", { underline }, className]}
+  {...rest}
+>
+  <slot />
+</a>
+
+<style lang="scss">
+  @use "../../styles/variables" as *;
+
+  .link {
+    display: inline-block;
+    text-decoration-color: rgba(0, 0, 0, 0.15);
+    color: currentColor;
+    transition:
+      color 0.3s ease-in-out,
+      text-decoration-color 0.3s ease-in-out;
+
+    &:hover {
+      color: rgba(
+        255,
+        255,
+        255,
+        0.7
+      ); // Light gray on difference = Dark gray visible
+      text-decoration-color: rgba(0, 0, 0, 0.25);
+    }
+
+    &.underline {
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    :global(.dark) & {
+      text-decoration-color: rgba(255, 255, 255, 0.3);
+
+      &:hover {
+        color: $color-white;
+        text-decoration-color: rgba(255, 255, 255, 0.5);
+      }
+    }
+  }
+</style>

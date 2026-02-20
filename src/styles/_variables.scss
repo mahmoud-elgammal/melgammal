@@ -1,0 +1,20 @@
+// Colors
+$color-light-bg: #f5f5f4; // stone-100
+$color-dark-bg: #1c1917; // stone-900
+
+$color-light-text: rgba(0, 0, 0, 0.5);
+$color-dark-text: rgba(255, 255, 255, 0.75);
+
+$color-black: #000000;
+$color-white: #ffffff;
+
+// Fonts
+$font-sans: "Meyer", "Inter", "sans-serif", "ui-sans-serif", "system-ui", "sans-serif", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+$font-serif: "Lora", "ui-serif", "Georgia", "Cambria", "Times New Roman", "Times", "serif";
+
+// Breakpoints
+$screen-sm: 640px;
+$screen-md: 768px;
+$screen-lg: 1024px;
+$screen-xl: 1280px;
+$screen-2xl: 1536px;

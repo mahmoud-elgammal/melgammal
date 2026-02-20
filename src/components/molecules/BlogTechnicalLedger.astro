@@ -1,0 +1,168 @@
+---
+interface Props {
+    title: string;
+    data: { k: string; v: string }[];
+}
+
+const { title, data } = Astro.props;
+---
+
+<div class="blog-tech-ledger animate-ledger">
+    <div class="ledger-header">
+        <div class="bracket-label">[DATA_SPEC]</div>
+        <h4 class="ledger-title">{title}</h4>
+    </div>
+
+    <div class="ledger-rows">
+        {
+            data.map((row) => (
+                <div class="ledger-row">
+                    <span class="k">{row.k}</span>
+                    <span class="v" data-value={row.v}>
+                        <span class="v-inner">{row.v}</span>
+                    </span>
+                </div>
+            ))
+        }
+    </div>
+</div>
+
+<style lang="scss">
+    @use "../../styles/variables" as *;
+    @use "../../styles/mixins" as *;
+
+    .blog-tech-ledger {
+        margin: 4rem 0;
+        padding: 2rem;
+        background: rgba($color-black, 0.02);
+        border: 1px solid rgba($color-black, 0.05);
+        border-radius: 0.5rem;
+        position: relative;
+        overflow: hidden;
+
+        :global(.dark) & {
+            background: rgba($color-white, 0.02);
+            border-color: rgba($color-white, 0.05);
+        }
+
+        &::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba($color-black, 0.01),
+                transparent
+            );
+            transform: translateX(-100%);
+            pointer-events: none;
+            :global(.dark) & {
+                background: linear-gradient(
+                    90deg,
+                    transparent,
+                    rgba($color-white, 0.02),
+                    transparent
+                );
+            }
+        }
+
+        &:hover::after {
+            animation: scan 2s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+        }
+    }
+
+    @keyframes scan {
+        100% {
+            transform: translateX(100%);
+        }
+    }
+
+    .ledger-header {
+        margin-bottom: 2rem;
+
+        .bracket-label {
+            font-family: ui-monospace, monospace;
+            font-size: 0.6rem;
+            font-weight: 700;
+            opacity: 0.4;
+            letter-spacing: 0.2em;
+            margin-bottom: 0.5rem;
+        }
+
+        .ledger-title {
+            font-size: 0.9rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin: 0;
+        }
+    }
+
+    .ledger-rows {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .ledger-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 2rem;
+        font-family: ui-monospace, monospace;
+        font-size: 0.7rem;
+
+        .k {
+            opacity: 0.4;
+            font-weight: 600;
+        }
+
+        .v {
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: $color-black;
+            position: relative;
+            overflow: hidden;
+
+            :global(.dark) & {
+                color: $color-white;
+            }
+
+            .v-inner {
+                display: block;
+                transform: translateY(110%);
+                transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            }
+        }
+
+        &.revealed .v-inner {
+            transform: translateY(0);
+        }
+    }
+</style>
+
+<script>
+    import { inView } from "motion";
+
+    function initLedger() {
+        const ledgers = document.querySelectorAll(".animate-ledger");
+
+        ledgers.forEach((ledger) => {
+            inView(ledger, () => {
+                const rows = ledger.querySelectorAll(".ledger-row");
+                rows.forEach((row, index) => {
+                    setTimeout(() => {
+                        row.classList.add("revealed");
+                    }, index * 100);
+                });
+            });
+        });
+    }
+
+    initLedger();
+    document.addEventListener("astro:page-load", initLedger);
+</script>

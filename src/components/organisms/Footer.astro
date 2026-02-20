@@ -1,0 +1,549 @@
+---
+import Container from "@components/atoms/Container.astro";
+import { SITE, SOCIALS } from "@consts";
+import BackToTop from "@components/atoms/BackToTop.astro";
+import Link from "../atoms/Link.astro";
+---
+
+<footer class="immersive-monolith main-footer">
+  <!-- Immersive Foundation Layer -->
+  <div class="monolith-backdrop">
+    <div class="technical-grid"></div>
+  </div>
+
+  <Container>
+    <div class="monolith-content">
+      <!-- BAND A: MASSIVE IMPACT -->
+      <div class="impact-section">
+        <h1 class="display-impact">ELGAMMAL</h1>
+        <div class="engagement-hub">
+          <Link href={`mailto:${SITE.EMAIL}`} class="art-director-pill">
+            {SITE.EMAIL}
+            <span class="pill-icon">→</span>
+          </Link>
+        </div>
+      </div>
+
+      <!-- BAND B: THE TECHNICAL LEDGER -->
+      <div class="ledger-section">
+        <div class="ledger-grid">
+          <!-- Services/Skills Card -->
+          <div class="ledger-col">
+            <div class="bracket-label">[SERVICES]</div>
+            <ul class="meta-list">
+              <li>Creative Development</li>
+              <li>Technical Architecture</li>
+              <li>Design Systems</li>
+              <li>Generative Art</li>
+            </ul>
+          </div>
+
+          <!-- Connect Card -->
+          <div class="ledger-col">
+            <div class="bracket-label">[CONNECT]</div>
+            <ul class="meta-list">
+              {
+                SOCIALS.map((social) => (
+                  <li>
+                    <Link href={social.HREF} external class="meta-link">
+                      {social.NAME}
+                    </Link>
+                  </li>
+                ))
+              }
+            </ul>
+          </div>
+
+          <!-- Location Card -->
+          <div class="ledger-col">
+            <div class="bracket-label">[LOCATION]</div>
+            <div class="technical-stats">
+              <div class="stat-row">
+                <span class="k">CAI / EGY</span>
+              </div>
+              <div class="stat-row">
+                <span class="k">LAT</span>
+                <span class="v">30.0444° N</span>
+              </div>
+              <div class="stat-row">
+                <span class="k">LNG</span>
+                <span class="v">31.2357° E</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Site Info Card -->
+          <div class="ledger-col">
+            <div class="bracket-label">[SITE_DATA]</div>
+            <div class="technical-stats">
+              <div class="stat-row">
+                <span class="k">VER.</span>
+                <span class="v">2026.REL.01</span>
+              </div>
+              <div class="stat-row">
+                <span class="k">TIME</span>
+                <span class="v mono-pulse" id="footer-ticker">00:00:00</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </Container>
+
+  <!-- BAND C: THE HUD STRIP -->
+  <div class="hud-strip">
+    <div class="hud-marquee">
+      <div class="marquee-inner">
+        <span
+          >EST. 2024 / ARCHITECTURAL ENGINEERING — SYSTEM_OPTIMIZED_FOR_DEPTH —
+          KINETIC_DISCOVERY_ACTIVE — ELG_FOUNDATION_v2.1 —
+        </span>
+        <span
+          >EST. 2024 / ARCHITECTURAL ENGINEERING — SYSTEM_OPTIMIZED_FOR_DEPTH —
+          KINETIC_DISCOVERY_ACTIVE — ELG_FOUNDATION_v2.1 —
+        </span>
+        <span
+          >EST. 2024 / ARCHITECTURAL ENGINEERING — SYSTEM_OPTIMIZED_FOR_DEPTH —
+          KINETIC_DISCOVERY_ACTIVE — ELG_FOUNDATION_v2.1 —
+        </span>
+      </div>
+    </div>
+
+    <div class="hud-controls">
+      <div class="theme-switcher-ledger">
+        <button id="light-theme-button" class="t-btn">LT</button>
+        <button id="dark-theme-button" class="t-btn">DK</button>
+        <button id="system-theme-button" class="t-btn">SYS</button>
+      </div>
+      <div class="btt-anchor">
+        <BackToTop />
+      </div>
+    </div>
+  </div>
+
+  <div class="monolith-baseline">
+    <Container>
+      <div class="baseline-flex">
+        <span class="copy"
+          >&copy; {new Date().getFullYear()} — MAHMOUD S. ELGAMMAL</span
+        >
+        <span class="tag">DESIGNED WITH GRIT & GRACE</span>
+      </div>
+    </Container>
+  </div>
+</footer>
+
+<script>
+  import { animate, stagger, inView } from "motion";
+
+  function initFooter() {
+    // 1. Cairo Time Ticker
+    const ticker = document.getElementById("footer-ticker");
+    if (ticker) {
+      const update = () => {
+        const now = new Date();
+        const cairo = new Date(
+          now.getTime() + (now.getTimezoneOffset() + 120) * 60000,
+        );
+        ticker.textContent = cairo.toLocaleTimeString("en-GB", {
+          hour12: false,
+        });
+      };
+      update();
+      if ((window as any).footerTickerInterval)
+        clearInterval((window as any).footerTickerInterval);
+      (window as any).footerTickerInterval = setInterval(update, 1000);
+    }
+
+    // 2. Art Director Entrance Animations
+    // Targeting the .impact-section directly because the footer now has massive 40rem padding
+    const impactSection = document.querySelector(".impact-section");
+    if (impactSection) {
+      inView(
+        impactSection,
+        () => {
+          animate(
+            ".display-impact" as any,
+            { opacity: [0, 1], scale: [0.95, 1], y: [20, 0] }, // Reduced y offset
+            { duration: 1.5, easing: [0.16, 1, 0.3, 1] } as any,
+          );
+          animate(
+            ".ledger-col" as any,
+            { opacity: [0, 1], y: [20, 0] }, // Reduced y offset
+            {
+              delay: stagger(0.1),
+              duration: 0.8,
+              easing: [0.16, 1, 0.3, 1],
+            } as any,
+          );
+        },
+        { margin: "0px 0px -100px 0px" }, // Triggers when the section is 100px into the viewport
+      );
+    }
+  }
+
+  initFooter();
+  document.addEventListener("astro:page-load", initFooter);
+</script>
+
+<style lang="scss">
+  @use "../../styles/variables" as *;
+  @use "../../styles/mixins" as *;
+
+  .immersive-monolith {
+    position: relative;
+    margin-top: 10rem;
+    background: $color-light-bg;
+    color: $color-black;
+    overflow: hidden;
+    min-height: 100vh; // Occupy full screen height
+    display: flex;
+    flex-direction: column;
+    justify-content: center; // Center content vertically
+    padding: 10rem 0;
+    will-change: opacity;
+
+    :global(.dark) & {
+      background: $color-dark-bg;
+      color: $color-white;
+    }
+  }
+
+  .monolith-backdrop {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .technical-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba($color-black, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba($color-black, 0.03) 1px, transparent 1px);
+    background-size: 50px 50px;
+    z-index: 0;
+
+    :global(.dark) & {
+      background-image:
+        linear-gradient(rgba($color-white, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba($color-white, 0.03) 1px, transparent 1px);
+    }
+  }
+
+  .monolith-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8rem;
+  }
+
+  /* --- BAND A: MASSIVE IMPACT --- */
+  .impact-section {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 6rem;
+    margin-bottom: 5rem;
+  }
+
+  .display-impact {
+    font-size: clamp(6rem, 18vw, 24rem);
+    font-weight: 900;
+    letter-spacing: -0.06em;
+    line-height: 0.8;
+    margin: 0;
+    color: rgba($color-black, 0.4); /* Substantial 'real' impact */
+    text-transform: uppercase;
+    user-select: none;
+    will-change: transform, opacity;
+    opacity: 0; /* Hidden initially for reveal animation */
+
+    :global(.dark) & {
+      color: rgba($color-white, 0.25);
+    }
+  }
+
+  .engagement-hub {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2;
+  }
+
+  .art-director-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 2rem;
+    padding: 1.5rem 3.5rem;
+    background: $color-black;
+    color: $color-white;
+    border-radius: 999px;
+    font-size: 1.25rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+
+    .pill-icon {
+      font-size: 1.5rem;
+      transition: transform 0.4s ease;
+    }
+
+    &:hover {
+      transform: scale(1.05) translateY(-5px);
+      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.2);
+      .pill-icon {
+        transform: translateX(8px);
+      }
+    }
+
+    :global(.dark) & {
+      background: $color-white;
+      color: $color-black;
+    }
+  }
+
+  /* --- BAND B: THE LEDGER --- */
+  .ledger-section {
+    margin-bottom: 12rem;
+  }
+
+  .ledger-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 4rem;
+
+    @include screen(md) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    @include screen(lg) {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+
+  .ledger-col {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    opacity: 0; /* Hidden initially for reveal animation */
+  }
+
+  .bracket-label {
+    font-family: ui-monospace, monospace;
+    font-size: 0.7rem;
+    font-weight: 700;
+    opacity: 0.4;
+    letter-spacing: 0.2em;
+    color: $color-black;
+
+    :global(.dark) & {
+      color: $color-white;
+    }
+  }
+
+  .meta-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+
+    li {
+      font-size: 1rem;
+      font-weight: 500;
+      opacity: 0.7;
+    }
+
+    .meta-link {
+      color: $color-black;
+      text-decoration: none;
+      transition: all 0.3s ease;
+
+      :global(.dark) & {
+        color: $color-white;
+      }
+
+      &:hover {
+        opacity: 0.4;
+        transform: translateX(5px);
+      }
+    }
+  }
+
+  .technical-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      font-family: ui-monospace, monospace;
+      font-size: 0.8rem;
+
+      .k {
+        opacity: 0.4;
+        font-weight: 600;
+      }
+      .v {
+        font-weight: 800;
+        opacity: 0.8;
+      }
+
+      .mono-pulse {
+        color: #10b981;
+        &::before {
+          content: "";
+          display: inline-block;
+          width: 6px;
+          height: 6px;
+          background: currentColor;
+          border-radius: 50%;
+          margin-right: 8px;
+          animation: pulse 2s infinite;
+        }
+      }
+    }
+  }
+
+  /* --- BAND C: HUD STRIP --- */
+  .hud-strip {
+    border-top: 1px solid rgba($color-black, 0.05);
+    border-bottom: 1px solid rgba($color-black, 0.05);
+    padding: 1rem 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba($color-black, 0.01);
+
+    :global(.dark) & {
+      border-color: rgba($color-white, 0.08);
+      background: rgba($color-white, 0.02);
+    }
+  }
+
+  .hud-marquee {
+    flex: 1;
+    overflow: hidden;
+    white-space: nowrap;
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      black 10%,
+      black 90%,
+      transparent
+    );
+  }
+
+  .marquee-inner {
+    display: inline-block;
+    animation: marquee 30s linear infinite;
+
+    span {
+      font-family: ui-monospace, monospace;
+      font-size: 0.65rem;
+      font-weight: 600;
+      opacity: 0.3;
+      letter-spacing: 0.1em;
+      margin-right: 4rem;
+      color: $color-black;
+
+      :global(.dark) & {
+        color: $color-white;
+      }
+    }
+  }
+
+  .hud-controls {
+    display: flex;
+    align-items: center;
+    gap: 3rem;
+    padding: 0 4rem;
+    border-left: 1px solid rgba($color-black, 0.05);
+
+    :global(.dark) & {
+      border-left-color: rgba($color-white, 0.08);
+    }
+  }
+
+  .theme-switcher-ledger {
+    display: flex;
+    gap: 0.5rem;
+    background: rgba($color-black, 0.02);
+    padding: 2px;
+    border-radius: 4px;
+
+    :global(.dark) & {
+      background: rgba($color-white, 0.03);
+    }
+
+    .t-btn {
+      font-family: ui-monospace, monospace;
+      font-size: 0.6rem;
+      padding: 4px 10px;
+      background: transparent;
+      color: $color-black;
+      opacity: 0.3;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      :global(.dark) & {
+        color: $color-white;
+      }
+
+      &:hover {
+        opacity: 1;
+        background: rgba($color-black, 0.05);
+        :global(.dark) & {
+          background: rgba($color-white, 0.08);
+        }
+      }
+    }
+  }
+
+  .monolith-baseline {
+    padding: 3rem 0;
+    .baseline-flex {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: ui-monospace, monospace;
+      font-size: 0.7rem;
+      opacity: 0.3;
+      font-weight: 600;
+      color: #000000; // Explicit black as per user snippet
+    }
+  }
+
+  @keyframes marquee {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+
+  @keyframes pulse {
+    0% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.4;
+      transform: scale(0.9);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+</style>

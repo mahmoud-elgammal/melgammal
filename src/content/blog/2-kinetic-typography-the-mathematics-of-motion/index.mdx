@@ -1,0 +1,38 @@
+---
+title: "Kinetic Typography: The Mathematics of Motion"
+description: "Exploring the intersection of Swiss-style layout and physics-based animation to create web experiences that feel truly alive."
+date: "Feb 18 2026"
+image: "/blog/kinetic_typography.png"
+color: "#FF3366"
+---
+
+Typography on the web has traditionally been static, rooted in the legacy of print. But in a digital environment, time is a design dimension. When we combine the structural discipline of architectural engineering with the fluid physics of motion, we arrive at **Kinetic Typography**—fonts that don't just sit on a grid, but react, breathe, and evolve.
+
+## The Foundation of Motion
+
+At its core, great motion design is built on mathematical easing functions. Moving from point A to point B linearly feels robotic. To make an interface feel premium, we must simulate physical properties: mass, friction, and spring tension.
+
+### Easing as Engineering
+
+Bezier curves $(p0, p1, p2, p3)$ are the blueprints of speed. By manipulating the control points, we define the "soul" of an interaction. 
+
+- **Cubic Bezier (0.16, 1, 0.3, 1)**: This is the "Art Director" ease. It creates a high-velocity start with a languid, sophisticated deceleration.
+- **Spring Physics**: Instead of fixed durations, we use stiffness and damping to calculate natural movement:
+  `F = -k * x - c * v`
+
+## Implementing Dynamic Type
+
+Using libraries like Motion One or Framer Motion, we can orchestrate these animations across a grid. The key is **Staggering**. By offsetting the entry of each letter or line by a few milliseconds, we guide the user's eye and create a sense of architectural depth.
+
+```typescript
+// Example: Orchestrating a typography reveal
+animate(
+  ".title-char",
+  { opacity: [0, 1], y: [20, 0] },
+  { delay: stagger(0.05), duration: 0.8, easing: [0.16, 1, 0.3, 1] }
+);
+```
+
+## The Architectural Void
+
+In kinetic design, what you *don't* animate is as important as what you do. Leaving "voids" of silence between movements creates rhythm. It prevents the interface from becoming noisy and maintains the "grit and grace" aesthetic we strive for.

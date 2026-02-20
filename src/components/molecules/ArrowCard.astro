@@ -1,0 +1,111 @@
+---
+import type { CollectionEntry } from "astro:content";
+
+type BlogEntry = CollectionEntry<"blog">;
+type ProjectEntry = CollectionEntry<"projects">;
+
+type Props = {
+  entry: BlogEntry | ProjectEntry;
+};
+
+const { entry } = Astro.props;
+---
+
+<a href={`/${entry.collection}/${entry.slug}`} class="arrow-card">
+  <div class="content">
+    <div class="title">
+      {entry.data.title}
+    </div>
+    <div class="description">
+      {entry.data.description}
+    </div>
+  </div>
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    class="arrow-icon"
+  >
+    <line x1="5" y1="12" x2="19" y2="12" class="line"></line>
+    <polyline points="12 5 19 12 12 19" class="polyline"></polyline>
+  </svg>
+</a>
+
+<style lang="scss">
+  @use "../../styles/variables" as *;
+  @use "../../styles/mixins" as *;
+
+  .arrow-card {
+    position: relative;
+    display: flex;
+    flex-wrap: nowrap;
+    padding: 0.75rem 1rem; /* py-3 px-4 */
+    padding-right: 2.5rem; /* pr-10 */
+    border-radius: 0.5rem; /* rounded-lg */
+    border: 1px solid rgba(0, 0, 0, 0.15); /* border-black/15 */
+    transition:
+      background-color 0.3s ease-in-out,
+      color 0.3s ease-in-out;
+
+    @include hover {
+      background-color: rgba(0, 0, 0, 0.05); /* bg-black/5 */
+      color: $color-black;
+
+      .line {
+        transform: translateX(0) scaleX(1);
+      }
+
+      .polyline {
+        transform: translateX(0);
+      }
+    }
+
+    @include dark {
+      border-color: rgba(255, 255, 255, 0.2); /* border-white/20 */
+
+      @include hover {
+        background-color: rgba(255, 255, 255, 0.05); /* bg-white/5 */
+        color: $color-white;
+      }
+    }
+  }
+
+  .content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .title {
+    font-weight: 600;
+  }
+
+  .description {
+    font-size: 0.875rem; /* text-sm */
+  }
+
+  .arrow-icon {
+    position: absolute;
+    top: 50%;
+    right: 0.5rem; /* right-2 */
+    transform: translateY(-50%);
+    width: 1.25rem; /* size-5 */
+    height: 1.25rem;
+    stroke-width: 2;
+    fill: none;
+    stroke: currentColor;
+  }
+
+  .line {
+    transform: translateX(0.75rem) scaleX(0); /* translate-x-3 scale-x-0 */
+    transition: transform 0.3s ease-in-out;
+    transform-origin: center;
+  }
+
+  .polyline {
+    transform: translateX(-0.25rem); /* -translate-x-1 */
+    transition: transform 0.3s ease-in-out;
+  }
+</style>

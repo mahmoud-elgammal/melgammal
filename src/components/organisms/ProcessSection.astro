@@ -1,0 +1,285 @@
+---
+import Container from "@components/atoms/Container.astro";
+
+interface Props {
+    index: string;
+    title: string;
+    description: string;
+    imagePath?: string;
+    imageAlt?: string;
+    specs: { k: string; v: string }[];
+    isReversed?: boolean;
+}
+
+const {
+    index,
+    title,
+    description,
+    imagePath,
+    imageAlt,
+    specs,
+    isReversed = false,
+} = Astro.props;
+---
+
+<section class:list={["process-section", { reversed: isReversed }]}>
+    <div class="ghost-index">{index}</div>
+
+    <Container size="sm">
+        <div class="section-grid">
+            <div class="content-block animate">
+                <div class="bracket-label">[V_PHASE_{index}]</div>
+                <h2 class="phase-title">{title}</h2>
+                <p class="phase-description">{description}</p>
+
+                <div class="tech-ledger">
+                    {
+                        specs.map((spec) => (
+                            <div class="ledger-row">
+                                <span class="k">{spec.k}</span>
+                                <span class="v">{spec.v}</span>
+                            </div>
+                        ))
+                    }
+                </div>
+            </div>
+
+            {
+                imagePath && (
+                    <div class="image-block animate">
+                        <div class="image-inner">
+                            <img src={imagePath} alt={imageAlt || title} />
+                            <div class="image-overlay" />
+                            <div class="corner-accents">
+                                <>
+                                    <span />
+                                    <span />
+                                    <span />
+                                    <span />
+                                </>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+        </div>
+    </Container>
+</section>
+
+<style lang="scss">
+    @use "../../styles/variables" as *;
+    @use "../../styles/mixins" as *;
+
+    .process-section {
+        position: relative;
+        padding: 15rem 0;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        min-height: 100vh;
+    }
+
+    .ghost-index {
+        position: absolute;
+        right: 5%;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: clamp(15rem, 40vw, 50rem);
+        font-weight: 900;
+        line-height: 1;
+        opacity: 0.03;
+        color: $color-black;
+        letter-spacing: -0.05em;
+        pointer-events: none;
+        z-index: 0;
+
+        :global(.dark) & {
+            color: $color-white;
+            opacity: 0.05;
+        }
+    }
+
+    .reversed .ghost-index {
+        right: auto;
+        left: 5%;
+    }
+
+    .section-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 6rem;
+        position: relative;
+        z-index: 1;
+    }
+
+    .bracket-label {
+        font-family: ui-monospace, monospace;
+        font-size: 0.7rem;
+        font-weight: 700;
+        opacity: 0.4;
+        letter-spacing: 0.2em;
+        margin-bottom: 1.5rem;
+    }
+
+    .phase-title {
+        font-size: clamp(1.75rem, 4.5vw, 3rem);
+        font-weight: 900;
+        line-height: 1.1;
+        letter-spacing: -0.02em;
+        margin-bottom: 2rem;
+        text-transform: uppercase;
+    }
+
+    .phase-description {
+        font-size: 1.125rem;
+        line-height: 1.7;
+        opacity: 0.8;
+        margin-bottom: 4rem;
+        max-width: 60ch;
+    }
+
+    .tech-ledger {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        width: 100%;
+        padding-top: 2rem;
+        border-top: 1px solid rgba($color-black, 0.1);
+
+        :global(.dark) & {
+            border-top-color: rgba($color-white, 0.1);
+        }
+
+        .ledger-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 2rem;
+            font-family: ui-monospace, monospace;
+            font-size: 0.75rem;
+
+            .k {
+                opacity: 0.4;
+                font-weight: 600;
+            }
+
+            .v {
+                font-weight: 800;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+            }
+        }
+    }
+
+    .image-block {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 16 / 10;
+
+        .image-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background: $color-light-bg;
+            overflow: hidden;
+            border-radius: 0.5rem;
+            box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.1);
+
+            :global(.dark) & {
+                background: #292524;
+            }
+
+            img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                opacity: 0.9;
+                mix-blend-mode: multiply;
+
+                :global(.dark) & {
+                    mix-blend-mode: screen;
+                    opacity: 0.7;
+                }
+            }
+        }
+
+        .image-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(
+                45deg,
+                rgba($color-black, 0.05),
+                transparent
+            );
+        }
+
+        .corner-accents {
+            position: absolute;
+            inset: -1rem;
+            pointer-events: none;
+
+            span {
+                position: absolute;
+                width: 2rem;
+                height: 2rem;
+                border: 1px solid rgba($color-black, 0.2);
+
+                :global(.dark) & {
+                    border-color: rgba($color-white, 0.2);
+                }
+
+                &:nth-child(1) {
+                    top: 0;
+                    left: 0;
+                    border-right: 0;
+                    border-bottom: 0;
+                }
+                &:nth-child(2) {
+                    top: 0;
+                    right: 0;
+                    border-left: 0;
+                    border-bottom: 0;
+                }
+                &:nth-child(3) {
+                    bottom: 0;
+                    left: 0;
+                    border-right: 0;
+                    border-top: 0;
+                }
+                &:nth-child(4) {
+                    bottom: 0;
+                    right: 0;
+                    border-left: 0;
+                    border-top: 0;
+                }
+            }
+        }
+    }
+
+    /* Animation */
+    .animate {
+        opacity: 0;
+        transform: translateY(30px);
+        transition: all 1s cubic-bezier(0.16, 1, 0.3, 1);
+
+        &.in-view {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+
+<script>
+    import { inView } from "motion";
+
+    function initProcessSections() {
+        const animatedElements = document.querySelectorAll(".animate");
+        animatedElements.forEach((el) => {
+            inView(el, (info) => {
+                el.classList.add("in-view");
+            });
+        });
+    }
+
+    initProcessSections();
+    document.addEventListener("astro:page-load", initProcessSections);
+</script>

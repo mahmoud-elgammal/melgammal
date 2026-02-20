@@ -1,0 +1,264 @@
+---
+import Link from "../atoms/Link.astro";
+---
+
+<section class="about-section animate section">
+    <div class="about-grid">
+        <!-- Left Column: Intro Hook -->
+        <div class="about-left" data-speed="0.1">
+            <h5 class="section-title">
+                <span class="status-marker"></span>
+                About
+            </h5>
+            <p class="intro-hook reveal-text">
+                Hey! I'm Mahmoud <span class="phonetic">[ma-moud]</span>, a kind
+                design-driven developer based in Egypt.
+            </p>
+            <div class="technical-label">STATUS: BIOGRAPHIC_SCAN</div>
+        </div>
+
+        <!-- Right Column: Role & Details -->
+        <div class="about-right" data-speed="-0.05">
+            <h2 class="role-title reveal-text">Creative Developer</h2>
+
+            <div class="bio-content">
+                <p class="reveal-text">
+                    My approach prioritizes human understanding over just lines
+                    of code, bridging technology with psychology and art to
+                    create more intuitive and impactful digital experiences.
+                </p>
+                <p class="reveal-text">
+                    With a background in Psychology and a deep passion for
+                    mathematics and philosophy, I’ve become a developer driven
+                    by <span class="highlight">curiosity, logic, and craft</span
+                    >.
+                </p>
+                <p class="reveal-text">
+                    Off work, I explore the intersections of technology and
+                    human behavior, write about design, and find inspiration in
+                    creative coding and fine art.
+                </p>
+            </div>
+
+            <div class="cta-wrapper animate">
+                <Link href="/resume.pdf" class="resume-button" external>
+                    <span class="icon">👁</span>
+                    View Resume
+                </Link>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style lang="scss">
+    @use "../../styles/variables" as *;
+    @use "../../styles/mixins" as *;
+
+    .about-section {
+        margin-top: 6rem;
+        padding-top: 4rem;
+        border-top: 1px dashed rgba($color-black, 0.15);
+        perspective: 1000px;
+
+        :global(.dark) & {
+            border-top-color: rgba($color-white, 0.15);
+        }
+    }
+
+    .about-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 4rem;
+
+        @include screen(lg) {
+            grid-template-columns: 1fr 2fr;
+            gap: 6rem;
+        }
+    }
+
+    .about-left {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+        will-change: transform;
+
+        .section-title {
+            margin-bottom: 0;
+            text-transform: capitalize;
+            font-size: 0.85rem;
+            letter-spacing: 0.15em;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+
+            .status-marker {
+                width: 6px;
+                height: 6px;
+                background: $color-black;
+                border-radius: 50%;
+                :global(.dark) & {
+                    background: $color-white;
+                }
+            }
+        }
+
+        .intro-hook {
+            font-size: 1.35rem;
+            line-height: 1.4;
+            color: rgba($color-black, 0.9);
+            max-width: 320px;
+            font-weight: 500;
+
+            .phonetic {
+                font-family: ui-monospace, "Cascadia Code", monospace;
+                font-size: 0.9rem;
+                opacity: 0.4;
+                font-weight: 400;
+            }
+
+            :global(.dark) & {
+                color: rgba($color-white, 0.9);
+            }
+        }
+
+        .technical-label {
+            font-family: ui-monospace, "Cascadia Code", monospace;
+            font-size: 0.6rem;
+            letter-spacing: 0.2em;
+            opacity: 0.3;
+            margin-top: 1rem;
+        }
+    }
+
+    .about-right {
+        display: flex;
+        flex-direction: column;
+        gap: 3rem;
+        will-change: transform;
+
+        .role-title {
+            font-size: 3.5rem;
+            font-weight: 700;
+            letter-spacing: -0.04em;
+            line-height: 0.95;
+            margin: 0;
+            color: $color-black;
+
+            @include screen(md) {
+                font-size: 5rem;
+            }
+
+            :global(.dark) & {
+                color: $color-white;
+            }
+        }
+
+        .bio-content {
+            display: flex;
+            flex-direction: column;
+            gap: 1.75rem;
+            max-width: 620px;
+
+            p {
+                font-size: 1.15rem;
+                line-height: 1.6;
+                color: rgba($color-black, 0.7);
+
+                :global(.dark) & {
+                    color: rgba($color-white, 0.7);
+                }
+            }
+
+            .highlight {
+                color: $color-black;
+                font-weight: 600;
+                position: relative;
+                z-index: 1;
+
+                &::after {
+                    content: "";
+                    position: absolute;
+                    bottom: 2px;
+                    left: 0;
+                    width: 100%;
+                    height: 1px;
+                    background: rgba($color-black, 0.2);
+                }
+
+                :global(.dark) & {
+                    color: $color-white;
+                    &::after {
+                        background: rgba($color-white, 0.2);
+                    }
+                }
+            }
+        }
+    }
+
+    .cta-wrapper {
+        margin-top: 1rem;
+    }
+
+    .resume-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem 2.2rem;
+        background: transparent;
+        border: 1px solid rgba($color-black, 0.15);
+        border-radius: 99px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        text-decoration: none;
+        color: $color-black;
+        position: relative;
+        overflow: hidden;
+
+        :global(.dark) & {
+            border-color: rgba($color-white, 0.15);
+            color: $color-white;
+        }
+
+        .icon {
+            font-size: 1.2rem;
+            opacity: 0.6;
+        }
+
+        &::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: $color-black;
+            transform: scaleX(0);
+            transform-origin: right;
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: -1;
+            :global(.dark) & {
+                background: $color-white;
+            }
+        }
+
+        &:hover {
+            color: $color-white;
+            border-color: $color-black;
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+
+            &::before {
+                transform: scaleX(1);
+                transform-origin: left;
+            }
+
+            .icon {
+                opacity: 1;
+            }
+
+            :global(.dark) & {
+                color: $color-black;
+                border-color: $color-white;
+                box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+            }
+        }
+    }
+</style>

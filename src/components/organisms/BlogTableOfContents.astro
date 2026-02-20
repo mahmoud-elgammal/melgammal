@@ -1,0 +1,205 @@
+---
+interface Props {
+    headings: { depth: number; slug: string; text: string }[];
+}
+
+const { headings } = Astro.props;
+const filteredHeadings = headings.filter((h) => h.depth <= 3);
+---
+
+<nav class="blog-toc animate" id="post-toc">
+    <div class="toc-header">
+        <div class="bracket-label">[TRANS_MAPPING]</div>
+        <h2 class="toc-title">CONTENT_ARCH</h2>
+    </div>
+
+    <ul class="toc-list">
+        {
+            filteredHeadings.map((heading) => (
+                <li class={`depth-${heading.depth}`}>
+                    <a
+                        href={`#${heading.slug}`}
+                        class="toc-link"
+                        data-slug={heading.slug}
+                    >
+                        <span class="index-prefix">
+                            // {heading.depth === 2 ? "SEC_" : "SUB_"}
+                        </span>
+                        <span class="link-text">{heading.text}</span>
+                    </a>
+                </li>
+            ))
+        }
+    </ul>
+</nav>
+
+<style lang="scss">
+    @use "../../styles/variables" as *;
+    @use "../../styles/mixins" as *;
+
+    .blog-toc {
+        margin: 2rem 0 4rem 0;
+        padding: 0;
+        background: transparent;
+        border: none;
+        position: relative;
+        max-width: 100%;
+    }
+
+    .toc-header {
+        margin-bottom: 2rem;
+        position: relative;
+        z-index: 1;
+
+        .bracket-label {
+            font-family: ui-monospace, monospace;
+            font-size: 0.55rem;
+            font-weight: 700;
+            opacity: 0.3;
+            letter-spacing: 0.2em;
+            margin-bottom: 0.25rem;
+        }
+
+        .toc-title {
+            font-size: 0.9rem;
+            font-weight: 900;
+            letter-spacing: 0.05em;
+            margin: 0;
+            color: $color-black;
+            opacity: 0.8;
+            :global(.dark) & {
+                color: $color-white;
+            }
+        }
+    }
+
+    .toc-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        position: relative;
+        z-index: 1;
+
+        li {
+            &.depth-3 {
+                padding-left: 1.5rem;
+            }
+        }
+    }
+
+    .toc-link {
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        color: rgba($color-black, 0.4);
+        font-family: ui-monospace, monospace;
+        font-size: 0.75rem;
+        font-weight: 600;
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        position: relative;
+
+        .index-prefix {
+            opacity: 0.2;
+            font-size: 0.6rem;
+            transition: all 0.3s ease;
+        }
+
+        .link-text {
+            text-transform: uppercase;
+            letter-spacing: 0.01em;
+        }
+
+        &:hover,
+        &.active {
+            color: $color-black;
+            transform: translateX(5px);
+
+            .index-prefix {
+                opacity: 1;
+                color: $color-black;
+                :global(.dark) & {
+                    color: $color-white;
+                }
+            }
+
+            :global(.dark) & {
+                color: $color-white;
+            }
+        }
+
+        &.active {
+            font-weight: 800;
+            &::before {
+                content: "";
+                position: absolute;
+                left: -1rem;
+                top: 50%;
+                width: 4px;
+                height: 4px;
+                background: $color-black;
+                transform: translateY(-50%);
+                :global(.dark) & {
+                    background: $color-white;
+                }
+            }
+        }
+
+        :global(.dark) & {
+            color: rgba($color-white, 0.4);
+        }
+    }
+
+    .animate {
+        opacity: 0;
+        transform: translateY(10px);
+        transition: all 1s cubic-bezier(0.16, 1, 0.3, 1);
+
+        &.in-view {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+
+<script>
+    function initTOC() {
+        const tocLinks = document.querySelectorAll(".toc-link");
+        const headings = Array.from(tocLinks)
+            .map((link) =>
+                document.getElementById(link.getAttribute("data-slug") || ""),
+            )
+            .filter((h) => h !== null) as HTMLElement[];
+
+        if (headings.length === 0) return;
+
+        const observerOptions = {
+            root: null,
+            rootMargin: "0px 0px -80% 0px",
+            threshold: 0,
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                    const id = entry.target.getAttribute("id");
+                    tocLinks.forEach((link) => {
+                        if (link.getAttribute("data-slug") === id) {
+                            link.classList.add("active");
+                        } else {
+                            link.classList.remove("active");
+                        }
+                    });
+                }
+            });
+        }, observerOptions);
+
+        headings.forEach((heading) => observer.observe(heading));
+    }
+
+    initTOC();
+    document.addEventListener("astro:page-load", initTOC);
+</script>

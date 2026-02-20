@@ -1,0 +1,186 @@
+---
+import Container from "@components/atoms/Container.astro";
+import FormattedDate from "@components/atoms/FormattedDate.astro";
+import { readingTime } from "@lib/utils";
+
+interface Props {
+    title: string;
+    date: Date;
+    body: string;
+}
+
+const { title, date, body } = Astro.props;
+---
+
+<section class="post-hero-text">
+    <Container size="lg">
+        <div class="hero-layout">
+            <div class="meta-ledger animate">
+                <div class="ledger-row">
+                    <span class="k">DATE</span>
+                    <span class="v"><FormattedDate date={date} /></span>
+                </div>
+                <div class="ledger-row">
+                    <span class="k">READ_TIME</span>
+                    <span class="v">{readingTime(body)}</span>
+                </div>
+                <div class="ledger-row">
+                    <span class="k">STATUS</span>
+                    <span class="v">VERIFIED_SOURCE</span>
+                </div>
+            </div>
+
+            <h1 class="post-title animate">
+                {title}
+            </h1>
+        </div>
+    </Container>
+
+    <div class="hero-decorative">
+        <div class="technical-grid"></div>
+    </div>
+</section>
+
+<style lang="scss">
+    @use "../../styles/variables" as *;
+    @use "../../styles/mixins" as *;
+
+    .post-hero-text {
+        position: relative;
+        padding: 0rem 0 6rem 0;
+        background: $color-light-bg;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+
+        :global(.dark) & {
+            background: $color-dark-bg;
+        }
+    }
+
+    .hero-layout {
+        position: relative;
+        z-index: 2;
+        max-width: 1000px; // Keep text relatively contained for impact
+    }
+
+    .meta-ledger {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        width: fit-content;
+        padding: 1.5rem 0;
+        border-top: 1px solid rgba($color-black, 0.1);
+        border-bottom: 1px solid rgba($color-black, 0.1);
+        margin-bottom: 3rem;
+
+        :global(.dark) & {
+            border-color: rgba($color-white, 0.1);
+        }
+
+        .ledger-row {
+            display: flex;
+            gap: 4rem;
+            justify-content: space-between;
+            font-family: ui-monospace, monospace;
+            font-size: 0.7rem;
+
+            .k {
+                opacity: 0.4;
+                font-weight: 600;
+            }
+
+            .v {
+                font-weight: 800;
+                text-transform: uppercase;
+                color: $color-black;
+                :global(.dark) & {
+                    color: $color-white;
+                }
+            }
+        }
+    }
+
+    .post-title {
+        font-size: clamp(2.5rem, 8vw, 6rem);
+        font-weight: 900;
+        line-height: 0.85;
+        letter-spacing: -0.05em;
+        text-transform: uppercase;
+        margin: 0;
+        color: $color-black;
+
+        :global(.dark) & {
+            color: $color-white;
+        }
+    }
+
+    .hero-decorative {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        z-index: 1;
+
+        .technical-grid {
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba($color-black, 0.03) 1px, transparent 1px),
+                linear-gradient(
+                    90deg,
+                    rgba($color-black, 0.03) 1px,
+                    transparent 1px
+                );
+            background-size: 50px 50px;
+
+            :global(.dark) & {
+                background-image:
+                    linear-gradient(
+                        rgba($color-white, 0.02) 1px,
+                        transparent 1px
+                    ),
+                    linear-gradient(
+                        90deg,
+                        rgba($color-white, 0.02) 1px,
+                        transparent 1px
+                    );
+            }
+        }
+    }
+
+    /* Animation */
+    .animate {
+        opacity: 0;
+        transform: translateY(30px);
+        transition: all 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    :global(.post-hero-text.in-view) .animate {
+        opacity: 1;
+        transform: translateY(0);
+
+        &:nth-child(1) {
+            transition-delay: 0.1s;
+        }
+        &:nth-child(2) {
+            transition-delay: 0.2s;
+        }
+    }
+</style>
+
+<script>
+    import { inView } from "motion";
+
+    function initPostHeroText() {
+        const hero = document.querySelector(".post-hero-text");
+
+        if (hero) {
+            inView(hero, () => {
+                hero.classList.add("in-view");
+            });
+        }
+    }
+
+    initPostHeroText();
+    document.addEventListener("astro:page-load", initPostHeroText);
+</script>

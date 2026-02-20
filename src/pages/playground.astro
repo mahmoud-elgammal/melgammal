@@ -1,0 +1,172 @@
+---
+import PageLayout from "@layouts/PageLayout.astro";
+import Container from "@components/atoms/Container.astro";
+import PlaygroundItem from "@components/molecules/PlaygroundItem.astro";
+import { SITE } from "@consts";
+import { getCollection } from "astro:content";
+
+const artifacts = (await getCollection("playground"))
+    .filter((item) => !item.data.draft)
+    .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+
+const title = `Playground | ${SITE.TITLE}`;
+const description =
+    "Technical artifacts, open-source tools, and digital experiments.";
+---
+
+<PageLayout title={title} description={description}>
+    <Container>
+        <div class="playground-layout">
+            <!-- Page header with dramatic reveal -->
+            <section class="playground-header">
+                <div class="header-top">
+                    <span class="header-label" id="pg-label">ARTIFACT_LAB</span>
+                    <span class="header-count" id="pg-count">
+                        {String(artifacts.length).padStart(2, "0")} TOOLS
+                    </span>
+                </div>
+                <h1 class="page-title" id="pg-title">Playground</h1>
+            </section>
+
+            <!-- Artifact list -->
+            <div class="artifacts-list" id="pg-list">
+                {
+                    artifacts.map((artifact, i) => (
+                        <PlaygroundItem
+                            title={artifact.data.title}
+                            description={artifact.data.description}
+                            tags={artifact.data.tags}
+                            demoURL={artifact.data.demoURL}
+                            repoURL={artifact.data.repoURL}
+                            date={artifact.data.date}
+                            index={i}
+                        />
+                    ))
+                }
+            </div>
+        </div>
+    </Container>
+</PageLayout>
+
+<style lang="scss">
+    @use "../styles/variables" as *;
+    @use "../styles/mixins" as *;
+
+    .playground-layout {
+        display: flex;
+        flex-direction: column;
+        gap: 5rem;
+        margin-bottom: 10rem;
+    }
+
+    /* ── Header ── */
+    .playground-header {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        padding-top: 2rem;
+    }
+
+    .header-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .header-label {
+        font-family: ui-monospace, monospace;
+        font-size: 0.65rem;
+        font-weight: 900;
+        letter-spacing: 0.25em;
+        opacity: 0.3;
+    }
+
+    .header-count {
+        font-family: ui-monospace, monospace;
+        font-size: 0.65rem;
+        font-weight: 900;
+        letter-spacing: 0.2em;
+        opacity: 0.2;
+    }
+
+    .page-title {
+        font-weight: 950;
+        letter-spacing: -0.05em;
+        line-height: 0.9;
+        margin: 0;
+    }
+
+    /* ── List ── */
+    .artifacts-list {
+        display: flex;
+        flex-direction: column;
+    }
+</style>
+
+<script>
+    import { animate, inView } from "motion";
+
+    function initPlayground() {
+        const title = document.getElementById("pg-title");
+        const headerTop = document.querySelector(
+            ".header-top",
+        ) as HTMLElement | null;
+        const items = document.querySelectorAll(".playground-item");
+
+        // Set initial states via JS (not CSS) so they're always reset correctly
+        if (headerTop) headerTop.style.opacity = "0";
+        if (title) {
+            title.style.opacity = "0";
+            title.style.transform = "translateY(30px)";
+        }
+        items.forEach((el) => {
+            (el as HTMLElement).style.opacity = "0";
+            (el as HTMLElement).style.transform = "translateY(24px)";
+        });
+
+        // Header metadata fade in
+        if (headerTop) {
+            animate(
+                headerTop as any,
+                { opacity: [0, 1] } as any,
+                {
+                    duration: 0.5,
+                    delay: 0.05,
+                    easing: "ease-out",
+                } as any,
+            );
+        }
+
+        // Title reveal
+        if (title) {
+            animate(
+                title as any,
+                { opacity: [0, 1], y: [30, 0] },
+                { duration: 0.8, delay: 0.15, easing: [0.16, 1, 0.3, 1] },
+            );
+        }
+
+        // Staggered item reveals on scroll — fire once only
+        items.forEach((item) => {
+            const stop = inView(
+                item,
+                () => {
+                    stop(); // unsubscribe immediately so it only fires once
+                    animate(
+                        item as any,
+                        { opacity: [0, 1], y: [24, 0] },
+                        { duration: 0.6, easing: [0.16, 1, 0.3, 1] },
+                    ).then(() => {
+                        // Clear inline styles so CSS hover states work cleanly
+                        (item as HTMLElement).style.transform = "";
+                        (item as HTMLElement).style.opacity = "";
+                    });
+                },
+                { margin: "0px 0px -60px 0px" },
+            );
+        });
+    }
+
+    initPlayground();
+    document.addEventListener("astro:page-load", initPlayground);
+</script>

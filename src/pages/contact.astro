@@ -1,0 +1,303 @@
+---
+import PageLayout from "@layouts/PageLayout.astro";
+import Container from "@components/atoms/Container.astro";
+import ContactForm from "@components/organisms/ContactForm.astro";
+import { SITE } from "@consts";
+
+const title = `Contact | ${SITE.TITLE}`;
+const description =
+    "Get in touch. Direct inquiries and project proposals welcome.";
+---
+
+<PageLayout title={title} description={description}>
+    <Container>
+        <div class="contact-layout">
+            <!-- Header -->
+            <section class="contact-header">
+                <div class="header-meta" id="ct-meta">
+                    <span class="meta-dot"></span>
+                    <span class="meta-label">AVAILABLE FOR PROJECTS</span>
+                    <span class="meta-sep">//</span>
+                    <span class="meta-label">CAIRO · GMT+2</span>
+                </div>
+
+                <h1 class="contact-title" id="ct-title">
+                    Let's work<br />together.
+                </h1>
+
+                <p class="contact-sub" id="ct-sub">
+                    Have a project in mind? I'd love to hear about it.<br />
+                    I respond within 24 hours.
+                </p>
+            </section>
+
+            <!-- Divider -->
+            <div class="divider" id="ct-divider"></div>
+
+            <!-- Body -->
+            <div class="contact-body">
+                <!-- Info sidebar -->
+                <aside class="contact-info" id="ct-info">
+                    <div class="info-block">
+                        <span class="info-label">RESPONSE</span>
+                        <span class="info-value">Within 24h</span>
+                    </div>
+                    <div class="info-block">
+                        <span class="info-label">STATUS</span>
+                        <span class="info-value info-available">
+                            <span class="pulse"></span>
+                            Open to work
+                        </span>
+                    </div>
+                    <div class="info-block">
+                        <span class="info-label">LOCATION</span>
+                        <span class="info-value">Cairo, Egypt</span>
+                    </div>
+                    <div class="info-block">
+                        <span class="info-label">EMAIL</span>
+                        <a href="mailto:hello@example.com" class="info-link"
+                            >hello@example.com</a
+                        >
+                    </div>
+                </aside>
+
+                <!-- Form -->
+                <div class="form-wrapper" id="ct-form">
+                    <ContactForm />
+                </div>
+            </div>
+        </div>
+    </Container>
+</PageLayout>
+
+<style lang="scss">
+    @use "../styles/variables" as *;
+    @use "../styles/mixins" as *;
+
+    .contact-layout {
+        display: flex;
+        flex-direction: column;
+        gap: 5rem;
+        padding-top: 1rem;
+        padding-bottom: 12rem;
+    }
+
+    /* ── Header ── */
+    .contact-header {
+        display: relative;
+        flex-direction: column;
+        gap: 2.5rem;
+    }
+
+    .header-meta {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+
+        .meta-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #10b981;
+            box-shadow: 0 0 8px rgba(#10b981, 0.6);
+            flex-shrink: 0;
+        }
+
+        .meta-label {
+            font-family: ui-monospace, monospace;
+            font-size: 0.6rem;
+            font-weight: 900;
+            letter-spacing: 0.2em;
+            opacity: 0.4;
+        }
+
+        .meta-sep {
+            font-family: ui-monospace, monospace;
+            font-size: 0.6rem;
+            opacity: 0.15;
+        }
+    }
+
+    .contact-title {
+        font-size: clamp(2.75rem, 8vw, 6rem);
+        font-weight: 900;
+        letter-spacing: -0.04em;
+        line-height: 1;
+        margin: 0;
+    }
+
+    .contact-sub {
+        font-size: 1rem;
+        line-height: 1.7;
+        margin: 0;
+        max-width: 42ch;
+        color: rgba($color-black, 0.45);
+        :global(.dark) & {
+            color: rgba($color-white, 0.45);
+        }
+    }
+
+    /* ── Divider ── */
+    .divider {
+        height: 1px;
+        background: rgba($color-black, 0.08);
+        transform-origin: left;
+        :global(.dark) & {
+            background: rgba($color-white, 0.08);
+        }
+    }
+
+    /* ── Body ── */
+    .contact-body {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 4rem;
+
+        @include screen(lg) {
+            grid-template-columns: 200px 1fr;
+            gap: 8rem;
+            align-items: start;
+        }
+    }
+
+    /* ── Info sidebar ── */
+    .contact-info {
+        display: flex;
+        flex-direction: column;
+        gap: 2.5rem;
+
+        @include screen(lg) {
+            position: sticky;
+            top: 6rem;
+        }
+    }
+
+    .info-block {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+
+        .info-label {
+            font-family: ui-monospace, monospace;
+            font-size: 0.55rem;
+            font-weight: 900;
+            letter-spacing: 0.2em;
+            opacity: 0.25;
+        }
+
+        .info-value {
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+
+            &.info-available {
+                color: #10b981;
+            }
+        }
+
+        .info-link {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: inherit;
+            text-decoration: none;
+            opacity: 0.6;
+            transition: opacity 0.2s ease;
+            &:hover {
+                opacity: 1;
+                text-decoration: underline;
+                text-underline-offset: 3px;
+            }
+        }
+    }
+
+    .pulse {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #10b981;
+        box-shadow: 0 0 6px rgba(#10b981, 0.5);
+        animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+        0%,
+        100% {
+            opacity: 1;
+            transform: scale(1);
+        }
+        50% {
+            opacity: 0.5;
+            transform: scale(0.8);
+        }
+    }
+
+    /* ── Form wrapper ── */
+    .form-wrapper {
+        min-width: 0;
+    }
+</style>
+
+<script>
+    import { animate } from "motion";
+
+    function initContact() {
+        const meta = document.getElementById("ct-meta");
+        const title = document.getElementById("ct-title");
+        const sub = document.getElementById("ct-sub");
+        const div = document.getElementById("ct-divider");
+        const info = document.getElementById("ct-info");
+        const form = document.getElementById("ct-form");
+
+        // Set initial states via JS only (no CSS opacity:0 to avoid permanent invisibility)
+        [meta, title, sub, div, info, form].forEach((el) => {
+            if (el) {
+                el.style.opacity = "0";
+            }
+        });
+        if (title) title.style.transform = "translateY(20px)";
+
+        const ease = [0.16, 1, 0.3, 1] as any;
+
+        if (meta)
+            animate(
+                meta as any,
+                { opacity: [0, 1] },
+                { duration: 0.5, delay: 0.05, easing: "ease-out" },
+            );
+        if (title)
+            animate(
+                title as any,
+                { opacity: [0, 1], y: [20, 0] },
+                { duration: 0.8, delay: 0.15, easing: ease },
+            );
+        if (sub)
+            animate(
+                sub as any,
+                { opacity: [0, 1] },
+                { duration: 0.6, delay: 0.35, easing: "ease-out" },
+            );
+        if (div)
+            animate(
+                div as any,
+                { opacity: [0, 1], scaleX: [0, 1] },
+                { duration: 0.8, delay: 0.45, easing: ease },
+            );
+        if (info)
+            animate(
+                info as any,
+                { opacity: [0, 1], y: [12, 0] },
+                { duration: 0.6, delay: 0.55, easing: ease },
+            );
+        if (form)
+            animate(
+                form as any,
+                { opacity: [0, 1], y: [12, 0] },
+                { duration: 0.6, delay: 0.6, easing: ease },
+            );
+    }
+
+    initContact();
+    document.addEventListener("astro:page-load", initContact);
+</script>

@@ -1,0 +1,84 @@
+<div id="intro-loader" class="intro-loader" transition:persist>
+    <div class="counter-wrapper">
+        <span class="counter">0</span>%
+    </div>
+</div>
+
+<script is:inline>
+    // Immediate check to prevent flash on refresh
+    if (sessionStorage.getItem("intro-seen-v4")) {
+        document.getElementById("intro-loader").style.display = "none";
+    }
+</script>
+
+<script>
+    import { animate } from "motion";
+
+    const loader = document.getElementById("intro-loader");
+    const counterElement = loader?.querySelector(".counter");
+    const hasSeenIntro = sessionStorage.getItem("intro-seen-v4");
+
+    if (loader && !hasSeenIntro) {
+        const sequence = async () => {
+            // 1. Animate Counter
+            if (counterElement) {
+                await animate(0, 100, {
+                    duration: 1.5,
+                    ease: [0.22, 1, 0.36, 1],
+                    onUpdate: (value) => {
+                        counterElement.textContent =
+                            Math.round(value).toString();
+                    },
+                }).finished;
+            }
+
+            // 2. Slide curtain up
+            await animate(
+                loader as any,
+                { y: "-100%" },
+                {
+                    duration: 0.8,
+                    ease: [0.76, 0, 0.24, 1],
+                },
+            ).finished;
+
+            // 3. Cleanup
+            loader.style.display = "none";
+            sessionStorage.setItem("intro-seen-v4", "true");
+        };
+
+        sequence();
+    }
+</script>
+
+<style lang="scss">
+    @use "../../styles/variables" as *;
+    @use "../../styles/mixins" as *;
+
+    .intro-loader {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background-color: $color-black;
+        z-index: 9999;
+        display: flex;
+        justify-content: flex-end;
+        align-items: flex-end;
+        padding: 2rem;
+        color: $color-white;
+    }
+
+    .counter-wrapper {
+        font-family: $font-sans; // Use the premium sans font
+        font-size: 8rem; // Big and bold
+        font-weight: 700;
+        line-height: 1;
+        letter-spacing: -0.05em;
+
+        @include screen(md) {
+            font-size: 15rem; // Even bigger on desktop
+        }
+    }
+</style>

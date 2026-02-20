@@ -3,15 +3,19 @@ import mdx from "@astrojs/mdx";
 import sitemap from "@astrojs/sitemap";
 import compress from "astro-compress";
 import partytown from "@astrojs/partytown";
-import tailwindcss from "@tailwindcss/vite";
 import cloudflare from "@astrojs/cloudflare";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
 
 export default defineConfig({
   site: "http://melgammal.com",
   output: "static",
   adapter: cloudflare(),
   integrations: [
-    mdx(),
+    mdx({
+      remarkPlugins: [remarkMath],
+      rehypePlugins: [rehypeKatex],
+    }),
     sitemap(),
     compress(),
     partytown({
@@ -20,7 +24,4 @@ export default defineConfig({
       },
     }),
   ],
-  vite: {
-    plugins: [tailwindcss()],
-  },
 });

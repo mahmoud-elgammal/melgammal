@@ -1,0 +1,102 @@
+---
+interface Props {
+    quote: string;
+    author?: string;
+}
+
+const { quote, author } = Astro.props;
+---
+
+<div class="blog-pull-quote">
+    <div class="bracket-accent top-left animate-bracket">[V_QUOTE]</div>
+    <blockquote class="massive-quote">
+        “{quote}”
+    </blockquote>
+    {author && <cite class="quote-author">// {author}</cite>}
+    <div class="bracket-accent bottom-right animate-bracket">[/V_QUOTE]</div>
+</div>
+
+<style lang="scss">
+    @use "../../styles/variables" as *;
+    @use "../../styles/mixins" as *;
+
+    .blog-pull-quote {
+        position: relative;
+        padding: 6rem 0;
+        margin: 6rem 0;
+        text-align: center;
+        border-top: 1px solid rgba($color-black, 0.05);
+        border-bottom: 1px solid rgba($color-black, 0.05);
+        transition: border-color 0.4s ease;
+
+        :global(.dark) & {
+            border-color: rgba($color-white, 0.05);
+        }
+
+        &:hover {
+            border-color: rgba($color-black, 0.2);
+            :global(.dark) & {
+                border-color: rgba($color-white, 0.2);
+            }
+
+            .bracket-accent {
+                opacity: 0.8;
+                &.top-left {
+                    transform: translate(-1rem, -0.5rem);
+                }
+                &.bottom-right {
+                    transform: translate(1rem, 0.5rem);
+                }
+            }
+        }
+    }
+
+    .bracket-accent {
+        position: absolute;
+        font-family: ui-monospace, monospace;
+        font-size: 0.65rem;
+        font-weight: 700;
+        opacity: 0.3;
+        letter-spacing: 0.15em;
+        transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+
+        &.top-left {
+            top: 1.5rem;
+            left: 0;
+        }
+        &.bottom-right {
+            bottom: 1.5rem;
+            right: 0;
+        }
+    }
+
+    .massive-quote {
+        font-size: clamp(1.75rem, 4vw, 3rem);
+        font-weight: 900;
+        line-height: 1.1;
+        letter-spacing: -0.04em;
+        text-transform: uppercase;
+        color: $color-black;
+        margin: 0 auto 2rem auto;
+        max-width: 25ch;
+        transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+
+        :global(.dark) & {
+            color: $color-white;
+        }
+    }
+
+    .quote-author {
+        font-family: ui-monospace, monospace;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        opacity: 0.5;
+        font-style: normal;
+        transition: opacity 0.4s ease;
+    }
+
+    .blog-pull-quote:hover .quote-author {
+        opacity: 0.8;
+    }
+</style>

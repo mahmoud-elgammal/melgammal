@@ -1,67 +1,1563 @@
 ---
 import { type CollectionEntry, getCollection } from "astro:content";
 import PageLayout from "@layouts/PageLayout.astro";
-import Container from "@components/Container.astro";
-import FormattedDate from "@components/FormattedDate.astro";
-import { readingTime } from "@lib/utils";
-import BackToPrev from "@components/BackToPrev.astro";
-import Link from "@components/Link.astro";
+import Container from "@components/atoms/Container.astro";
+import BackToPrev from "@components/atoms/BackToPrev.astro";
 
 export async function getStaticPaths() {
   const projects = (await getCollection("projects"))
-    .filter(post => !post.data.draft)
+    .filter((p) => !p.data.draft)
     .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
-  return projects.map((project) => ({
+  return projects.map((project, index) => ({
     params: { slug: project.slug },
-    props: project,
+    props: {
+      project,
+      nextProject: projects[index + 1] ?? projects[0],
+    },
   }));
 }
-type Props = CollectionEntry<"projects">;
 
-const project = Astro.props;
+interface Props {
+  project: CollectionEntry<"projects">;
+  nextProject: CollectionEntry<"projects">;
+}
+
+const { project, nextProject } = Astro.props;
 const { Content } = await project.render();
+const {
+  title,
+  description,
+  date,
+  tags,
+  demoURL,
+  repoURL,
+  imageWeb,
+  imageMobile,
+  color,
+  status,
+  role,
+  duration,
+  client,
+  stats,
+  timeline,
+  gallery,
+} = project.data;
+
+const brandColor = color || "#8B5CF6";
+
+const statusConfig: Record<
+  string,
+  { label: string; color: string; pulse: boolean }
+> = {
+  shipped: { label: "SHIPPED", color: "#10b981", pulse: false },
+  "in-progress": { label: "IN PROGRESS", color: "#f59e0b", pulse: true },
+  concept: { label: "CONCEPT", color: "#3b82f6", pulse: false },
+};
+const st = statusConfig[status] || statusConfig.shipped;
 ---
 
-<PageLayout title={project.data.title} description={project.data.description}>
-  <Container>
-    <div class="animate">
-      <BackToPrev href="/projects">
-        Back to projects
-      </BackToPrev>
-    </div>
-    <div class="space-y-1 my-10">
-      <div class="animate flex items-center gap-1.5">
-        <div class="font-base text-sm">
-          <FormattedDate date={project.data.date} />
-        </div>
-        &bull;
-        <div class="font-base text-sm">
-          {readingTime(project.body)}
+<PageLayout title={title} description={description}>
+  <!-- ═══════════════ IMAGE MONOLITH ═══════════════ -->
+  {
+    imageWeb && (
+      <div class="cs-image-monolith animate" style={`--brand: ${brandColor}`}>
+        <div class="image-inner">
+          <div class="web-frame">
+            <img src={imageWeb} alt={`${title} — web`} loading="eager" />
+          </div>
+          {imageMobile && (
+            <div class="mobile-frame">
+              <div class="iphone-bezel">
+                <img
+                  src={imageMobile}
+                  alt={`${title} — mobile`}
+                  loading="lazy"
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
-      <div class="animate text-2xl font-semibold text-black dark:text-white">
-        {project.data.title}
+    )
+  }
+
+  <!-- ═══════════════ HERO ═══════════════ -->
+  <section
+    class="cs-hero"
+    style={`--brand: ${brandColor}`}
+    data-brand={brandColor}
+  >
+    <Container size="lg">
+      <div class="cs-hero-layout">
+        <h1 class="cs-title animate" id="cs-title">{title}</h1>
+
+        {
+          (demoURL || repoURL) && (
+            <div class="cs-links animate">
+              {demoURL && (
+                <a
+                  href={demoURL}
+                  target="_blank"
+                  rel="noopener"
+                  class="cs-link cs-link--primary"
+                >
+                  <span>View Live</span>
+                  <span class="link-arrow">↗</span>
+                </a>
+              )}
+              {repoURL && (
+                <a
+                  href={repoURL}
+                  target="_blank"
+                  rel="noopener"
+                  class="cs-link cs-link--secondary"
+                >
+                  <span>Source</span>
+                  <span class="link-arrow">↗</span>
+                </a>
+              )}
+            </div>
+          )
+        }
       </div>
-      {(project.data.demoURL || project.data.repoURL) && (
-        <nav class="animate flex gap-1">
-          {project.data.demoURL && (
-            <Link href={project.data.demoURL} external>
-              demo
-            </Link>
-          )}
-          {project.data.demoURL && project.data.repoURL && (
-            <span>/</span>
-          )}
-          {project.data.repoURL && (
-            <Link href={project.data.repoURL} external>
-              repo
-            </Link>
-          )}
-        </nav>
-      )}
+    </Container>
+    <div class="hero-decorative"><div class="technical-grid"></div></div>
+  </section>
+
+  <!-- ═══════════════ STATS BAR ═══════════════ -->
+  {
+    stats && stats.length > 0 && (
+      <section
+        class="cs-stats animate"
+        id="cs-stats"
+        style={`--brand: ${brandColor}`}
+      >
+        <div class="stats-inner">
+          {stats.map((s, i) => (
+            <div class="stat-item" style={`--delay: ${i * 0.12}s`}>
+              <span class="stat-value" data-count-target={s.value}>
+                {s.value}
+              </span>
+              <span class="stat-label">{s.label}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+    )
+  }
+
+  <!-- ═══════════════ OVERVIEW ═══════════════ -->
+  <section class="cs-overview" id="cs-overview">
+    <Container size="md">
+      <div class="overview-grid">
+        <div class="overview-body animate">
+          <article class="prose-monolith">
+            <Content />
+          </article>
+
+          {
+            gallery && gallery.length > 0 && (
+              <div class="inline-gallery animate">
+                {gallery.map((img, i) => (
+                  <figure class="inline-item" style={`--delay: ${i * 0.15}s`}>
+                    <div class="image-reveal">
+                      <img src={img.src} alt={img.alt} loading="lazy" />
+                    </div>
+                    {img.caption && (
+                      <figcaption class="inline-caption">
+                        {img.caption}
+                      </figcaption>
+                    )}
+                  </figure>
+                ))}
+              </div>
+            )
+          }
+        </div>
+      </div>
+    </Container>
+  </section>
+
+  <!-- ═══════════════ GANTT TIMELINE ═══════════════ -->
+  {
+    timeline && timeline.length > 0 && (
+      <section
+        class="cs-gantt-section"
+        id="cs-gantt"
+        style={`--brand: ${brandColor}`}
+      >
+        <Container size="lg">
+          <div class="section-header animate">
+            <span class="section-tag">[PROJECT_CHRONOLOGY]</span>
+            <h2 class="section-title">Timeline</h2>
+          </div>
+
+          <div class="gantt-container animate">
+            <div class="gantt-grid-bg">
+              {[...Array(5)].map((_, i) => (
+                <div class="gantt-grid-line" />
+              ))}
+            </div>
+
+            <div class="gantt-body">
+              {timeline.map((t, i) => (
+                <div class="gantt-row" style={`--row-index: ${i}`}>
+                  <div class="gantt-meta">
+                    <span class="gantt-phase-tag">{t.phase}</span>
+                    <span class="gantt-phase-date">{t.date}</span>
+                  </div>
+                  <div class="gantt-track">
+                    <div class="gantt-bar-wrap">
+                      <div
+                        class="gantt-bar"
+                        style={`--bar-offset: ${i * 15}%; --bar-width: 35%;`}
+                      >
+                        <div class="gantt-content">
+                          <h4 class="gantt-h4">{t.title}</h4>
+                          <p class="gantt-p">{t.description}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div class="gantt-axis">
+              <span class="axis-point">PROJ_START</span>
+              <span class="axis-point">MILESTONE_01</span>
+              <span class="axis-point">MILESTONE_02</span>
+              <span class="axis-point">PROJ_LAUNCH</span>
+            </div>
+          </div>
+        </Container>
+      </section>
+    )
+  }
+
+  <!-- ═══════════════ FOOTER ═══════════════ -->
+  <Container size="sm">
+    <div class="cs-footer animate">
+      <div class="bracket-label">[V_END_OF_CASE]</div>
+      <div class="footer-divider"></div>
+      <BackToPrev href="/work">Return to work</BackToPrev>
+      {
+        nextProject && nextProject.slug !== project.slug && (
+          <a href={`/projects/${nextProject.slug}`} class="next-project">
+            <div class="next-label">NEXT_CASE →</div>
+            <div class="next-title">{nextProject.data.title}</div>
+          </a>
+        )
+      }
     </div>
-    <article class="animate">
-      <Content />
-    </article>
   </Container>
+
+  <!-- ═══════════════ FLOATING DOCK (ACTIONS) ═══════════════ -->
+  <nav class="cs-dock" id="cs-dock" style={`--brand: ${brandColor}`}>
+    <div class="dock-inner">
+      <a href="/work" class="dock-pill" title="Back to Work">
+        <span>← Work</span>
+      </a>
+
+      <div class="dock-divider"></div>
+
+      <button class="dock-pill" data-action="top" title="Scroll to Top">
+        <div class="scroll-progress-ring">
+          <svg width="32" height="32" viewBox="0 0 32 32">
+            <circle
+              class="progress-ring-bg"
+              cx="16"
+              cy="16"
+              r="14"
+              fill="none"
+              stroke-width="2.5"></circle>
+            <circle
+              class="progress-ring-fill"
+              cx="16"
+              cy="16"
+              r="14"
+              fill="none"
+              stroke-width="2.5"></circle>
+          </svg>
+          <span class="progress-arrow">↑</span>
+        </div>
+        <span class="dock-label">Top</span>
+      </button>
+
+      {
+        demoURL && (
+          <a
+            href={demoURL}
+            target="_blank"
+            rel="noopener"
+            class="dock-pill dock-pill--live"
+          >
+            <span>View Live ↗</span>
+          </a>
+        )
+      }
+
+      {
+        repoURL && (
+          <a href={repoURL} target="_blank" rel="noopener" class="dock-pill">
+            <span>Source ↗</span>
+          </a>
+        )
+      }
+
+      <button class="dock-pill" data-action="share" title="Copy Link">
+        <span>Share</span>
+      </button>
+
+      <div class="dock-divider"></div>
+
+      <a href="mailto:hello@melgammal.com" class="dock-pill">
+        <span>Contact</span>
+      </a>
+    </div>
+  </nav>
 </PageLayout>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- ═══════════════ STYLES ═══════════════ -->
+<!-- ══════════════════════════════════════════ -->
+<style lang="scss">
+  @use "../../styles/variables" as *;
+
+  /* ── Hero ── */
+  .cs-hero {
+    position: relative;
+    padding: 4rem 0 4rem; /* Adjusted padding */
+    background: transparent; /* Clean background */
+    overflow: visible; /* Let content breathe */
+
+    /* Removed gradients/decorations */
+  }
+
+  .cs-title {
+    font-size: clamp(2.5rem, 6vw, 5rem);
+    font-weight: 900;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    margin: 0;
+    color: $color-black;
+    :global(.dark) & {
+      color: $color-white;
+    }
+  }
+
+  /* ── Links ── */
+  .cs-links {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .cs-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: ui-monospace, monospace;
+    font-size: 0.65rem;
+    font-weight: 900;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    text-decoration: none;
+    padding: 0.75rem 1.75rem;
+    border-radius: 100px;
+    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+
+    &--primary {
+      background: $color-black;
+      color: $color-white;
+      :global(.dark) & {
+        background: $color-white;
+        color: $color-black;
+      }
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 30px -8px rgba(0, 0, 0, 0.3);
+      }
+    }
+    &--secondary {
+      background: transparent;
+      color: $color-black;
+      border: 1px solid rgba($color-black, 0.15);
+      :global(.dark) & {
+        color: $color-white;
+        border-color: rgba($color-white, 0.15);
+      }
+      &:hover {
+        border-color: rgba($color-black, 0.4);
+        transform: translateY(-2px);
+      }
+    }
+    .link-arrow {
+      transition: transform 0.3s ease;
+    }
+    &:hover .link-arrow {
+      transform: translate(2px, -2px);
+    }
+  }
+
+  /* ── Image Monolith ── */
+  .cs-image-monolith {
+    position: relative;
+    width: 100%;
+    padding: 0; /* Full bleed */
+    background: transparent; /* No background */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    /* No pseudo-elements (gradients) */
+  }
+
+  .image-inner {
+    position: relative;
+    width: 100%;
+    max-width: 100%; /* Full width */
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .web-frame {
+    width: 100%;
+    border-radius: 0; /* No radius for full bleed */
+    overflow: hidden;
+    /* box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.5); */ /* Optional: remove shadow if full bleed */
+    background: #000;
+    position: relative;
+    z-index: 1;
+    img {
+      width: 100%;
+      height: auto;
+      min-height: 60vh; /* Ensure it has presence */
+      object-fit: cover;
+      display: block;
+    }
+  }
+  .mobile-frame {
+    position: absolute;
+    bottom: -5%;
+    right: 5%; /* Moved in slightly */
+    width: 18%; /* Slightly smaller */
+    z-index: 2;
+    .iphone-bezel {
+      border: 4px solid #1a1a1a;
+      border-radius: 2rem;
+      background: #000;
+      overflow: hidden;
+      aspect-ratio: 9/19;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+    }
+  }
+
+  /* ═══════════════ STATS BAR ═══════════════ */
+  .cs-stats {
+    padding: 0;
+  }
+  .stats-inner {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    border-top: 1px solid rgba($color-black, 0.06);
+    border-bottom: 1px solid rgba($color-black, 0.06);
+    :global(.dark) & {
+      border-color: rgba($color-white, 0.06);
+    }
+  }
+  .stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 3rem 2rem;
+    border-right: 1px solid rgba($color-black, 0.04);
+    transition: opacity 0.4s ease;
+    :global(.dark) & {
+      border-color: rgba($color-white, 0.04);
+    }
+    &:last-child {
+      border-right: none;
+    }
+  }
+  .stat-value {
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 900;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    color: $color-black;
+    :global(.dark) & {
+      color: $color-white;
+    }
+  }
+  .stat-label {
+    font-family: ui-monospace, monospace;
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    opacity: 0.4;
+  }
+
+  /* ═══════════════ OVERVIEW ═══════════════ */
+  .cs-overview {
+    padding: 6rem 0;
+  }
+  .overview-grid {
+    display: block;
+    max-width: 800px; /* Optional: limit width for readability since it's now full width */
+    margin: 0 auto;
+  }
+
+  .overview-meta {
+    position: sticky;
+    top: 120px;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+  .meta-block {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  .meta-key {
+    font-family: ui-monospace, monospace;
+    font-size: 0.55rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    opacity: 0.3;
+  }
+  .meta-val {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: $color-black;
+    :global(.dark) & {
+      color: $color-white;
+    }
+  }
+
+  .tech-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+  .tech-pill {
+    font-family: ui-monospace, monospace;
+    font-size: 0.55rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 0.35rem 0.75rem;
+    border-radius: 100px;
+    background: rgba($color-black, 0.04);
+    color: rgba($color-black, 0.7);
+    :global(.dark) & {
+      background: rgba($color-white, 0.06);
+      color: rgba($color-white, 0.7);
+    }
+  }
+
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: ui-monospace, monospace;
+    font-size: 0.6rem;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--dot-color, #10b981);
+  }
+  .status-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    background: var(--dot-color, #10b981);
+    border-radius: 50%;
+  }
+  .status-pulse .status-dot {
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+  @keyframes pulse-dot {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.3;
+    }
+  }
+
+  .overview-body {
+    min-width: 0;
+  }
+
+  .prose-monolith {
+    color: rgba($color-black, 0.82);
+    line-height: 1.9;
+    font-size: 1.15rem;
+    :global(.dark) & {
+      color: rgba($color-white, 0.82);
+    }
+
+    :global(p),
+    :global(h2),
+    :global(h3),
+    :global(ul),
+    :global(ol),
+    :global(blockquote),
+    :global(hr) {
+      opacity: 0;
+      transform: translateY(20px);
+      transition:
+        opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+        transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+
+      &.in-view {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    :global(p) {
+      margin-bottom: 2.5rem;
+    }
+    :global(h2) {
+      font-size: 1.75rem;
+      font-weight: 900;
+      margin: 5rem 0 1.5rem;
+      letter-spacing: -0.02em;
+      color: $color-black;
+      :global(.dark) & {
+        color: $color-white;
+      }
+    }
+    :global(h3) {
+      font-size: 1.25rem;
+      font-weight: 800;
+      margin: 4rem 0 1.25rem;
+      color: $color-black;
+      :global(.dark) & {
+        color: $color-white;
+      }
+    }
+    :global(strong) {
+      font-weight: 900;
+      color: $color-black;
+      :global(.dark) & {
+        color: $color-white;
+      }
+    }
+    :global(ul) {
+      list-style: none;
+      padding: 0;
+      margin-bottom: 3rem;
+      :global(li) {
+        position: relative;
+        padding-left: 2rem;
+        margin-bottom: 1rem;
+        &::before {
+          content: "—";
+          position: absolute;
+          left: 0;
+          opacity: 0.4;
+          font-weight: 900;
+        }
+      }
+    }
+
+    // ── Animated Highlights (Refined: Borderless Swipe Reveal) ──
+    :global(.p-highlight) {
+      position: relative;
+      background: #000;
+      color: #fff;
+      padding: 3rem 4rem;
+      border-radius: 2.5rem;
+      border: none;
+      margin: 5rem 0;
+      overflow: hidden;
+      transform: translateY(30px);
+      opacity: 0;
+      transition: all 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+
+      :global(.dark) & {
+        background: #fff;
+        color: #000;
+      }
+
+      &.in-view {
+        transform: translateY(0);
+        opacity: 1;
+        &::after {
+          transform: scaleX(0);
+        }
+      }
+
+      // Leading swipe bar
+      &::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: var(--brand);
+        z-index: 10;
+        transform: scaleX(1);
+        transform-origin: right;
+        transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+        transition-delay: 0.1s;
+      }
+
+      :global(strong) {
+        color: var(--brand);
+        :global(.dark) & {
+          color: var(--brand);
+        }
+      }
+    }
+
+    // ── Inline Highlights ──
+    :global(.txt-highlight) {
+      background-image: linear-gradient(var(--brand), var(--brand));
+      background-repeat: no-repeat;
+      background-size: 0% 100%;
+      background-position: left center;
+      transition: background-size 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+      color: inherit;
+      padding: 0 4px;
+      margin: 0 -4px;
+      border-radius: 4px;
+      font-weight: 800;
+      white-space: nowrap;
+
+      &.in-view {
+        background-size: 100% 100%;
+        color: #fff;
+        :global(.dark) & {
+          color: #000;
+        }
+      }
+    }
+  }
+
+  .inline-gallery {
+    margin-top: 6rem;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 4rem;
+    &.animate {
+      opacity: 1;
+    }
+  }
+
+  .inline-item {
+    margin: 0;
+    width: 100%;
+    .image-reveal {
+      border-radius: 1.5rem;
+      overflow: hidden;
+      background: rgba($color-black, 0.03);
+      border: 1px solid rgba($color-black, 0.05);
+      :global(.dark) & {
+        background: rgba($color-white, 0.03);
+        border-color: rgba($color-white, 0.05);
+      }
+      img {
+        width: 100%;
+        height: auto;
+        display: block;
+        transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      &:hover img {
+        transform: scale(1.02);
+      }
+    }
+    figcaption {
+      margin-top: 1.5rem;
+      font-family: ui-monospace, monospace;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      opacity: 0.4;
+      text-align: center;
+    }
+  }
+
+  /* ═══════════════ SECTION HEADERS ═══════════════ */
+  .section-header {
+    margin-bottom: 4rem;
+  }
+  .section-tag {
+    font-family: ui-monospace, monospace;
+    font-size: 0.55rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    opacity: 0.3;
+    display: block;
+    margin-bottom: 0.75rem;
+  }
+  .section-title {
+    font-size: clamp(1.75rem, 4vw, 2.75rem);
+    font-weight: 900;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    margin: 0;
+    color: $color-black;
+    :global(.dark) & {
+      color: $color-white;
+    }
+  }
+
+  /* ═══════════════ GANTT TIMELINE ═══════════════ */
+  .cs-gantt-section {
+    padding: 10rem 0;
+    overflow: hidden;
+    position: relative;
+    :global(.dark) & {
+      background: color-mix(in srgb, var(--brand) 3%, $color-dark-bg);
+    }
+  }
+
+  .gantt-container {
+    position: relative;
+    padding: 5rem 4rem;
+    border-radius: 2.5rem;
+    overflow: hidden;
+    :global(.dark) & {
+      background: #000;
+      border-color: #fff;
+    }
+  }
+
+  .gantt-grid-bg {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 4rem;
+    pointer-events: none;
+    .gantt-grid-line {
+      width: 1px;
+      height: 100%;
+      background: rgba($color-black, 0.05);
+      :global(.dark) & {
+        background: rgba($color-white, 0.05);
+      }
+    }
+  }
+
+  .gantt-body {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 4rem;
+  }
+
+  .gantt-row {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    align-items: center;
+    gap: 3rem;
+  }
+
+  .gantt-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .gantt-phase-tag {
+    font-family: ui-monospace, monospace;
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: var(--brand);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+  }
+
+  .gantt-phase-date {
+    font-family: ui-monospace, monospace;
+    font-size: 0.7rem;
+    font-weight: 700;
+    opacity: 0.4;
+    color: $color-black;
+    :global(.dark) & {
+      color: $color-white;
+    }
+  }
+
+  .gantt-track {
+    position: relative;
+    height: 100px;
+    background: rgba($color-black, 0.02);
+    border-radius: 1.5rem;
+    border: 1px dashed rgba($color-black, 0.1);
+    :global(.dark) & {
+      background: rgba($color-white, 0.02);
+      border-color: rgba($color-white, 0.1);
+    }
+  }
+
+  .gantt-bar-wrap {
+    height: 100%;
+    width: 100%;
+    position: relative;
+  }
+
+  .gantt-bar {
+    position: absolute;
+    top: 50%;
+    left: var(--bar-offset);
+    width: var(--bar-width);
+    transform: translateY(-50%) translateX(20px);
+    opacity: 0;
+    background: #fff;
+    border: 4.5px solid #000;
+    border-radius: 1.5rem;
+    padding: 1.5rem 2.5rem;
+    cursor: pointer;
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+
+    :global(.dark) & {
+      background: #0a0a0a;
+      border-color: #fff;
+    }
+
+    &.in-view {
+      opacity: 1;
+      transform: translateY(-50%) translateX(0);
+    }
+
+    &:hover {
+      transform: translateY(-58%) scale(1.05);
+      border-color: var(--brand);
+      z-index: 10;
+      box-shadow:
+        15px 15px 0px 0px var(--brand),
+        0 10px 40px -10px var(--brand);
+      :global(.dark) & {
+        background: #111;
+        box-shadow:
+          15px 15px 0px 0px var(--brand),
+          0 15px 60px -15px var(--brand);
+      }
+    }
+  }
+
+  .gantt-h4 {
+    font-size: 1.2rem;
+    font-weight: 950;
+    margin: 0 0 0.4rem;
+    letter-spacing: -0.03em;
+    color: $color-black;
+    :global(.dark) & {
+      color: $color-white;
+    }
+  }
+
+  .gantt-p {
+    font-size: 0.9rem;
+    line-height: 1.5;
+    font-weight: 500;
+    color: rgba($color-black, 0.6);
+    :global(.dark) & {
+      color: rgba($color-white, 0.6);
+    }
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .gantt-axis {
+    margin-top: 5rem;
+    padding: 0 4rem;
+    display: flex;
+    justify-content: space-between;
+    font-family: ui-monospace, monospace;
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    opacity: 0.6;
+    color: $color-black;
+    @media (max-width: 768px) {
+      font-size: 0.55rem;
+    }
+    :global(.dark) & {
+      color: $color-white;
+    }
+
+    .axis-point {
+      transition: color 0.3s ease;
+      &:hover {
+        color: var(--brand);
+        opacity: 1;
+      }
+    }
+  }
+
+  /* ═══════════════ FOOTER ═══════════════ */
+  .cs-footer {
+    padding: 5rem 0 12rem;
+
+    .bracket-label {
+      font-family: ui-monospace, monospace;
+      font-size: 0.6rem;
+      font-weight: 700;
+      opacity: 0.3;
+      letter-spacing: 0.2em;
+      margin-bottom: 1rem;
+    }
+    .footer-divider {
+      height: 1px;
+      background: rgba($color-black, 0.1);
+      margin-bottom: 3rem;
+      :global(.dark) & {
+        background: rgba($color-white, 0.1);
+      }
+    }
+  }
+
+  .next-project {
+    display: block;
+    margin-top: 4rem;
+    padding: 2rem 0;
+    border-top: 1px solid rgba($color-black, 0.06);
+    text-decoration: none;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    :global(.dark) & {
+      border-color: rgba($color-white, 0.06);
+    }
+
+    &:hover {
+      transform: translateX(8px);
+      .next-title {
+        opacity: 1;
+      }
+      .next-label {
+        letter-spacing: 0.3em;
+      }
+    }
+    .next-label {
+      font-family: ui-monospace, monospace;
+      font-size: 0.6rem;
+      font-weight: 700;
+      opacity: 0.35;
+      letter-spacing: 0.1em;
+      // text-transform: uppercase; // Removed
+      margin-bottom: 0.75rem;
+      transition: letter-spacing 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .next-title {
+      font-size: clamp(1.25rem, 3vw, 2rem);
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      color: $color-black;
+      opacity: 0.7;
+      transition: opacity 0.4s ease;
+      :global(.dark) & {
+        color: $color-white;
+      }
+    }
+  }
+
+  /* ═══════════════ DOCK ═══════════════ */
+  .cs-dock {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    z-index: 999;
+    opacity: 0;
+    pointer-events: none;
+    transition:
+      transform 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+      opacity 0.4s ease;
+
+    &.visible {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+      pointer-events: auto;
+    }
+  }
+  .dock-inner {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 0.85rem;
+    border-radius: 100px;
+    // Premium High Contrast
+    background: #000000;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    box-shadow:
+      0 20px 50px -10px rgba(0, 0, 0, 0.7),
+      0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+
+    :global(.dark) & {
+      background: #ffffff;
+      border: 2px solid rgba(0, 0, 0, 0.2);
+      box-shadow: 0 20px 50px -10px rgba(255, 255, 255, 0.3);
+    }
+  }
+  .dock-pill {
+    background: transparent;
+    border: none;
+    color: #999;
+    font-family: ui-monospace, monospace;
+    font-size: 0.75rem; /* Slightly larger for readability */
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    padding: 0.6rem 1rem; /* More padding for touch targets */
+    border-radius: 12px; /* Softer radius */
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); /* Smooth spring-like transition */
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    position: relative;
+
+    &:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateY(-2px);
+    }
+
+    &:active {
+      transform: translateY(0) scale(0.98);
+    }
+
+    :global(.dark) & {
+      color: #666;
+      &:hover {
+        color: #000;
+        background: rgba(0, 0, 0, 0.04);
+      }
+    }
+
+    .scroll-progress-ring {
+      position: relative;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      svg {
+        transform: rotate(-90deg);
+        width: 100%;
+        height: 100%;
+      }
+
+      .progress-ring-bg {
+        stroke: rgba(255, 255, 255, 0.1);
+        :global(.dark) & {
+          stroke: rgba(0, 0, 0, 0.1);
+        }
+      }
+
+      .progress-ring-fill {
+        stroke: var(--brand);
+        stroke-linecap: round;
+        stroke-dasharray: 88; /* 2 * PI * R (14) - actually need to recalculate for R=11? */
+        stroke-dashoffset: 88;
+        transition: stroke-dashoffset 0.1s linear;
+      }
+
+      .progress-arrow {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 0.7rem;
+        font-weight: 900;
+      }
+    }
+
+    .dock-label {
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+
+    &--live {
+      color: #fff;
+      background: #1a1a1a;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+
+      &:hover {
+        background: #222;
+        color: #fff;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        border-color: rgba(255, 255, 255, 0.2);
+      }
+      :global(.dark) & {
+        color: #000;
+        background: #f0f0f0;
+        border-color: rgba(0, 0, 0, 0.05);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        &:hover {
+          background: #fff;
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        }
+      }
+    }
+  }
+  .dock-divider {
+    width: 1px;
+    height: 16px;
+    background: rgba(255, 255, 255, 0.1);
+    margin: 0 0.25rem;
+    :global(.dark) & {
+      background: rgba(0, 0, 0, 0.1);
+    }
+  }
+
+  /* ═══════════════ ANIMATIONS ═══════════════ */
+  .animate {
+    opacity: 0;
+    transform: translateY(20px);
+    transition:
+      opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+      transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+    &.in-view {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  :global(.cs-hero.in-view) .animate {
+    opacity: 1;
+    transform: translateY(0);
+    &:nth-child(1) {
+      transition-delay: 0.05s;
+    }
+    &:nth-child(2) {
+      transition-delay: 0.15s;
+    }
+  }
+
+  .cs-image-monolith.animate {
+    transform: translateY(32px);
+    transition-duration: 1.1s;
+  }
+
+  .cs-stats.in-view .stat-item {
+    animation: stat-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation-delay: var(--delay, 0s);
+    opacity: 0;
+  }
+  @keyframes stat-in {
+    from {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .gallery-item.in-view {
+    animation: gallery-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation-delay: var(--delay, 0s);
+  }
+  @keyframes gallery-in {
+    from {
+      opacity: 0;
+      transform: translateY(20px) scale(0.97);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  /* ═══════════════ RESPONSIVE ═══════════════ */
+  @media (max-width: 768px) {
+    .cs-hero {
+      padding: 0 0 3rem;
+    }
+    .cs-image-monolith {
+      padding: 2.5rem 1rem;
+    }
+    .mobile-frame {
+      width: 28%;
+      right: -3%;
+    }
+
+    .stats-inner {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .stat-item {
+      padding: 2rem 1.5rem;
+    }
+
+    .overview-grid {
+      grid-template-columns: 1fr;
+      gap: 3rem;
+    }
+    .overview-meta {
+      position: static;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.5rem;
+    }
+
+    .timeline-node {
+      grid-template-columns: 40px 1fr;
+      gap: 1.25rem;
+    }
+    .node-content {
+      padding-bottom: 2.5rem;
+    }
+
+    .gallery-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .cta-inner {
+      padding: 2rem 1.5rem;
+    }
+
+    .cs-dock {
+      bottom: 1rem;
+      max-width: 95vw;
+    }
+    .dock-inner {
+      overflow-x: auto;
+      scrollbar-width: none;
+      &::-webkit-scrollbar {
+        display: none;
+      }
+    }
+    .dock-pill {
+      font-size: 0.55rem;
+      padding: 0.4rem 0.7rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .scroll-progress-ring {
+      position: relative;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      svg {
+        transform: rotate(-90deg);
+        width: 100%;
+        height: 100%;
+      }
+
+      .progress-ring-bg {
+        stroke: rgba($color-black, 0.1);
+        :global(.dark) & {
+          stroke: rgba($color-white, 0.1);
+        }
+      }
+
+      .progress-ring-fill {
+        stroke: var(--brand);
+        stroke-linecap: round;
+        stroke-dasharray: 88; /* 2 * PI * R (14) */
+        stroke-dashoffset: 88;
+        transition: stroke-dashoffset 0.1s linear;
+      }
+
+      .progress-arrow {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 0.8rem;
+        font-weight: 900;
+        color: var(--brand);
+      }
+    }
+
+    .dock-label {
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+  }
+</style>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- ═══════════════ SCRIPT ═══════════════ -->
+<!-- ══════════════════════════════════════════ -->
+<script>
+  import { inView } from "motion";
+
+  function initCaseStudy() {
+    // ── Brand theme takeover ──
+    const hero = document.querySelector(".cs-hero") as HTMLElement;
+    if (hero) {
+      const brand = hero.dataset.brand || "#8B5CF6";
+      document.documentElement.style.setProperty("--brand", brand);
+
+      const isDark = document.documentElement.classList.contains("dark");
+      const baseBg = isDark ? "#1c1917" : "#f5f5f4";
+      document.body.style.background = `color-mix(in srgb, ${brand} 3%, ${baseBg})`;
+
+      inView(hero, () => {
+        hero.classList.add("in-view");
+      });
+    }
+
+    // ── Scroll animations (standard) ──
+    document
+      .querySelectorAll(
+        ".cs-image-monolith.animate, .cs-stats.animate, .cs-overview .animate, .cs-gallery .animate, .cs-cta .animate, .cs-footer.animate, .cs-gantt-section .animate, .gantt-container.animate",
+      )
+      .forEach((el) => {
+        inView(
+          el,
+          () => {
+            el.classList.add("in-view");
+          },
+          { margin: "0px 0px -60px 0px" },
+        );
+      });
+
+    // ── Granular Prose Reveals & Highlights ──
+    const highlights = [
+      "Challenge:",
+      "Decision:",
+      "Risk:",
+      "Impact:",
+      "System Design:",
+      "Business Decision:",
+      "Project Management:",
+    ];
+
+    document
+      .querySelectorAll(".prose-monolith > *:not(.inline-gallery)")
+      .forEach((el) => {
+        // Auto-highlight based on keywords
+        const text = el.textContent || "";
+        if (highlights.find((h) => text.trim().startsWith(h))) {
+          el.classList.add("p-highlight");
+        }
+
+        // Inline keyword highlights
+        highlights.forEach((h) => {
+          const keyword = h.replace(":", "");
+          if (
+            el.innerHTML.includes(keyword) &&
+            !el.classList.contains("p-highlight")
+          ) {
+            el.innerHTML = el.innerHTML.replaceAll(
+              keyword,
+              `<span class="txt-highlight">${keyword}</span>`,
+            );
+          }
+        });
+
+        inView(
+          el as HTMLElement,
+          (info) => {
+            el.classList.add("in-view");
+            el.querySelectorAll(".txt-highlight").forEach((span) =>
+              span.classList.add("in-view"),
+            );
+          },
+          { margin: "0px 0px -10px 0px" },
+        );
+      });
+
+    // ── Gantt Timeline Reveals ──
+    document.querySelectorAll(".gantt-bar").forEach((bar) => {
+      inView(
+        bar as HTMLElement,
+        () => {
+          bar.classList.add("in-view");
+        },
+        { margin: "0px 0px -100px 0px" },
+      );
+    });
+
+    // ── Floating Dock ──
+    const dock = document.getElementById("cs-dock");
+    if (dock && hero) {
+      const obs = new IntersectionObserver(
+        ([e]) => {
+          dock.classList.toggle("visible", !e.isIntersecting);
+        },
+        { threshold: 0, rootMargin: "0px 0px -100px 0px" },
+      );
+      obs.observe(hero);
+
+      // Top Button
+      const topBtn = dock.querySelector('[data-action="top"]');
+      const progressFill = dock.querySelector(
+        ".progress-ring-fill",
+      ) as SVGCircleElement;
+
+      topBtn?.addEventListener("click", () => {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      });
+
+      // Scroll Progress Logic
+      const updateScrollProgress = () => {
+        const winScroll = window.scrollY;
+        const height =
+          document.documentElement.scrollHeight -
+          document.documentElement.clientHeight;
+        const scrolled = winScroll / height;
+
+        if (progressFill) {
+          const radius = progressFill.r.baseVal.value;
+          const circumference = 2 * Math.PI * radius;
+          const offset = circumference - scrolled * circumference;
+          progressFill.style.strokeDasharray = `${circumference}`;
+          progressFill.style.strokeDashoffset = `${offset}`;
+        }
+      };
+
+      window.addEventListener("scroll", updateScrollProgress);
+      updateScrollProgress(); // Initial call
+
+      // Share Button
+      const shareBtn = dock.querySelector('[data-action="share"]');
+      shareBtn?.addEventListener("click", () => {
+        navigator.clipboard.writeText(window.location.href).then(() => {
+          const span = shareBtn.querySelector("span");
+          if (span) {
+            const original = span.innerText;
+            span.innerText = "Copied!";
+            setTimeout(() => (span.innerText = original), 2000);
+          }
+        });
+      });
+    }
+
+    return () => {
+      document.body.style.background = "";
+    };
+  }
+
+  const cleanup = initCaseStudy();
+  document.addEventListener("astro:before-swap", () => cleanup?.());
+  document.addEventListener("astro:page-load", () => {
+    if (window.location.pathname.startsWith("/projects/")) initCaseStudy();
+  });
+</script>

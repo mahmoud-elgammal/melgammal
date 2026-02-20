@@ -1,0 +1,205 @@
+---
+import type { CollectionEntry } from "astro:content";
+
+type Props = {
+    project: CollectionEntry<"projects">;
+};
+
+const { project } = Astro.props;
+const { title, tags, imageWeb, imageMobile, color } = project.data;
+
+// Default color if none provided
+const brandColor = color || "#8B5CF6";
+const subtitle = tags && tags.length > 0 ? tags[0] : "Project";
+---
+
+<div class="visual-card">
+    <a
+        href={`/projects/${project.slug}`}
+        class="card-link"
+        aria-label={`View ${title}`}
+    >
+        <div class="visual-hero" style={`--brand-bg: ${brandColor}`}>
+            <div class="noise-overlay"></div>
+            <div class="mockup-container">
+                {
+                    imageWeb && (
+                        <div class="web-mockup">
+                            <img
+                                src={imageWeb}
+                                alt={`${title} Web`}
+                                loading="lazy"
+                            />
+                        </div>
+                    )
+                }
+                {
+                    imageMobile && (
+                        <div class="mobile-mockup">
+                            <div class="iphone-frame">
+                                <img
+                                    src={imageMobile}
+                                    alt={`${title} Mobile`}
+                                    loading="lazy"
+                                />
+                            </div>
+                        </div>
+                    )
+                }
+            </div>
+        </div>
+
+        <div class="card-info">
+            <h3 class="project-name">{title}</h3>
+            <p class="project-subtitle">{subtitle}</p>
+        </div>
+    </a>
+</div>
+
+<style lang="scss">
+    @use "../../styles/variables" as *;
+    @use "../../styles/mixins" as *;
+
+    .visual-card {
+        width: 100%;
+        transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+
+        &:hover {
+            transform: translateY(-8px);
+
+            .visual-hero {
+                box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.15);
+            }
+
+            .web-mockup {
+                transform: scale(1.02) translateY(-10px);
+            }
+            .mobile-mockup {
+                transform: scale(1.05) translate(10px, -15px);
+            }
+
+            .project-name {
+                color: $color-black;
+            }
+            :global(.dark) & .project-name {
+                color: $color-white;
+            }
+        }
+    }
+
+    .card-link {
+        text-decoration: none;
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    /* ── Visual Section ── */
+    .visual-hero {
+        position: relative;
+        background: var(--brand-bg);
+        border-radius: 2.25rem;
+        aspect-ratio: 4 / 3;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2.5rem;
+        box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.1);
+        transition: all 0.5s ease;
+
+        @include screen(lg) {
+            padding: 3.5rem;
+        }
+    }
+
+    .noise-overlay {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+            135deg,
+            rgba(0, 0, 0, 0.1) 0%,
+            rgba(255, 255, 255, 0.05) 100%
+        );
+    }
+
+    .mockup-container {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .web-mockup {
+        width: 95%;
+        border-radius: 0.75rem;
+        overflow: hidden;
+        box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.35);
+        background: #000;
+        transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+
+        img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+    }
+
+    .mobile-mockup {
+        position: absolute;
+        width: 28%;
+        bottom: -10%;
+        right: -2%;
+        transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1) 0.1s;
+
+        .iphone-frame {
+            border: 6px solid #1a1a1a;
+            border-radius: 2rem;
+            background: #000;
+            overflow: hidden;
+            aspect-ratio: 9/19;
+            box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.5);
+
+            img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+        }
+    }
+
+    /* ── Info Section ── */
+    .card-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+        padding-left: 0.5rem;
+    }
+
+    .project-name {
+        font-size: 1.25rem;
+        font-weight: 700;
+        margin: 0;
+        color: rgba(0, 0, 0, 0.85);
+        letter-spacing: -0.02em;
+        transition: color 0.3s ease;
+
+        :global(.dark) & {
+            color: rgba(255, 255, 255, 0.85);
+        }
+    }
+
+    .project-subtitle {
+        font-size: 0.9375rem;
+        color: rgba(0, 0, 0, 0.45);
+        margin: 0;
+        font-weight: 500;
+        letter-spacing: 0.01em;
+
+        :global(.dark) & {
+            color: rgba(255, 255, 255, 0.4);
+        }
+    }
+</style>

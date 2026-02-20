@@ -1,0 +1,85 @@
+---
+import PageLayout from "@layouts/PageLayout.astro";
+import ProcessHero from "@components/organisms/ProcessHero.astro";
+import ProcessSection from "@components/organisms/ProcessSection.astro";
+
+const PROCESS_DATA = [
+    {
+        index: "01",
+        title: "DIGITAL EXCAVATION & DISCOVERY",
+        description:
+            "WE BEGIN BY STRIPPING AWAY THE SUPERFICIAL. UNDERSTANDING THE CORE INTENT, USER MAPPING, AND ALIGNING TECHNICAL GOALS WITH ARCHITECTURAL VISION.",
+        imagePath:
+            "/Users/elgammal/.gemini/antigravity/brain/0ea1eaf8-5cb2-4f1a-83a9-7142ba8935d5/process_discovery_technical_v2_1771442286504.png",
+        specs: [
+            { k: "PHASE", v: "DISCOVERY_01" },
+            { k: "METHOD", v: "GOAL_ALIGNMENT" },
+            { k: "DELIVERABLE", v: "TECHNICAL_BLUEPRINT" },
+            { k: "TIMELINE", v: "WEEK_01" },
+        ],
+    },
+    {
+        index: "02",
+        title: "STRUCTURAL ARCHITECTURE & GRID SYSTEMS",
+        description:
+            "DESIGNING THE MONOLITH. WE CONSTRUCT THE UNDERLYING GRID, TYPE SCALES, AND VISUAL LANGUAGE THAT WILL COMMAND ATTENTION AND ENSURE STRUCTURAL INTEGRITY.",
+        imagePath:
+            "/Users/elgammal/.gemini/antigravity/brain/0ea1eaf8-5cb2-4f1a-83a9-7142ba8935d5/process_design_technical_1771442227565.png",
+        isReversed: true,
+        specs: [
+            { k: "PHASE", v: "DESIGN_ARCH_02" },
+            { k: "FOUNDATION", v: "CSS_GRID_50PX" },
+            { k: "LANGUAGE", v: "BRUTAL_AESTHETIC" },
+            { k: "TOOL", v: "FIGMA_BLUEPRINTS" },
+        ],
+    },
+    {
+        index: "03",
+        title: "HIGH-PERFORMANCE TECHNICAL ENGINEERING",
+        description:
+            "EXECUTING THE VISION WITH GRIT. IMPLEMENTING PHYSICS ENGINES, RESPONSIVE SYSTEMS, AND GPU-ACCELERATED ANIMATIONS FOR A SEAMLESS USER JOURNEY.",
+        imagePath:
+            "/Users/elgammal/.gemini/antigravity/brain/0ea1eaf8-5cb2-4f1a-83a9-7142ba8935d5/process_engineering_technical_1771442245017.png",
+        specs: [
+            { k: "PHASE", v: "ENGINEERING_03" },
+            { k: "STACK", v: "ASTRO_TYPESCRIPT" },
+            { k: "ENGINE", v: "MOTION_ONE" },
+            { k: "STATUS", v: "GPU_OPTIMIZED" },
+        ],
+    },
+    {
+        index: "04",
+        title: "KINETIC DISCOVERY & CONTINUOUS POLISH",
+        description:
+            "THE MONOLITH EVOLVES. CONTINUOUS PERFORMANCE AUDITS, INTERACTIVE DISCOVERY REFINEMENTS, AND POLISHING THE VOID TO PERFECTION.",
+        imagePath:
+            "/Users/elgammal/.gemini/antigravity/brain/0ea1eaf8-5cb2-4f1a-83a9-7142ba8935d5/process_evolution_technical_metric_1771442258274.png",
+        isReversed: true,
+        specs: [
+            { k: "PHASE", v: "EVOLUTION_04" },
+            { k: "AUDIT", v: "LIGHTHOUSE_PERF" },
+            { k: "POLISH", v: "MICRO_INTERACTIONS" },
+            { k: "LIFECYCLE", v: "CONTINUOUS_RELEASE" },
+        ],
+    },
+];
+---
+
+<PageLayout
+    title="Process"
+    description="The architectural engineering workflow behind our digital monoliths."
+>
+    <ProcessHero />
+
+    <div class="process-sections-vessel">
+        {PROCESS_DATA.map((phase) => <ProcessSection {...phase} />)}
+    </div>
+</PageLayout>
+
+<style lang="scss">
+    .process-sections-vessel {
+        margin-top: -10rem;
+        position: relative;
+        z-index: 10;
+    }
+</style>

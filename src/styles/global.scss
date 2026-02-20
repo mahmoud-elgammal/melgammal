@@ -1,0 +1,166 @@
+@use "variables" as *;
+@use "mixins" as *;
+
+@font-face {
+    font-family: "Meyer";
+    src: url("/fonts/meyer-regular.otf") format("opentype");
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+html {
+    color-scheme: light;
+
+    &.dark {
+        color-scheme: dark;
+    }
+}
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+}
+
+body {
+    font-family: $font-sans;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    display: flex;
+    flex-direction: column;
+    background-color: $color-light-bg;
+    color: $color-light-text;
+
+    :global(.dark) & {
+        background-color: $color-dark-bg;
+        color: $color-dark-text;
+    }
+}
+
+header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    padding-top: 1.25rem;
+    padding-bottom: 1.25rem;
+    // backdrop-filter: blur(4px); // Removed for clean blend mode
+    color: #fff;
+    mix-blend-mode: difference;
+
+    // :global(.dark) & {
+    //     // background-color: rgba(28, 25, 23, 0.25); // Removed
+    // }
+}
+
+main {
+    flex: 1 1 0%;
+    padding-top: 8rem;
+    /* py-32 -> 128px */
+    padding-bottom: 8rem;
+}
+
+footer {
+    padding-top: 1.25rem;
+    /* py-5 */
+    padding-bottom: 1.25rem;
+    font-size: 0.875rem;
+    /* text-sm */
+}
+
+/* Utilities equivalent */
+article a {
+    font-family: $font-sans;
+    color: currentColor;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    text-decoration-color: rgba(0, 0, 0, 0.15);
+    transition-property: color, text-decoration-color, background-color, border-color, text-decoration-color, fill, stroke;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 300ms;
+
+    :global(.dark) & {
+        text-decoration-color: rgba(255, 255, 255, 0.3);
+    }
+
+    @include hover {
+        color: $color-black;
+        text-decoration-color: rgba(0, 0, 0, 0.25);
+
+        :global(.dark) & {
+            color: $color-white;
+            text-decoration-color: rgba(255, 255, 255, 0.5);
+        }
+    }
+}
+
+.animate {
+    opacity: 0;
+    transform: translateY(0.75rem);
+    /* translate-y-3 */
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
+    transition-duration: 700ms;
+
+    &.show {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+html #back-to-top {
+    opacity: 0;
+    pointer-events: none;
+}
+
+html.scrolled #back-to-top {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Utility classes to replace Tailwind layout basics */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+.flex {
+    display: flex;
+}
+
+.flex-col {
+    flex-direction: column;
+}
+
+.items-center {
+    align-items: center;
+}
+
+.justify-between {
+    justify-content: space-between;
+}
+
+.gap-y-2 {
+    row-gap: 0.5rem;
+}
+
+.gap-1 {
+    gap: 0.25rem;
+}
+
+.flex-wrap {
+    flex-wrap: wrap;
+}
+
+.font-semibold {
+    font-weight: 600;
+}

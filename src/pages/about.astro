@@ -1,0 +1,328 @@
+---
+import { getCollection } from "astro:content";
+import Container from "@components/atoms/Container.astro";
+import PageLayout from "@layouts/PageLayout.astro";
+import Link from "@components/atoms/Link.astro";
+import { dateRange } from "@lib/utils";
+import { ABOUT } from "@consts";
+
+const allwork = (await getCollection("work")).sort(
+    (a, b) =>
+        new Date(b.data.dateStart).valueOf() -
+        new Date(a.data.dateStart).valueOf(),
+);
+
+const work = await Promise.all(
+    allwork.map(async (item) => {
+        const { Content } = await item.render();
+        return { ...item, Content };
+    }),
+);
+---
+
+<PageLayout title={ABOUT.TITLE} description={ABOUT.DESCRIPTION}>
+    <Container>
+        <section class="section brute-work" id="work-experience">
+            <div class="section-header animate">
+                <h1 class="section-title">Career Path</h1>
+            </div>
+            <div class="work-container">
+                {
+                    work.map((entry, index) => (
+                        <div
+                            class="work-item-brute"
+                            data-color={
+                                entry.data.company === "Media Platin"
+                                    ? "#FF3E00"
+                                    : "#4F46E5"
+                            }
+                            style={`--item-index: ${index}`}
+                        >
+                            <div class="brute-num">0{index + 1}</div>
+                            <div class="brute-content">
+                                <div class="brute-date">
+                                    {dateRange(
+                                        entry.data.dateStart,
+                                        entry.data.dateEnd,
+                                    )}
+                                </div>
+                                <h3 class="brute-company">
+                                    {entry.data.company}
+                                </h3>
+                                <div class="brute-role">{entry.data.role}</div>
+                                <div class="brute-narrative">
+                                    <entry.Content />
+                                </div>
+                            </div>
+                        </div>
+                    ))
+                }
+            </div>
+        </section>
+    </Container>
+</PageLayout>
+
+<script>
+    import { animate, inView, stagger, scroll } from "motion";
+
+    /* ── Utilities ── */
+    function wrapCharacters(element: HTMLElement) {
+        if (element.dataset.charsWrapped) return;
+        const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+        const textNodes: Node[] = [];
+        let node;
+        while ((node = walker.nextNode())) textNodes.push(node);
+
+        textNodes.forEach((textNode) => {
+            const text = textNode.textContent || "";
+            const fragment = document.createDocumentFragment();
+            [...text].forEach((char) => {
+                const span = document.createElement("span");
+                span.textContent = char;
+                span.style.display = "inline-block";
+                span.style.whiteSpace = "pre";
+                fragment.appendChild(span);
+            });
+            textNode.parentNode?.replaceChild(fragment, textNode);
+        });
+        element.dataset.charsWrapped = "true";
+    }
+
+    /* ── Wait for IntroLoader curtain ── */
+    function waitForLoader(): Promise<void> {
+        return new Promise((resolve) => {
+            const loader = document.getElementById("intro-loader");
+            if (!loader || window.getComputedStyle(loader).display === "none") {
+                resolve();
+                return;
+            }
+            const observer = new MutationObserver(() => {
+                if (window.getComputedStyle(loader).display === "none") {
+                    observer.disconnect();
+                    resolve();
+                }
+            });
+            observer.observe(loader, {
+                attributes: true,
+                attributeFilter: ["style", "class"],
+            });
+            setTimeout(() => {
+                observer.disconnect();
+                resolve();
+            }, 3000);
+        });
+    }
+
+    async function initAboutAnimations() {
+        await waitForLoader();
+
+        /* ── Branded Brute Scroll Reveals & Progress ── */
+        const bruteItemsElements =
+            document.querySelectorAll(".work-item-brute");
+        bruteItemsElements.forEach((item) => {
+            // 1. Entrance Reveal
+            inView(
+                item,
+                () => {
+                    animate(
+                        item as any,
+                        {
+                            opacity: [0, 1],
+                            y: [60, 0],
+                            filter: ["blur(10px)", "blur(0px)"],
+                        },
+                        { duration: 1.2, easing: [0.16, 1, 0.3, 1] } as any,
+                    );
+                },
+                { margin: "0px 0px -50px 0px" },
+            );
+
+            // 2. Scroll-Linked Progress (Letter by Letter)
+            const narrative = item.querySelector(".brute-narrative");
+            if (narrative instanceof HTMLElement) {
+                wrapCharacters(narrative);
+                const chars = narrative.querySelectorAll("span");
+
+                const isDark =
+                    document.documentElement.classList.contains("dark");
+                const dimColor = isDark
+                    ? "rgba(255,255,255,0.15)"
+                    : "rgba(0,0,0,0.15)";
+                const activeColor = isDark
+                    ? "rgba(255,255,255,0.9)"
+                    : "rgba(0,0,0,0.9)";
+
+                scroll(
+                    animate(chars as any, { color: [dimColor, activeColor] }, {
+                        delay: stagger(0.0005),
+                    } as any),
+                    {
+                        target: narrative,
+                        offset: ["start 0.95", "end 0.05"],
+                    },
+                );
+            }
+        });
+    }
+
+    initAboutAnimations();
+</script>
+
+<style lang="scss">
+    @use "../styles/variables" as *;
+    @use "../styles/mixins" as *;
+
+    .section {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .section-header {
+        margin-bottom: 4rem;
+        padding-top: 4rem;
+    }
+
+    .section-title {
+        font-size: 3.5rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: -0.05em;
+        color: $color-black;
+
+        :global(.dark) & {
+            color: $color-white;
+        }
+
+        @include screen(md) {
+            font-size: 8rem;
+        }
+    }
+
+    .brute-work {
+        position: relative;
+        padding: 4rem 0 8rem 0;
+        overflow: visible;
+    }
+
+    .work-container {
+        display: flex;
+        flex-direction: column;
+        gap: 12rem; // Massive spacing for brute rhythm
+    }
+
+    .work-item-brute {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+        width: 100%;
+        opacity: 0; // Animated
+        transform: translateY(60px);
+
+        @include screen(md) {
+            flex-direction: row;
+            align-items: flex-start;
+            gap: 4rem;
+
+            // Staggered offsets for brute feel
+            &:nth-child(even) {
+                padding-left: 15%;
+            }
+            &:nth-child(odd) {
+                padding-right: 15%;
+            }
+        }
+
+        &:hover {
+            .brute-company {
+                transform: skewX(-2deg) scale(1.02);
+                color: $color-black;
+                -webkit-text-stroke: 1px currentColor;
+
+                :global(.dark) & {
+                    color: $color-white;
+                }
+            }
+            .brute-num {
+                opacity: 0.8;
+                transform: translateX(-10px);
+            }
+        }
+    }
+
+    .brute-num {
+        font-size: 5rem;
+        font-weight: 900;
+        line-height: 0.8;
+        opacity: 0.1;
+        letter-spacing: -0.05em;
+        transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+
+        @include screen(md) {
+            font-size: 10rem;
+        }
+    }
+
+    .brute-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .brute-date {
+        font-size: 0.875rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.2em;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+
+    .brute-company {
+        font-size: 4rem;
+        font-weight: 900;
+        line-height: 0.9;
+        margin: 0;
+        letter-spacing: -0.05em;
+        text-transform: uppercase;
+        color: transparent;
+        -webkit-text-stroke: 1.5px rgba(0, 0, 0, 0.3);
+        transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+        cursor: pointer;
+
+        :global(.dark) & {
+            -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.3);
+        }
+
+        @include screen(md) {
+            font-size: 8.5rem;
+        }
+    }
+
+    .brute-role {
+        font-size: 1.25rem;
+        font-weight: 500;
+        margin-top: 1rem;
+        opacity: 0.8;
+        font-style: italic;
+    }
+
+    .brute-narrative {
+        margin-top: 3rem;
+        max-width: 60ch;
+        font-size: 1.5rem; // Bigger brute scale
+        line-height: 1.5;
+        font-weight: 500;
+        color: rgba(0, 0, 0, 0.15); // Initially dim for scroll progress
+        transition: color 0.3s ease;
+
+        :global(.dark) & {
+            color: rgba(255, 255, 255, 0.15);
+        }
+
+        :global(p) {
+            margin-bottom: 1.5rem;
+        }
+    }
+</style>

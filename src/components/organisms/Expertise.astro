@@ -1,0 +1,502 @@
+---
+
+---
+
+<section class="expertise-section animate" id="expertise-container">
+    <div class="expertise-header">
+        <h5 class="section-title">Expertise</h5>
+    </div>
+
+    <div class="architectural-void" id="prism-board">
+        <!-- Blueprint Grid System -->
+        <div class="technical-grid"></div>
+
+        <!-- Interactive Technical HUD -->
+        <div class="discovery-lens" id="discovery-lens">
+            <div class="lens-labels">
+                <span class="label-coord" id="lens-x">X: 000</span>
+                <span class="label-coord" id="lens-y">Y: 000</span>
+                <span class="label-status">SYSTEM: OPTIC_ACTIVE</span>
+            </div>
+            <div class="lens-crosshair"></div>
+        </div>
+
+        <!-- Semantic Skill Elements with Depth & Rhythm -->
+        <div
+            class="kinetic-tag depth-front weight-bold size-lg"
+            data-skill="Node.js"
+        >
+            Node.js
+        </div>
+        <div
+            class="kinetic-tag depth-mid weight-medium size-md"
+            data-skill="TypeScript"
+        >
+            TypeScript
+        </div>
+        <div
+            class="kinetic-tag depth-back weight-light size-sm"
+            data-skill="React"
+        >
+            React
+        </div>
+        <div
+            class="kinetic-tag depth-front weight-bold size-lg"
+            data-skill="Prometheus"
+        >
+            Prometheus
+        </div>
+        <div
+            class="kinetic-tag depth-mid weight-medium size-md"
+            data-skill="Grafana"
+        >
+            Grafana
+        </div>
+        <div
+            class="kinetic-tag depth-back weight-light size-sm"
+            data-skill="Docker"
+        >
+            Docker
+        </div>
+        <div
+            class="kinetic-tag depth-front weight-bold size-md"
+            data-skill="Kubernetes"
+        >
+            K8s
+        </div>
+        <div
+            class="kinetic-tag depth-mid weight-medium size-sm"
+            data-skill="k6"
+        >
+            k6
+        </div>
+        <div
+            class="kinetic-tag depth-back weight-light size-lg"
+            data-skill="Three.js"
+        >
+            Three.js
+        </div>
+        <div
+            class="kinetic-tag depth-front weight-bold size-sm"
+            data-skill="React Native"
+        >
+            React Native
+        </div>
+        <div
+            class="kinetic-tag depth-mid weight-medium size-md"
+            data-skill="Rust"
+        >
+            Rust
+        </div>
+        <div
+            class="kinetic-tag depth-back weight-light size-md"
+            data-skill="AWS"
+        >
+            AWS
+        </div>
+        <div
+            class="kinetic-tag depth-front weight-bold size-lg"
+            data-skill="Astro.js"
+        >
+            Astro.js
+        </div>
+    </div>
+</section>
+
+<script>
+    import Matter from "matter-js";
+    import { animate, stagger } from "motion";
+
+    const { Engine, Events, Runner, Bodies, Composite, Body, Vector } = Matter;
+
+    let engine: any;
+    let runner: any;
+    let board: HTMLElement | null;
+    let lens: HTMLElement | null;
+    let coordX: HTMLElement | null;
+    let coordY: HTMLElement | null;
+    let tagBodies: {
+        element: HTMLElement;
+        body: Matter.Body;
+        rect: DOMRect;
+        renderedOnce: boolean;
+        depth: number;
+    }[] = [];
+    let mouse = { x: 0, y: 0, active: false };
+
+    function initArchitecturalVoid() {
+        board = document.getElementById("prism-board");
+        lens = document.getElementById("discovery-lens");
+        coordX = document.getElementById("lens-x");
+        coordY = document.getElementById("lens-y");
+
+        if (!board) return;
+
+        const tags = board.querySelectorAll(
+            ".kinetic-tag",
+        ) as NodeListOf<HTMLElement>;
+        const width = board.offsetWidth;
+        const height = board.offsetHeight || 600;
+
+        // 1. Engine Setup
+        engine = Engine.create();
+        engine.gravity.y = 0;
+        engine.enableSleeping = false;
+
+        // 2. Create Kinetic Bodies with Depth Logic
+        tagBodies = Array.from(tags).map((tag) => {
+            const rect = tag.getBoundingClientRect();
+            const x = (Math.random() * 0.6 + 0.2) * width;
+            const y = (Math.random() * 0.6 + 0.2) * height;
+
+            // Determine depth factor from class
+            let depth = 1;
+            if (tag.classList.contains("depth-front")) depth = 1.25;
+            if (tag.classList.contains("depth-back")) depth = 0.75;
+
+            const body = Bodies.rectangle(x, y, rect.width, rect.height, {
+                chamfer: { radius: rect.height / 2 },
+                restitution: 0.8,
+                frictionAir: 0.04 / depth, // Further things move "slower"
+                friction: 0.1,
+                label: "kinetic-tag",
+            });
+
+            return { element: tag, body, rect, renderedOnce: false, depth };
+        });
+
+        // 3. Boundaries (Blueprint Edge)
+        const wallOptions = { isStatic: true, restitution: 1 };
+        Composite.add(engine.world, [
+            ...tagBodies.map((tb) => tb.body),
+            Bodies.rectangle(width / 2, height + 100, width, 200, wallOptions),
+            Bodies.rectangle(width / 2, -100, width, 200, wallOptions),
+            Bodies.rectangle(-100, height / 2, 200, height, wallOptions),
+            Bodies.rectangle(width + 100, height / 2, 200, height, wallOptions),
+        ]);
+
+        // 4. Interaction HUD
+        board.addEventListener("mousemove", (e) => {
+            const rect = board!.getBoundingClientRect();
+            mouse.x = e.clientX - rect.left;
+            mouse.y = e.clientY - rect.top;
+            mouse.active = true;
+
+            if (lens) {
+                lens.style.transform = `translate3d(${mouse.x - 125}px, ${mouse.y - 125}px, 0)`;
+                lens.style.opacity = "1";
+                if (coordX)
+                    coordX.innerText = `X: ${Math.round(mouse.x).toString().padStart(3, "0")}`;
+                if (coordY)
+                    coordY.innerText = `Y: ${Math.round(mouse.y).toString().padStart(3, "0")}`;
+            }
+        });
+
+        board.addEventListener("mouseleave", () => {
+            mouse.active = false;
+            if (lens) lens.style.opacity = "0";
+        });
+
+        // 5. Kinetic Simulation
+        runner = Runner.create();
+        Runner.run(runner, engine);
+
+        Events.on(engine, "afterUpdate", () => {
+            const tagsToReveal: HTMLElement[] = [];
+
+            tagBodies.forEach((tb) => {
+                const { body, element, rect, depth } = tb;
+
+                // Discovery Attraction (Parallax sensitive)
+                if (mouse.active) {
+                    const dx = mouse.x - body.position.x;
+                    const dy = mouse.y - body.position.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist < 400 * depth) {
+                        const pull = 0.001 * depth * (1 - dist / (400 * depth));
+                        Body.applyForce(body, body.position, {
+                            x: dx * pull,
+                            y: dy * pull,
+                        });
+                    }
+                }
+
+                // Architectural Spacing
+                tagBodies.forEach((other) => {
+                    if (other === tb) return;
+                    const dx = other.body.position.x - body.position.x;
+                    const dy = other.body.position.y - body.position.y;
+                    const distSq = dx * dx + dy * dy;
+                    if (distSq < 12000) {
+                        const push = 0.0003 / (distSq + 1);
+                        Body.applyForce(body, body.position, {
+                            x: -dx * push,
+                            y: -dy * push,
+                        });
+                    }
+                });
+
+                // Velocity-Based Optics
+                const vel = body.velocity;
+                const speed = body.speed;
+                const skewX = vel.x * 0.6;
+                const scale = depth * (1 + speed * 0.015);
+
+                element.style.transform = `
+                    translate3d(${body.position.x - rect.width / 2}px, ${body.position.y - rect.height / 2}px, 0)
+                    rotate(${body.angle}rad)
+                    skewX(${skewX}deg)
+                    scale(${scale})
+                `;
+
+                // Depth Blur
+                const focusDist = mouse.active
+                    ? Math.sqrt(
+                          Math.pow(mouse.x - body.position.x, 2) +
+                              Math.pow(mouse.y - body.position.y, 2),
+                      )
+                    : 500;
+                const blurAmount = Math.max(
+                    0,
+                    focusDist / 150 - 1 + (1 - depth) * 2,
+                );
+                element.style.filter = `blur(${blurAmount}px)`;
+                element.style.opacity = (0.2 + depth * 0.8).toString();
+
+                if (!tb.renderedOnce) {
+                    tagsToReveal.push(element);
+                    tb.renderedOnce = true;
+                }
+            });
+
+            if (tagsToReveal.length > 0) {
+                animate(
+                    tagsToReveal,
+                    {
+                        opacity: [0, 1],
+                        scale: [0.8, 1],
+                        filter: ["blur(10px)", "blur(0px)"],
+                    },
+                    {
+                        duration: 1.5,
+                        delay: stagger(0.06),
+                        easing: [0.16, 1, 0.3, 1],
+                    } as any,
+                );
+            }
+        });
+    }
+
+    document.addEventListener("astro:page-load", () => {
+        if (runner) Runner.stop(runner);
+        if (engine) Engine.clear(engine);
+        initArchitecturalVoid();
+    });
+</script>
+
+<style lang="scss">
+    @use "../../styles/variables" as *;
+    @use "../../styles/mixins" as *;
+
+    .expertise-section {
+        display: flex;
+        flex-direction: column;
+        gap: 2.5rem;
+        margin-top: 10rem;
+        user-select: none;
+    }
+
+    .architectural-void {
+        position: relative;
+        width: 100%;
+        height: 650px;
+        border: 1px dashed rgba($color-black, 0.15); // Integrated site style
+        border-radius: 0.5rem; // More architectural/square
+        overflow: hidden;
+        cursor: none;
+
+        :global(.dark) & {
+            background: $color-black;
+            border-color: rgba($color-white, 0.15);
+        }
+    }
+
+    .technical-grid {
+        position: absolute;
+        inset: 0;
+        background-image:
+            linear-gradient(rgba($color-black, 0.03) 1px, transparent 1px),
+            linear-gradient(
+                90deg,
+                rgba($color-black, 0.03) 1px,
+                transparent 1px
+            );
+        background-size: 40px 40px;
+        pointer-events: none;
+
+        :global(.dark) & {
+            background-image:
+                linear-gradient(rgba($color-white, 0.03) 1px, transparent 1px),
+                linear-gradient(
+                    90deg,
+                    rgba($color-white, 0.03) 1px,
+                    transparent 1px
+                );
+        }
+    }
+
+    .discovery-lens {
+        position: absolute;
+        width: 250px;
+        height: 250px;
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 100;
+        opacity: 0;
+        will-change: transform;
+
+        // Refractive Optics
+        backdrop-filter: blur(2px) contrast(1.2) saturate(1.2);
+        mix-blend-mode: difference;
+        border: 1px solid rgba($color-white, 0.5);
+        box-shadow: 0 0 100px rgba($color-white, 0.1);
+
+        .lens-crosshair {
+            position: absolute;
+            inset: 0;
+            &::before,
+            &::after {
+                content: "";
+                position: absolute;
+                background: rgba($color-white, 0.3);
+            }
+            &::before {
+                top: 50%;
+                left: 10%;
+                right: 10%;
+                height: 1px;
+            }
+            &::after {
+                left: 50%;
+                top: 10%;
+                bottom: 10%;
+                width: 1px;
+            }
+        }
+
+        .lens-labels {
+            position: absolute;
+            top: -50px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            align-items: center;
+            font-family:
+                ui-monospace, "Cascadia Code", "Source Code Pro", Menlo,
+                Consolas, monospace;
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: $color-black;
+            background: $color-white;
+            padding: 4px 8px;
+            border-radius: 2px;
+            white-space: nowrap;
+
+            :global(.dark) & {
+                color: $color-white;
+                background: $color-black;
+                border: 1px solid rgba($color-white, 0.2);
+            }
+
+            .label-status {
+                opacity: 0.6;
+                font-size: 0.55rem;
+            }
+        }
+    }
+
+    .kinetic-tag {
+        position: absolute;
+        background: $color-black;
+        color: $color-white;
+        border-radius: 2px; // Fixed square architectural feel
+        white-space: nowrap;
+        opacity: 0;
+        will-change: transform, filter;
+        z-index: 50;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: inherit;
+        border: 1px solid rgba($color-white, 0.1);
+        padding: 0.6rem 1.4rem;
+
+        :global(.dark) & {
+            background: $color-white;
+            color: $color-black;
+            border-color: rgba($color-black, 0.1);
+        }
+
+        // Depth Layering
+        &.depth-front {
+            z-index: 80;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.2);
+        }
+        &.depth-mid {
+            z-index: 50;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+        }
+        &.depth-back {
+            z-index: 20;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        // Typographic Rhythm
+        &.weight-bold {
+            font-weight: 800;
+            letter-spacing: -0.04em;
+            transform-style: preserve-3d;
+        }
+        &.weight-medium {
+            font-weight: 600;
+            letter-spacing: -0.02em;
+        }
+        &.weight-light {
+            font-weight: 300;
+            letter-spacing: 0.02em;
+        }
+
+        &.size-lg {
+            font-size: 1.8rem;
+            padding: 1rem 2.2rem;
+        }
+        &.size-md {
+            font-size: 1.2rem;
+            padding: 0.7rem 1.8rem;
+        }
+        &.size-sm {
+            font-size: 0.9rem;
+            padding: 0.5rem 1.2rem;
+        }
+    }
+
+    .expertise-header {
+        position: relative;
+        &::before {
+            content: "";
+            position: absolute;
+            left: -1rem;
+            top: 50%;
+            width: 4px;
+            height: 4px;
+            background: $color-black;
+            border-radius: 50%;
+            :global(.dark) & {
+                background: $color-white;
+            }
+        }
+    }
+</style>

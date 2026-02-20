@@ -1,0 +1,266 @@
+---
+import Container from "@components/atoms/Container.astro";
+
+interface Props {
+    src: string;
+    alt: string;
+}
+
+const { src, alt } = Astro.props;
+---
+
+<section class="blog-monolith-image-section">
+    <Container size="sm">
+        <div class="monolith-wrapper animate" data-gallery-image>
+            <div class="monolith-inner" id="monolith-hero">
+                <img src={src} alt={alt} />
+                <div class="image-overlay"></div>
+
+                <div class="scanning-hud">
+                    <div class="crosshair" id="hud-crosshair"></div>
+                    <div class="scan-line"></div>
+                    <div class="coordinate-label top-right">COORD_X: 0.00</div>
+                    <div class="coordinate-label bottom-left">
+                        COORD_Y: 0.00
+                    </div>
+                </div>
+
+                <div class="corner-accents">
+                    <span></span><span></span><span></span><span></span>
+                </div>
+            </div>
+        </div>
+    </Container>
+</section>
+
+<style lang="scss">
+    @use "../../styles/variables" as *;
+    @use "../../styles/mixins" as *;
+
+    .blog-monolith-image-section {
+        position: relative;
+        z-index: 5;
+    }
+
+    .monolith-wrapper {
+        perspective: 1500px;
+        width: 100%;
+    }
+
+    .monolith-inner {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        background: $color-black;
+        overflow: hidden;
+        border-radius: 1rem;
+        box-shadow: 0 60px 120px -30px rgba(0, 0, 0, 0.3);
+        transform-style: preserve-3d;
+        will-change: transform;
+        cursor: crosshair;
+
+        :global(.dark) & {
+            box-shadow: 0 60px 120px -30px rgba(0, 0, 0, 0.6);
+        }
+
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.95;
+            transition: transform 0.3s ease-out;
+        }
+
+        &:hover {
+            .scanning-hud {
+                opacity: 1;
+            }
+        }
+    }
+
+    .image-overlay {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+            to bottom,
+            transparent,
+            rgba($color-black, 0.2)
+        );
+        z-index: 1;
+    }
+
+    .scanning-hud {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.4s ease;
+
+        .crosshair {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border: 1px solid rgba($color-white, 0.5);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            will-change: transform;
+
+            &::before,
+            &::after {
+                content: "";
+                position: absolute;
+                background: rgba($color-white, 0.5);
+            }
+
+            &::before {
+                top: 50%;
+                left: -10px;
+                right: -10px;
+                height: 1px;
+                transform: translateY(-50%);
+            }
+            &::after {
+                left: 50%;
+                top: -10px;
+                bottom: -10px;
+                width: 1px;
+                transform: translateX(-50%);
+            }
+        }
+
+        .scan-line {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background: rgba($color-white, 0.1);
+            animation: scan-vertical 4s linear infinite;
+        }
+
+        .coordinate-label {
+            position: absolute;
+            font-family: ui-monospace, monospace;
+            font-size: 0.5rem;
+            color: rgba($color-white, 0.6);
+            padding: 0.5rem;
+            letter-spacing: 0.1em;
+
+            &.top-right {
+                top: 1rem;
+                right: 1rem;
+            }
+            &.bottom-left {
+                bottom: 1rem;
+                left: 1rem;
+            }
+        }
+    }
+
+    @keyframes scan-vertical {
+        0% {
+            top: 0;
+        }
+        100% {
+            top: 100%;
+        }
+    }
+
+    .corner-accents {
+        position: absolute;
+        inset: 2rem;
+        pointer-events: none;
+        z-index: 3;
+
+        span {
+            position: absolute;
+            width: 2rem;
+            height: 2rem;
+            border: 1px solid rgba($color-white, 0.4);
+
+            &:nth-child(1) {
+                top: 0;
+                left: 0;
+                border-right: 0;
+                border-bottom: 0;
+            }
+            &:nth-child(2) {
+                top: 0;
+                right: 0;
+                border-left: 0;
+                border-bottom: 0;
+            }
+            &:nth-child(3) {
+                bottom: 0;
+                left: 0;
+                border-right: 0;
+                border-top: 0;
+            }
+            &:nth-child(4) {
+                bottom: 0;
+                right: 0;
+                border-left: 0;
+                border-top: 0;
+            }
+        }
+    }
+
+    /* Animation */
+    .animate {
+        opacity: 0;
+        transform: translateY(40px) scale(0.98);
+        transition: all 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+
+        &.in-view {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+</style>
+
+<script>
+    import { inView, scroll, animate } from "motion";
+
+    function initMonolithParallax() {
+        const monolith = document.getElementById("monolith-hero");
+        const crosshair = document.getElementById("hud-crosshair");
+        const wrapper = monolith?.closest(".animate");
+
+        if (wrapper) {
+            inView(wrapper, () => {
+                wrapper.classList.add("in-view");
+            });
+        }
+
+        if (monolith) {
+            scroll(
+                animate(monolith as any, {
+                    y: [0, -60],
+                    scale: [1, 1.02],
+                    rotateX: [0, 8],
+                }),
+                { target: monolith as any, offset: ["start end", "end start"] },
+            );
+
+            monolith.addEventListener("mousemove", (e) => {
+                if (!crosshair) return;
+                const rect = monolith.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+
+                crosshair.style.left = `${x}px`;
+                crosshair.style.top = `${y}px`;
+
+                const labels = monolith.querySelectorAll(".coordinate-label");
+                if (labels[0])
+                    labels[0].textContent = `COORD_X: ${(x / rect.width).toFixed(2)}`;
+                if (labels[1])
+                    labels[1].textContent = `COORD_Y: ${(y / rect.height).toFixed(2)}`;
+            });
+        }
+    }
+
+    initMonolithParallax();
+    document.addEventListener("astro:page-load", initMonolithParallax);
+</script>

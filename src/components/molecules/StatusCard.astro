@@ -1,0 +1,235 @@
+---
+interface Props {
+    name?: string;
+    status?: string;
+    role?: string;
+    description?: string;
+    avatarSrc?: string;
+}
+
+const {
+    name = "Mahmoud is",
+    status = "OPEN TO WORK",
+    role = "Creative Developer",
+    description = "Scaling engaged teams from 1→10 ppl.",
+    avatarSrc,
+} = Astro.props;
+---
+
+<div class="status-card" id="status-card-tilt">
+    <span class="name-label">{name}</span>
+
+    <div class="avatar-wrapper">
+        {
+            avatarSrc ? (
+                <img src={avatarSrc} alt={name} class="avatar" />
+            ) : (
+                <div class="avatar avatar-placeholder">
+                    <svg
+                        viewBox="0 0 80 80"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                    >
+                        <circle cx="40" cy="30" r="14" fill="#a8a29e" />
+                        <ellipse
+                            cx="40"
+                            cy="62"
+                            rx="22"
+                            ry="16"
+                            fill="#a8a29e"
+                        />
+                    </svg>
+                </div>
+            )
+        }
+        <span class="online-dot"></span>
+    </div>
+
+    <div class="info">
+        <span class="status-badge">{status}</span>
+        <p class="role-line">
+            <strong>{role}</strong> – {description}
+        </p>
+    </div>
+</div>
+
+<script>
+    import { animate } from "motion";
+
+    /* ── 3D Tilt micro-interaction ── */
+    function setupCardTilt() {
+        const card = document.getElementById(
+            "status-card-tilt",
+        ) as HTMLElement | null;
+        if (!card) return;
+
+        card.addEventListener("mousemove", (e: MouseEvent) => {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+
+            // Normalize to -1 → +1
+            const rotateY = ((x - centerX) / centerX) * 4; // ±4deg
+            const rotateX = ((centerY - y) / centerY) * 3; // ±3deg
+
+            animate(card as any, { rotateX, rotateY }, {
+                duration: 0.2,
+                easing: [0.23, 1, 0.32, 1],
+            } as any);
+        });
+
+        card.addEventListener("mouseleave", () => {
+            animate(card as any, { rotateX: 0, rotateY: 0, scale: 1 }, {
+                duration: 0.5,
+                easing: [0.23, 1, 0.32, 1],
+            } as any);
+        });
+    }
+
+    setupCardTilt();
+</script>
+
+<style lang="scss">
+    @use "../../styles/variables" as *;
+    @use "../../styles/mixins" as *;
+
+    .status-card {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.75rem;
+        border-radius: 999px;
+        padding: 0.5rem 1.25rem 0.5rem 0.75rem;
+        max-width: 100%;
+        perspective: 400px;
+        transform-style: preserve-3d;
+        cursor: default;
+        transition: box-shadow 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+
+        :global(.dark) & {
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+    }
+
+    .name-label {
+        font-size: 0.9375rem;
+        white-space: nowrap;
+        color: $color-black;
+
+        :global(.dark) & {
+            color: $color-white;
+        }
+    }
+
+    .avatar-wrapper {
+        position: relative;
+        flex-shrink: 0;
+    }
+
+    .avatar {
+        width: 2.75rem;
+        height: 2.75rem;
+        border-radius: 50%;
+        object-fit: cover;
+        background: #d6d3d1;
+        overflow: hidden;
+    }
+
+    .avatar-placeholder {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        svg {
+            width: 100%;
+            height: 100%;
+        }
+    }
+
+    .online-dot {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 0.625rem;
+        height: 0.625rem;
+        background: #10b981;
+        border-radius: 50%;
+        border: 2px solid $color-white;
+        animation: pulse-glow 2s ease-in-out infinite;
+
+        :global(.dark) & {
+            border-color: #1c1917;
+        }
+    }
+
+    @keyframes pulse-glow {
+        0%,
+        100% {
+            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6);
+            transform: scale(1);
+        }
+        50% {
+            box-shadow: 0 0 8px 4px rgba(16, 185, 129, 0.25);
+            transform: scale(1.15);
+        }
+    }
+
+    .info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.125rem;
+        min-width: 0;
+    }
+
+    /* ── Shimmer badge ── */
+    .status-badge {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        line-height: 1.2;
+
+        /* Shimmer gradient text */
+        background: linear-gradient(
+            90deg,
+            #10b981 0%,
+            #10b981 40%,
+            #34d399 50%,
+            #10b981 60%,
+            #10b981 100%
+        );
+        background-size: 200% 100%;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        animation: shimmer 3s ease-in-out infinite;
+    }
+
+    @keyframes shimmer {
+        0%,
+        100% {
+            background-position: 100% 0;
+        }
+        50% {
+            background-position: -100% 0;
+        }
+    }
+
+    .role-line {
+        font-size: 0.8125rem;
+        line-height: 1.3;
+        color: $color-black;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+
+        strong {
+            font-weight: 700;
+        }
+
+        :global(.dark) & {
+            color: rgba(255, 255, 255, 0.85);
+        }
+    }
+</style>

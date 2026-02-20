@@ -1,0 +1,179 @@
+---
+
+---
+
+<section class="contact-hero-monolith">
+    <div class="monolith-background">
+        <div class="vertical-title-wrapper">
+            <h1 class="vertical-title" id="contact-vertical-title">ENGAGE</h1>
+        </div>
+    </div>
+
+    <div class="monolith-metadata">
+        <div class="metadata-item">
+            <span class="label">TRANS_TYPE</span>
+            <span class="value">DIRECT_SECURE</span>
+        </div>
+        <div class="metadata-item">
+            <span class="label">LOCATION</span>
+            <span class="value">30.0444° N // 31.2357° E</span>
+        </div>
+    </div>
+
+    <div class="structural-accent"></div>
+</section>
+
+<style lang="scss">
+    @use "../../styles/variables" as *;
+    @use "../../styles/mixins" as *;
+
+    .contact-hero-monolith {
+        position: relative;
+        height: 100vh;
+        width: 100%;
+        background: $color-black;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+
+        :global(.light) & {
+            background: $color-white;
+        }
+    }
+
+    .monolith-background {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        display: flex;
+        align-items: center;
+        padding-left: 5vw;
+    }
+
+    .vertical-title-wrapper {
+        height: 100%;
+        display: flex;
+        align-items: center;
+    }
+
+    .vertical-title {
+        font-size: clamp(10rem, 25vw, 30rem);
+        font-weight: 950;
+        line-height: 0.7;
+        letter-spacing: -0.08em;
+        text-transform: uppercase;
+        color: rgba($color-white, 0.05);
+        margin: 0;
+        white-space: nowrap;
+        pointer-events: none;
+        user-select: none;
+        transform-origin: left center;
+
+        :global(.light) & {
+            color: rgba($color-black, 0.03);
+        }
+    }
+
+    .monolith-metadata {
+        position: absolute;
+        bottom: 4rem;
+        left: 4rem;
+        z-index: 10;
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+
+        .metadata-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+
+            .label {
+                font-family: ui-monospace, monospace;
+                font-size: 0.6rem;
+                font-weight: 700;
+                opacity: 0.4;
+                color: $color-white;
+                letter-spacing: 0.2em;
+                :global(.light) & {
+                    color: $color-black;
+                }
+            }
+
+            .value {
+                font-family: ui-monospace, monospace;
+                font-size: 0.7rem;
+                font-weight: 800;
+                color: $color-white;
+                :global(.light) & {
+                    color: $color-black;
+                }
+            }
+        }
+    }
+
+    .structural-accent {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 40vw;
+        height: 100%;
+        background: $color-light-bg;
+        z-index: 2;
+        box-shadow: -20px 0 100px rgba(0, 0, 0, 0.5);
+
+        :global(.dark) & {
+            background: $color-dark-bg;
+            box-shadow: -20px 0 100px rgba(0, 0, 0, 0.8);
+        }
+
+        &::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 1px;
+            height: 100%;
+            background: rgba($color-black, 0.1);
+            :global(.dark) & {
+                background: rgba($color-white, 0.1);
+            }
+        }
+    }
+</style>
+
+<script>
+    import { animate, scroll } from "motion";
+
+    function initContactMonolith() {
+        const title = document.getElementById("contact-vertical-title");
+
+        if (title) {
+            // Mouse parallax for subtle structural depth
+            window.addEventListener("mousemove", (e) => {
+                const moveX = (e.clientX - window.innerWidth / 2) * 0.01;
+                const moveY = (e.clientY - window.innerHeight / 2) * 0.01;
+
+                animate(
+                    title as any,
+                    {
+                        x: moveX,
+                        y: moveY,
+                    },
+                    { duration: 0.5, easing: [0.16, 1, 0.3, 1] },
+                );
+            });
+
+            // Intersection scroll reveal
+            animate(
+                title as any,
+                { opacity: [0, 1], x: [-100, 0] },
+                { duration: 1.5, easing: [0.16, 1, 0.3, 1] },
+            );
+        }
+    }
+
+    initContactMonolith();
+    document.addEventListener("astro:page-load", initContactMonolith);
+</script>

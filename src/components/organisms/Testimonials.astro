@@ -1,0 +1,293 @@
+---
+import Container from "@components/atoms/Container.astro";
+
+const testimonials = [
+    {
+        quote: "ELGAMMAL DOESN'T JUST BUILD INTERFACES; HE ENGINEERS DIGITAL MONOLITHS THAT COMMAND ATTENTION.",
+        author: "MARCUS CHEN",
+        role: "PRINCIPAL DESIGNER",
+        company: "NEURAL ARCHIVE",
+        impact: "200% ENGAGEMENT INCREASE",
+        project: "SYSTEM_VOID_v1",
+    },
+    {
+        quote: "THE INTERSECTION OF GRIT AND GRACE. A RARE TECHNICAL ARCHITECT WHO UNDERSTANDS THE WEIGHT OF THE VOID.",
+        author: "ELARA VANCE",
+        role: "CTO",
+        company: "KINETIC FOUNDRY",
+        impact: "ZERO LATENCY INTERACTION",
+        project: "CORE_PRISM_ENGINE",
+    },
+    {
+        quote: "A MASTERCLASS IN ART DIRECTION. EVERY PIXEL HAS STRUCTURAL PURPOSE AND ARCHITECTURAL INTENT.",
+        author: "SOPHIA ROSS",
+        role: "CREATIVE DIRECTOR",
+        company: "BRUTE STUDIOS",
+        impact: "GLOBAL DESIGN AWARD",
+        project: "IMMERSIVE_COMMERCE",
+    },
+];
+
+// Split into two sets for the two tracks
+const setA = [...testimonials, ...testimonials]; // Duplicated for seamless loop
+const setB = [...testimonials].reverse();
+const setB_loop = [...setB, ...setB];
+---
+
+<section class="testimonials-kinetic section animate">
+    <Container>
+        <div class="intro-ledger">
+            <div class="bracket-label">[V_INFLUENCE]</div>
+            <h2 class="section-title">THE ECHO OF INFLUENCE</h2>
+        </div>
+    </Container>
+
+    <div class="marquee-vessel">
+        <!-- TRACK 01: LEFT TO RIGHT -->
+        <div class="marquee-track track-ltr">
+            <div class="track-inner">
+                {
+                    setA.map((t) => (
+                        <div class="testimonial-card">
+                            <div class="quote-wrapper">
+                                <blockquote class="massive-quote">
+                                    “{t.quote}”
+                                </blockquote>
+                            </div>
+                            <div class="author-ledger">
+                                <div class="ledger-row">
+                                    <span class="k">AUTHOR</span>
+                                    <span class="v">{t.author}</span>
+                                </div>
+                                <div class="ledger-row">
+                                    <span class="k">POSITION</span>
+                                    <span class="v">{t.role}</span>
+                                </div>
+                                <div class="ledger-row">
+                                    <span class="k">IMPACT</span>
+                                    <span class="v">{t.impact}</span>
+                                </div>
+                            </div>
+                        </div>
+                    ))
+                }
+            </div>
+        </div>
+
+        <!-- TRACK 02: RIGHT TO LEFT -->
+        <div class="marquee-track track-rtl">
+            <div class="track-inner">
+                {
+                    setB_loop.map((t) => (
+                        <div class="testimonial-card">
+                            <div class="quote-wrapper">
+                                <blockquote class="massive-quote">
+                                    “{t.quote}”
+                                </blockquote>
+                            </div>
+                            <div class="author-ledger">
+                                <div class="ledger-row">
+                                    <span class="k">AUTHOR</span>
+                                    <span class="v">{t.author}</span>
+                                </div>
+                                <div class="ledger-row">
+                                    <span class="k">POSITION</span>
+                                    <span class="v">{t.role}</span>
+                                </div>
+                                <div class="ledger-row">
+                                    <span class="k">IMPACT</span>
+                                    <span class="v">{t.impact}</span>
+                                </div>
+                            </div>
+                        </div>
+                    ))
+                }
+            </div>
+        </div>
+    </div>
+</section>
+
+<style lang="scss">
+    @use "../../styles/variables" as *;
+    @use "../../styles/mixins" as *;
+
+    .testimonials-kinetic {
+        position: relative;
+        padding: 15rem 0;
+        overflow: hidden;
+        background: transparent;
+    }
+
+    .intro-ledger {
+        margin-bottom: 6rem;
+        position: relative;
+        z-index: 2;
+
+        .bracket-label {
+            font-family: ui-monospace, monospace;
+            font-size: 0.7rem;
+            font-weight: 700;
+            opacity: 0.4;
+            letter-spacing: 0.2em;
+            margin-bottom: 1rem;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: 0.1em;
+            margin: 0;
+        }
+    }
+
+    .marquee-vessel {
+        display: flex;
+        flex-direction: column;
+        gap: 4rem;
+        width: 100vw;
+        margin-left: calc(-50vw + 50%);
+        position: relative;
+    }
+
+    .marquee-track {
+        display: flex;
+        width: 100%;
+        overflow: hidden;
+        // mask-image removed to prevent cropping as requested
+
+        .track-inner {
+            display: flex;
+            gap: 3rem;
+            width: max-content;
+            padding: 2rem 0;
+        }
+
+        /* Animation logic replaced by scroll-linked Motion script */
+    }
+
+    .testimonial-card {
+        flex: 0 0 650px;
+        background: rgba($color-black, 0.02);
+        border: 1px solid rgba($color-black, 0.05);
+        padding: 3.5rem;
+        border-radius: 2.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 2.5rem;
+        transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        cursor: pointer;
+
+        :global(.dark) & {
+            background: rgba($color-white, 0.02);
+            border-color: rgba($color-white, 0.05);
+        }
+
+        &:hover {
+            transform: scale(1.02) translateY(-10px);
+            background: rgba($color-black, 0.04);
+            border-color: rgba($color-black, 0.1);
+            box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.1);
+
+            :global(.dark) & {
+                background: rgba($color-white, 0.04);
+                border-color: rgba($color-white, 0.1);
+                box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.3);
+            }
+
+            .massive-quote {
+                opacity: 1;
+            }
+        }
+    }
+
+    .massive-quote {
+        font-size: 1.5rem;
+        font-weight: 800;
+        line-height: 1.2;
+        letter-spacing: -0.02em;
+        margin: 0;
+        text-transform: uppercase;
+        color: $color-black;
+        opacity: 0.8;
+        transition: opacity 0.3s ease;
+
+        :global(.dark) & {
+            color: $color-white;
+        }
+    }
+
+    .author-ledger {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid rgba($color-black, 0.05);
+
+        :global(.dark) & {
+            border-top-color: rgba($color-white, 0.05);
+        }
+
+        .ledger-row {
+            display: flex;
+            justify-content: space-between;
+            font-family: ui-monospace, monospace;
+            font-size: 0.65rem;
+
+            .k {
+                opacity: 0.3;
+                font-weight: 600;
+            }
+
+            .v {
+                font-weight: 800;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+            }
+        }
+    }
+
+    /* Responsive Adjustments */
+    @include screen(sm) {
+        .testimonial-card {
+            flex: 0 0 500px;
+        }
+    }
+
+    @include screen(md) {
+        .testimonial-card {
+            flex: 0 0 650px;
+        }
+    }
+</style>
+
+<script>
+    import { animate, scroll } from "motion";
+
+    function initTestimonials() {
+        const trackLTR = document.querySelector(".track-ltr .track-inner");
+        const trackRTL = document.querySelector(".track-rtl .track-inner");
+
+        if (trackLTR) {
+            scroll(
+                animate(
+                    trackLTR as any,
+                    { x: ["-25%", "0%"] }, // Parallax shift linked to scroll
+                    { easing: "linear" } as any,
+                ),
+            );
+        }
+
+        if (trackRTL) {
+            scroll(
+                animate(
+                    trackRTL as any,
+                    { x: ["0%", "-25%"] }, // Opposite direction parallax shift
+                    { easing: "linear" } as any,
+                ),
+            );
+        }
+    }
+
+    initTestimonials();
+    document.addEventListener("astro:page-load", initTestimonials);
+</script>

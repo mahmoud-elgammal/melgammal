@@ -1,61 +1,165 @@
 ---
 import { getCollection } from "astro:content";
 import PageLayout from "@layouts/PageLayout.astro";
-import Container from "@components/Container.astro";
-import { dateRange } from "@lib/utils";
-import { WORK } from "@consts";
+import Container from "@components/atoms/Container.astro";
+import ProjectCard from "@components/molecules/ProjectCard.astro";
+import { SITE } from "@consts";
 
-const collection = (await getCollection("work")).sort(
-    (a, b) =>
-        new Date(b.data.dateStart).valueOf() -
-        new Date(a.data.dateStart).valueOf(),
-);
+const title = `Work | ${SITE.TITLE}`;
+const description = "Selected projects and case studies.";
 
-const work = await Promise.all(
-    collection.map(async (item) => {
-        const { Content } = await item.render();
-        return { ...item, Content };
-    }),
-);
+const projects = (await getCollection("projects"))
+    .filter((p) => !p.data.draft)
+    .sort(
+        (a, b) =>
+            new Date(b.data.date).valueOf() - new Date(a.data.date).valueOf(),
+    );
 ---
 
-<PageLayout title={WORK.TITLE} description={WORK.DESCRIPTION}>
+<PageLayout title={title} description={description}>
     <Container>
-        <div class="space-y-10">
-            <div class="animate font-semibold text-black dark:text-white">
-                Work
-            </div>
-            <ul class="flex flex-col space-y-4">
+        <div class="work-layout">
+            <!-- Header -->
+            <section class="work-header">
+                <div class="header-meta" id="wk-meta">
+                    <span class="meta-label">SELECTED WORK</span>
+                    <span class="meta-sep">//</span>
+                    <span class="meta-label">{projects.length} PROJECTS</span>
+                </div>
+                <h1 class="work-title" id="wk-title">Projects</h1>
+            </section>
+
+            <!-- Grid -->
+            <ul class="projects-grid" id="wk-grid">
                 {
-                    work.map((entry) => (
-                        <li class="animate">
-                            <div class="flex items-center justify-between gap-1 mb-2">
-                                <div class="flex items-center gap-2">
-                                    <div class="font-semibold text-black dark:text-white">
-                                        {entry.data.company}
-                                    </div>
-                                    <div class="text-sm opacity-75">
-                                        {entry.data.role}
-                                    </div>
-                                </div>
-                                <div class="text-sm opacity-75">
-                                    {dateRange(
-                                        entry.data.dateStart,
-                                        entry.data.dateEnd,
-                                    )}
-                                </div>
-                            </div>
-                            <article>
-                                <entry.Content />
-                            </article>
+                    projects.map((project) => (
+                        <li>
+                            <ProjectCard project={project} />
                         </li>
                     ))
                 }
             </ul>
-            <!--
-      <ul class="animate flex flex-col gap-4">
-
-      </ul> -->
         </div>
     </Container>
 </PageLayout>
+
+<style lang="scss">
+    @use "../../styles/variables" as *;
+    @use "../../styles/mixins" as *;
+
+    .work-layout {
+        display: flex;
+        flex-direction: column;
+        gap: 5rem;
+        padding-bottom: 10rem;
+    }
+
+    /* ── Header ── */
+    .work-header {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        padding-top: 1rem;
+    }
+
+    .header-meta {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+
+        .meta-label {
+            font-family: ui-monospace, monospace;
+            font-size: 0.6rem;
+            font-weight: 900;
+            letter-spacing: 0.2em;
+            opacity: 0.3;
+        }
+
+        .meta-sep {
+            font-family: ui-monospace, monospace;
+            font-size: 0.6rem;
+            opacity: 0.15;
+        }
+    }
+
+    .work-title {
+        font-size: clamp(2.5rem, 7vw, 5.5rem);
+        font-weight: 900;
+        letter-spacing: -0.04em;
+        line-height: 1;
+        margin: 0;
+    }
+
+    /* ── Grid ── */
+    .projects-grid {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 4rem;
+
+        @include screen(md) {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 3rem;
+        }
+    }
+</style>
+
+<script>
+    import { animate, stagger } from "motion";
+
+    function initWork() {
+        const meta = document.getElementById("wk-meta");
+        const title = document.getElementById("wk-title");
+        const items = document.querySelectorAll("#wk-grid li");
+
+        // Set initial states via JS
+        if (meta) {
+            meta.style.opacity = "0";
+        }
+        if (title) {
+            title.style.opacity = "0";
+            title.style.transform = "translateY(20px)";
+        }
+        items.forEach((el) => {
+            (el as HTMLElement).style.opacity = "0";
+            (el as HTMLElement).style.transform = "translateY(24px)";
+        });
+
+        const ease = [0.16, 1, 0.3, 1] as any;
+
+        if (meta)
+            animate(
+                meta as any,
+                { opacity: [0, 1] } as any,
+                { duration: 0.5, delay: 0.05 } as any,
+            );
+        if (title)
+            animate(
+                title as any,
+                { opacity: [0, 1], y: [20, 0] } as any,
+                { duration: 0.8, delay: 0.15, easing: ease } as any,
+            );
+
+        if (items.length) {
+            animate(
+                items as any,
+                { opacity: [0, 1], y: [24, 0] } as any,
+                {
+                    duration: 0.7,
+                    delay: stagger(0.12, { startDelay: 0.35 }),
+                    easing: ease,
+                } as any,
+            ).then(() => {
+                items.forEach((el) => {
+                    (el as HTMLElement).style.transform = "";
+                    (el as HTMLElement).style.opacity = "";
+                });
+            });
+        }
+    }
+
+    initWork();
+    document.addEventListener("astro:page-load", initWork);
+</script>

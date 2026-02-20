@@ -1,0 +1,561 @@
+---
+import Container from "@components/atoms/Container.astro";
+import Link from "@components/atoms/Link.astro";
+import Button from "@components/atoms/Button.astro";
+import LanguageSwitch from "@components/atoms/LanguageSwitch.astro";
+import { NAV_SHORTCUTS } from "@lib/shortcuts";
+---
+
+<!-- Shortcut toast notification -->
+<div id="shortcut-toast" class="shortcut-toast" aria-live="polite"></div>
+
+<!-- Shortcut help panel (toggled with ?) -->
+<!-- NOTE: Must stay before <header> for CSS sibling selector (~) to work -->
+<div id="shortcut-panel" class="shortcut-panel" aria-hidden="true">
+    <div class="shortcut-panel-inner">
+        <div class="shortcut-panel-header">
+            <h3>Keyboard Shortcuts</h3>
+            <kbd>?</kbd> to close
+        </div>
+        <ul class="shortcut-list" id="shortcut-list"></ul>
+    </div>
+</div>
+
+<header>
+    <Container>
+        <div class="header-content">
+            <div class="nav-group">
+                <Link href="/" underline={false}>
+                    <div class="brand" id="header-brand">M. El-Gammal</div>
+                </Link>
+                <nav id="header-nav">
+                    {
+                        NAV_SHORTCUTS.map((shortcut, index) => (
+                            <>
+                                <Link
+                                    href={shortcut.href}
+                                    class="header-nav-link"
+                                    aria-keyshortcuts={shortcut.keys}
+                                >
+                                    {shortcut.label}
+                                    <span class="nav-shortcut">
+                                        <kbd>{shortcut.hint}</kbd>
+                                    </span>
+                                </Link>
+                                {index < NAV_SHORTCUTS.length - 1 && (
+                                    <span class="header-sep">/</span>
+                                )}
+                            </>
+                        ))
+                    }
+                </nav>
+            </div>
+            <div class="actions-group">
+                <div id="header-cta">
+                    <Button href="/book-intro" variant="outline"
+                        >Book Intro</Button
+                    >
+                </div>
+                <div id="header-lang">
+                    <LanguageSwitch />
+                </div>
+            </div>
+        </div>
+    </Container>
+</header>
+
+<script>
+    import { animate, stagger } from "motion";
+    // @ts-ignore
+    import { tinykeys } from "tinykeys";
+    import { NAV_SHORTCUTS } from "@lib/shortcuts";
+
+    /* ── Utility: wait for IntroLoader to finish ── */
+    function waitForLoader(): Promise<void> {
+        return new Promise((resolve) => {
+            const loader = document.getElementById("intro-loader");
+            if (!loader || loader.style.display === "none") {
+                resolve();
+                return;
+            }
+            const observer = new MutationObserver(() => {
+                if (loader.style.display === "none") {
+                    observer.disconnect();
+                    resolve();
+                }
+            });
+            observer.observe(loader, {
+                attributes: true,
+                attributeFilter: ["style"],
+            });
+        });
+    }
+
+    /* ── Brand letter splitting ── */
+    function splitBrandLetters(brand: HTMLElement): HTMLElement[] {
+        const text = brand.textContent || "";
+        brand.innerHTML = "";
+        const letters: HTMLElement[] = [];
+
+        text.split("").forEach((char) => {
+            const span = document.createElement("span");
+            span.classList.add("brand-letter");
+            span.textContent = char === " " ? "\u00A0" : char;
+            span.style.opacity = "0";
+            span.style.display = "inline-block";
+            brand.appendChild(span);
+            letters.push(span);
+        });
+
+        return letters;
+    }
+
+    /* ── Header entrance animation ── */
+    async function animateHeader() {
+        await waitForLoader();
+
+        const brand = document.getElementById("header-brand");
+        const navLinks = document.querySelectorAll(
+            ".header-nav-link",
+        ) as NodeListOf<HTMLElement>;
+        const seps = document.querySelectorAll(
+            ".header-sep",
+        ) as NodeListOf<HTMLElement>;
+        const cta = document.getElementById("header-cta");
+        const lang = document.getElementById("header-lang");
+
+        // 1. Brand name — letter unfold
+        if (brand) {
+            const letters = splitBrandLetters(brand);
+            brand.style.opacity = "1"; // Unhide parent — letters start at opacity 0
+            animate(letters as any, { opacity: [0, 1], y: [12, 0] }, {
+                duration: 0.5,
+                delay: stagger(0.03),
+                easing: [0.16, 1, 0.3, 1],
+            } as any);
+        }
+
+        // 2. Nav links cascade from left
+        if (navLinks.length > 0) {
+            animate(
+                Array.from(navLinks) as any,
+                { opacity: [0, 1], x: [-8, 0] },
+                {
+                    duration: 0.4,
+                    delay: stagger(0.06),
+                    easing: [0.16, 1, 0.3, 1],
+                } as any,
+            );
+        }
+
+        // 3. Separators fade + scale
+        if (seps.length > 0) {
+            animate(
+                Array.from(seps) as any,
+                { opacity: [0, 0.5], scale: [0.5, 1] },
+                {
+                    duration: 0.3,
+                    delay: stagger(0.06),
+                    easing: [0, 0, 0.2, 1],
+                } as any,
+            );
+        }
+
+        // 4. CTA button scales in
+        if (cta) {
+            animate(cta as any, { opacity: [0, 1], scale: [0.9, 1] }, {
+                duration: 0.4,
+                delay: 0.4,
+                easing: [0.34, 1.56, 0.64, 1],
+            } as any);
+        }
+
+        // 5. Language switch fades in
+        if (lang) {
+            animate(lang as any, { opacity: [0, 1], y: [8, 0] }, {
+                duration: 0.4,
+                delay: 0.5,
+                easing: [0.16, 1, 0.3, 1],
+            } as any);
+        }
+
+        // Signal that header is ready — page content can now reveal
+        setTimeout(() => {
+            document.dispatchEvent(new CustomEvent("header-ready"));
+        }, 650);
+    }
+
+    /* ── Micro-interaction: Magnetic hover on nav links ── */
+    function setupMagneticHover() {
+        const links = document.querySelectorAll(
+            ".header-nav-link",
+        ) as NodeListOf<HTMLElement>;
+
+        links.forEach((link) => {
+            link.addEventListener("mousemove", (e: MouseEvent) => {
+                const rect = link.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                const distX = (e.clientX - centerX) / (rect.width / 2);
+                const distY = (e.clientY - centerY) / (rect.height / 2);
+
+                animate(
+                    link as any,
+                    {
+                        x: distX * 3,
+                        y: distY * 2,
+                    },
+                    { duration: 0.2, easing: [0.23, 1, 0.32, 1] } as any,
+                );
+            });
+
+            link.addEventListener("mouseleave", () => {
+                animate(link as any, { x: 0, y: 0 }, {
+                    duration: 0.4,
+                    easing: [0.23, 1, 0.32, 1],
+                } as any);
+            });
+        });
+    }
+
+    /* ── Micro-interaction: Brand letter scatter on hover ── */
+    function setupBrandScatter() {
+        const brand = document.getElementById("header-brand");
+        if (!brand) return;
+
+        brand.addEventListener("mouseenter", () => {
+            const letters = brand.querySelectorAll(
+                ".brand-letter",
+            ) as NodeListOf<HTMLElement>;
+            letters.forEach((letter) => {
+                const randomRotate = (Math.random() - 0.5) * 6; // ±3deg
+                const randomY = (Math.random() - 0.5) * 4; // ±2px
+                animate(letter as any, { rotate: randomRotate, y: randomY }, {
+                    duration: 0.3,
+                    easing: [0.23, 1, 0.32, 1],
+                } as any);
+            });
+        });
+
+        brand.addEventListener("mouseleave", () => {
+            const letters = brand.querySelectorAll(
+                ".brand-letter",
+            ) as NodeListOf<HTMLElement>;
+            animate(Array.from(letters) as any, { rotate: 0, y: 0 }, {
+                duration: 0.4,
+                delay: stagger(0.02),
+                easing: [0.23, 1, 0.32, 1],
+            } as any);
+        });
+    }
+
+    /* ── Init ── */
+    animateHeader();
+    setupMagneticHover();
+    setupBrandScatter();
+
+    /* ── Keyboard shortcuts ── */
+
+    function showToast(label: string, hint: string) {
+        const toast = document.getElementById("shortcut-toast");
+        if (!toast) return;
+
+        toast.textContent = `→ ${label}`;
+        toast.setAttribute("data-key", hint);
+        toast.classList.add("visible");
+
+        setTimeout(() => toast.classList.remove("visible"), 1200);
+    }
+
+    function toggleHelpPanel() {
+        const panel = document.getElementById("shortcut-panel");
+        const header = document.querySelector("header");
+        if (!panel) return;
+        const isOpen = panel.classList.toggle("open");
+        panel.setAttribute("aria-hidden", String(!isOpen));
+
+        if (header) {
+            header.classList.toggle("shortcuts-revealed", isOpen);
+        }
+    }
+
+    // Build help panel content
+    const list = document.getElementById("shortcut-list");
+    if (list) {
+        NAV_SHORTCUTS.forEach((s) => {
+            const li = document.createElement("li");
+            const kbdHtml = s.displayKeys
+                .map((k) => `<kbd>${k}</kbd>`)
+                .join(" ");
+            li.innerHTML = `<span class="shortcut-label">${s.label}</span><div class="shortcut-keys">${kbdHtml}</div>`;
+            list.appendChild(li);
+        });
+    }
+
+    // Register all shortcuts from config
+    const bindings: Record<string, (e: KeyboardEvent) => void> = {};
+
+    NAV_SHORTCUTS.forEach((shortcut) => {
+        bindings[shortcut.keys] = (e: KeyboardEvent) => {
+            e.preventDefault();
+            showToast(shortcut.label, shortcut.hint);
+            setTimeout(() => {
+                window.location.href = shortcut.href;
+            }, 300);
+        };
+    });
+
+    // ? to toggle help panel
+    bindings["Shift+?"] = (e: KeyboardEvent) => {
+        e.preventDefault();
+        toggleHelpPanel();
+    };
+
+    tinykeys(window, bindings);
+</script>
+
+<style lang="scss">
+    @use "../../styles/variables" as *;
+
+    .header-content {
+        display: flex;
+        flex-wrap: wrap;
+        row-gap: 0.5rem;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .nav-group {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .actions-group {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    /* ── Brand ── */
+    .brand {
+        font-weight: 600;
+        color: inherit;
+        cursor: pointer;
+
+        :global(.brand-letter) {
+            display: inline-block;
+            will-change: transform;
+        }
+    }
+
+    #header-brand {
+        opacity: 0; // Hidden until entrance animation
+    }
+
+    /* ── Nav links ── */
+    nav {
+        display: flex;
+        gap: 0;
+        flex-wrap: wrap;
+        font-size: 0.875rem;
+    }
+
+    :global(.header-nav-link) {
+        opacity: 0; // Hidden until entrance animation
+        position: relative;
+        will-change: transform;
+
+        // Underline reveal on hover
+        &::after {
+            content: "";
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background: currentColor;
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        &:hover::after {
+            transform: scaleX(1);
+        }
+    }
+
+    /* ── Shortcut Toast ── */
+    :global(.shortcut-toast) {
+        position: fixed;
+        bottom: 2rem;
+        left: 50%;
+        transform: translateX(-50%) translateY(20px);
+        background: $color-black;
+        color: $color-white;
+        padding: 0.5rem 1.25rem;
+        border-radius: 999px;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        opacity: 0;
+        pointer-events: none;
+        transition:
+            opacity 0.3s ease,
+            transform 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+        z-index: 9000;
+        white-space: nowrap;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+
+        :global(.dark) & {
+            background: $color-white;
+            color: $color-black;
+        }
+
+        &:global(.visible) {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+    }
+
+    /* ── Shortcut Help Panel ── */
+    :global(.shortcut-panel) {
+        position: fixed;
+        inset: 0;
+        z-index: 9500;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(8px);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+
+        &:global(.open) {
+            opacity: 1;
+            pointer-events: auto;
+        }
+    }
+
+    :global(.shortcut-panel-inner) {
+        background: $color-white;
+        border-radius: 1rem;
+        padding: 2rem;
+        min-width: 320px;
+        max-width: 420px;
+        box-shadow: 0 24px 64px rgba(0, 0, 0, 0.2);
+
+        :global(.dark) & {
+            background: #292524;
+        }
+    }
+
+    :global(.shortcut-panel-header) {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+
+        h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            margin: 0;
+            color: $color-black;
+
+            :global(.dark) & {
+                color: $color-white;
+            }
+        }
+
+        :global(.dark) & {
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+    }
+
+    :global(.shortcut-list) {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+
+        li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.375rem 0;
+        }
+    }
+
+    :global(.shortcut-label) {
+        font-size: 0.875rem;
+        color: $color-black;
+        opacity: 0.8;
+
+        :global(.dark) & {
+            color: $color-white;
+        }
+    }
+
+    :global(kbd) {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.15rem 0.4rem;
+        border-radius: 99px;
+        font-family:
+            ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+            "Liberation Mono", monospace;
+        font-size: 0.55rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        background: rgba(0, 0, 0, 0.02);
+        border: 1px solid rgba(0, 0, 0, 0.04);
+        color: rgba(0, 0, 0, 0.35);
+        line-height: 1;
+        vertical-align: middle;
+        transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+
+        :global(.dark) & {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(255, 255, 255, 0.06);
+            color: rgba(255, 255, 255, 0.35);
+        }
+    }
+
+    .nav-shortcut {
+        display: inline-flex;
+        margin-left: 0.5rem;
+        opacity: 0.8;
+        transform: scale(1);
+        pointer-events: none;
+        white-space: nowrap;
+        vertical-align: middle;
+    }
+
+    .header-nav-link:hover {
+        :global(kbd) {
+            background: rgba(0, 0, 0, 0.05);
+            border-color: rgba(0, 0, 0, 0.08);
+            color: rgba(0, 0, 0, 0.6);
+            transform: translateY(-1px);
+        }
+
+        :global(.dark) & :global(kbd) {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.12);
+            color: rgba(255, 255, 255, 0.7);
+        }
+    }
+
+    :global(.shortcut-keys) {
+        display: flex;
+        gap: 0.25rem;
+    }
+</style>

@@ -1,56 +1,104 @@
 ---
 import { type CollectionEntry, getCollection } from "astro:content";
 import PageLayout from "@layouts/PageLayout.astro";
-import Container from "@components/Container.astro";
-import ArrowCard from "@components/ArrowCard.astro";
+import Container from "@components/atoms/Container.astro";
+import PostCard from "@components/molecules/PostCard.astro";
 import { BLOG } from "@consts";
 
 const data = (await getCollection("blog"))
-  .filter(post => !post.data.draft)
+  .filter((post) => !post.data.draft)
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
-  
+
 type Acc = {
   [year: string]: CollectionEntry<"blog">[];
-}
+};
 
 const posts = data.reduce((acc: Acc, post) => {
-    const year = post.data.date.getFullYear().toString();
-    if (!acc[year]) {
-      acc[year] = [];
-    }
-    acc[year].push(post);
-    return acc;
-  }, {});
+  const year = post.data.date.getFullYear().toString();
+  if (!acc[year]) {
+    acc[year] = [];
+  }
+  acc[year].push(post);
+  return acc;
+}, {});
 
-const years = Object.keys(posts).sort((a, b) => parseInt(b) - parseInt(a)); 
+const years = Object.keys(posts).sort((a, b) => parseInt(b) - parseInt(a));
 ---
 
 <PageLayout title={BLOG.TITLE} description={BLOG.DESCRIPTION}>
   <Container>
-    <div class="space-y-10">
-      <div class="animate font-semibold text-black dark:text-white">
-        Blog
-      </div>
-      <div class="space-y-4">
-        {years.map(year => (
-          <section class="animate space-y-4">
-            <div class="font-semibold text-black dark:text-white">
-              {year}
-            </div>
-            <div>
-              <ul class="flex flex-col gap-4">
-                {
-                  posts[year].map((post) => (
+    <div class="blog-container">
+      <div class="animate heading">Blog</div>
+      <div class="years-list">
+        {
+          years.map((year) => (
+            <section class="animate year-section">
+              <div class="year-heading">{year}</div>
+              <div>
+                <ul class="posts-grid">
+                  {posts[year].map((post) => (
                     <li>
-                      <ArrowCard entry={post}/>
+                      <PostCard post={post} />
                     </li>
-                  ))
-                }
-              </ul>
-            </div>
-          </section>
-        ))}
+                  ))}
+                </ul>
+              </div>
+            </section>
+          ))
+        }
       </div>
     </div>
   </Container>
 </PageLayout>
+
+<style>
+  .blog-container {
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem; /* space-y-10 */
+  }
+
+  .heading {
+    font-weight: 600;
+    color: black;
+  }
+
+  :global(.dark) .heading {
+    color: white;
+  }
+
+  .years-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem; /* space-y-4 */
+  }
+
+  .year-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem; /* space-y-4 */
+  }
+
+  .year-heading {
+    font-weight: 600;
+    color: black;
+  }
+
+  :global(.dark) .year-heading {
+    color: white;
+  }
+
+  .posts-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 3rem;
+    list-style: none;
+    padding: 0;
+    margin: 2rem 0;
+
+    @media (min-width: 640px) {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 2.5rem;
+    }
+  }
+</style>

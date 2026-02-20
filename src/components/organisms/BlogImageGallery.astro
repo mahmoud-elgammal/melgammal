@@ -1,0 +1,498 @@
+---
+/**
+ * BlogImageGallery.astro
+ * An immersive architectural gallery mode for blog posts.
+ */
+---
+
+<div id="blog-image-gallery" class="image-gallery-overlay">
+    <div class="gallery-backdrop"></div>
+
+    <div class="gallery-content">
+        <header class="gallery-header">
+            <div class="header-left">
+                <div class="bracket-label">[V_SCREEN_CAPTURE]</div>
+                <div class="image-index" id="gallery-index">01 / 01</div>
+            </div>
+            <div class="header-right">
+                <button id="gallery-close" class="close-btn">
+                    <span class="btn-text">TERMINATE</span>
+                    <span class="btn-bracket">]</span>
+                </button>
+            </div>
+        </header>
+
+        <div class="main-focal-point">
+            <div class="nav-btn prev" id="gallery-prev">
+                <span class="arrow">←</span>
+            </div>
+
+            <div class="focal-image-wrapper">
+                <div class="corner-accents">
+                    <span></span><span></span><span></span><span></span>
+                </div>
+                <img id="focal-image" src="" alt="" />
+                <div class="image-caption" id="gallery-caption"></div>
+            </div>
+
+            <div class="nav-btn next" id="gallery-next">
+                <span class="arrow">→</span>
+            </div>
+        </div>
+
+        <footer class="gallery-footer">
+            <div class="thumbnail-bar-wrapper">
+                <div class="thumbnail-bar" id="gallery-thumbs">
+                    <!-- Thumbnails injected here -->
+                </div>
+            </div>
+        </footer>
+    </div>
+</div>
+
+<style lang="scss">
+    @use "../../styles/variables" as *;
+    @use "../../styles/mixins" as *;
+
+    .image-gallery-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 10000;
+        display: none; // Hidden by default
+        opacity: 0;
+        transition: opacity 0.4s ease;
+
+        &.active {
+            display: block;
+            opacity: 1;
+        }
+    }
+
+    .gallery-backdrop {
+        position: absolute;
+        inset: 0;
+        background: rgba($color-black, 0.9);
+        backdrop-filter: blur(20px);
+
+        :global(.light) & {
+            background: rgba($color-light-bg, 0.95);
+        }
+    }
+
+    .gallery-content {
+        position: relative;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        color: $color-white;
+
+        :global(.light) & {
+            color: $color-black;
+        }
+    }
+
+    .gallery-header {
+        padding: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+
+        .bracket-label {
+            font-family: ui-monospace, monospace;
+            font-size: 0.6rem;
+            font-weight: 700;
+            opacity: 0.4;
+            letter-spacing: 0.2em;
+            margin-bottom: 0.5rem;
+        }
+
+        .image-index {
+            font-family: ui-monospace, monospace;
+            font-size: 1.25rem;
+            font-weight: 900;
+            letter-spacing: 0.05em;
+        }
+    }
+
+    .close-btn {
+        background: none;
+        border: none;
+        color: inherit;
+        font-family: ui-monospace, monospace;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        opacity: 0.6;
+        transition: opacity 0.3s ease;
+
+        &:hover {
+            opacity: 1;
+        }
+        .btn-bracket {
+            opacity: 0.4;
+        }
+    }
+
+    .main-focal-point {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .focal-image-wrapper {
+        position: relative;
+        max-width: 80vw;
+        max-height: 60vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+
+        img {
+            max-width: 100%;
+            max-height: 60vh;
+            object-fit: contain;
+            border-radius: 0.5rem;
+            box-shadow: 0 60px 120px -30px rgba(0, 0, 0, 0.5);
+        }
+
+        .image-caption {
+            margin-top: 2rem;
+            font-family: ui-monospace, monospace;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            opacity: 0.7;
+            text-align: center;
+            max-width: 60ch;
+        }
+    }
+
+    .corner-accents {
+        position: absolute;
+        inset: -2rem;
+        pointer-events: none;
+
+        span {
+            position: absolute;
+            width: 3rem;
+            height: 3rem;
+            border: 1px solid rgba($color-white, 0.2);
+
+            :global(.light) & {
+                border-color: rgba($color-black, 0.1);
+            }
+
+            &:nth-child(1) {
+                top: 0;
+                left: 0;
+                border-right: 0;
+                border-bottom: 0;
+            }
+            &:nth-child(2) {
+                top: 0;
+                right: 0;
+                border-left: 0;
+                border-bottom: 0;
+            }
+            &:nth-child(3) {
+                bottom: 0;
+                left: 0;
+                border-right: 0;
+                border-top: 0;
+            }
+            &:nth-child(4) {
+                bottom: 0;
+                right: 0;
+                border-left: 0;
+                border-top: 0;
+            }
+        }
+    }
+
+    .nav-btn {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        padding: 4rem 2rem;
+        cursor: pointer;
+        z-index: 10;
+        opacity: 0.3;
+        transition: all 0.3s ease;
+
+        &:hover {
+            opacity: 1;
+            background: rgba($color-white, 0.05);
+            :global(.light) & {
+                background: rgba($color-black, 0.05);
+            }
+        }
+
+        &.prev {
+            left: 0;
+            border-radius: 0 1rem 1rem 0;
+        }
+        &.next {
+            right: 0;
+            border-radius: 1rem 0 0 1rem;
+        }
+
+        .arrow {
+            font-size: 2rem;
+            font-weight: 200;
+        }
+    }
+
+    .gallery-footer {
+        padding: 4rem 2rem;
+    }
+
+    .thumbnail-bar-wrapper {
+        max-width: 1000px;
+        margin: 0 auto;
+        overflow-x: auto;
+        padding-bottom: 1rem;
+        scrollbar-width: none;
+        &::-webkit-scrollbar {
+            display: none;
+        }
+    }
+
+    .thumbnail-bar {
+        display: flex;
+        gap: 1.5rem;
+        justify-content: center;
+        min-width: max-content;
+
+        :global(.thumb-item) {
+            cursor: pointer;
+            width: 80px;
+            aspect-ratio: 16 / 9;
+            border-radius: 0.25rem;
+            overflow: hidden;
+            opacity: 0.4;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            border: 1px solid rgba($color-white, 0.1);
+
+            :global(.light) & {
+                border-color: rgba($color-black, 0.1);
+            }
+
+            img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+
+            &:hover {
+                opacity: 0.8;
+                transform: translateY(-5px);
+            }
+
+            &.active {
+                opacity: 1;
+                transform: translateY(-10px);
+                border-color: $color-white;
+                box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+                :global(.light) & {
+                    border-color: $color-black;
+                }
+            }
+        }
+    }
+</style>
+
+<script>
+    import { animate } from "motion";
+
+    class ImageGallery {
+        private overlay: HTMLElement | null = null;
+        private focalImg: HTMLImageElement | null = null;
+        private caption: HTMLElement | null = null;
+        private indexLabel: HTMLElement | null = null;
+        private thumbBar: HTMLElement | null = null;
+        private images: { src: string; alt: string; caption?: string }[] = [];
+        private currentIndex: number = 0;
+
+        constructor() {
+            this.overlay = document.getElementById("blog-image-gallery");
+            this.focalImg = document.getElementById(
+                "focal-image",
+            ) as HTMLImageElement;
+            this.caption = document.getElementById("gallery-caption");
+            this.indexLabel = document.getElementById("gallery-index");
+            this.thumbBar = document.getElementById("gallery-thumbs");
+
+            this.init();
+        }
+
+        private init() {
+            if (!this.overlay) return;
+
+            // Gather all gallery images from the page
+            this.gatherImages();
+
+            // Setup triggers on page images
+            document
+                .querySelectorAll("[data-gallery-image]")
+                .forEach((el, idx) => {
+                    el.addEventListener("click", () => this.open(idx));
+                });
+
+            // Navigation
+            document
+                .getElementById("gallery-prev")
+                ?.addEventListener("click", () => this.prev());
+            document
+                .getElementById("gallery-next")
+                ?.addEventListener("click", () => this.next());
+            document
+                .getElementById("gallery-close")
+                ?.addEventListener("click", () => this.close());
+
+            this.overlay.addEventListener("click", (e) => {
+                if (
+                    e.target === this.overlay ||
+                    e.target === document.querySelector(".gallery-backdrop")
+                ) {
+                    this.close();
+                }
+            });
+
+            // Keyboard
+            document.addEventListener("keydown", (e) => {
+                if (!this.overlay?.classList.contains("active")) return;
+                if (e.key === "ArrowLeft") this.prev();
+                if (e.key === "ArrowRight") this.next();
+                if (e.key === "Escape") this.close();
+            });
+        }
+
+        private gatherImages() {
+            const pageImages = document.querySelectorAll(
+                "[data-gallery-image]",
+            );
+            this.images = Array.from(pageImages).map((el) => {
+                const img = el.querySelector("img") as HTMLImageElement;
+                const captionEl = el
+                    .closest("figure")
+                    ?.querySelector("figcaption");
+                return {
+                    src: img?.src || "",
+                    alt: img?.alt || "",
+                    caption: captionEl?.textContent || "",
+                };
+            });
+
+            // Injected Thumbnails
+            if (this.thumbBar) {
+                this.thumbBar.innerHTML = "";
+                this.images.forEach((img, idx) => {
+                    const thumb = document.createElement("div");
+                    thumb.className = "thumb-item";
+                    thumb.setAttribute("data-idx", idx.toString());
+                    thumb.innerHTML = `<img src="${img.src}" alt="${img.alt}" />`;
+                    thumb.addEventListener("click", () => this.goTo(idx));
+                    this.thumbBar?.appendChild(thumb);
+                });
+            }
+        }
+
+        private open(index: number) {
+            this.currentIndex = index;
+            this.overlay?.classList.add("active");
+            document.body.style.overflow = "hidden";
+            this.updateDisplay();
+
+            // Entrance animation
+            animate(
+                this.overlay as any,
+                { opacity: [0, 1] },
+                { duration: 0.4 },
+            );
+        }
+
+        private close() {
+            animate(
+                this.overlay as any,
+                { opacity: 0 },
+                { duration: 0.3 },
+            ).then(() => {
+                this.overlay?.classList.remove("active");
+                document.body.style.overflow = "";
+            });
+        }
+
+        private goTo(index: number) {
+            if (index < 0 || index >= this.images.length) return;
+
+            // Slide/Fade transition
+            animate(
+                this.focalImg as any,
+                { opacity: 0, x: [0, -20] },
+                { duration: 0.2 },
+            ).then(() => {
+                this.currentIndex = index;
+                this.updateDisplay();
+                animate(
+                    this.focalImg as any,
+                    { opacity: [0, 1], x: [20, 0] },
+                    { duration: 0.3 },
+                );
+            });
+        }
+
+        private prev() {
+            this.goTo(this.currentIndex - 1);
+        }
+        private next() {
+            this.goTo(this.currentIndex + 1);
+        }
+
+        private updateDisplay() {
+            const current = this.images[this.currentIndex];
+            if (!current || !this.focalImg) return;
+
+            this.focalImg.src = current.src;
+            this.focalImg.alt = current.alt;
+            if (this.caption) this.caption.textContent = current.caption || "";
+            if (this.indexLabel) {
+                this.indexLabel.textContent = `${(this.currentIndex + 1).toString().padStart(2, "0")} / ${this.images.length.toString().padStart(2, "0")}`;
+            }
+
+            // Update thumbs active state
+            this.thumbBar
+                ?.querySelectorAll(".thumb-item")
+                .forEach((thumb, idx) => {
+                    if (idx === this.currentIndex)
+                        thumb.classList.add("active");
+                    else thumb.classList.remove("active");
+                });
+
+            // Scroll active thumb into view
+            const activeThumb = this.thumbBar?.children[
+                this.currentIndex
+            ] as HTMLElement;
+            activeThumb?.scrollIntoView({
+                behavior: "smooth",
+                block: "nearest",
+                inline: "center",
+            });
+        }
+    }
+
+    const initGallery = () => {
+        new ImageGallery();
+    };
+
+    initGallery();
+    document.addEventListener("astro:page-load", initGallery);
+</script>

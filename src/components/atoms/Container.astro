@@ -1,0 +1,43 @@
+---
+interface Props {
+  size?: "sm" | "md" | "lg" | "xl";
+  className?: string;
+}
+
+const { size = "xl", className = "" } = Astro.props;
+---
+
+<div class:list={["container", size, className]}>
+  <slot />
+</div>
+
+<style lang="scss" is:global>
+  @use "../../styles/variables" as *;
+  @use "../../styles/mixins" as *;
+
+  .container {
+    width: 100%;
+    margin-right: auto;
+    margin-left: auto;
+    padding-right: 1.5rem;
+    padding-left: 1.5rem;
+
+    &.sm {
+      max-width: $screen-md;
+    } // Focused content (768px)
+    &.md {
+      max-width: $screen-lg;
+    } // Standard reading (1024px)
+    &.lg {
+      max-width: $screen-xl;
+    } // Wide layout (1280px)
+    &.xl {
+      max-width: $screen-2xl;
+    } // Cinematic (1536px)
+
+    @include screen(sm) {
+      padding-right: 2.5rem;
+      padding-left: 2.5rem;
+    }
+  }
+</style>

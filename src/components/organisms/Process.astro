@@ -1,0 +1,280 @@
+---
+import Container from "@components/atoms/Container.astro";
+
+const steps = [
+    {
+        title: "DIGITAL EXCAVATION & DISCOVERY",
+        description:
+            "WE BEGIN BY STRIPPING AWAY THE SUPERFICIAL. UNDERSTANDING THE CORE INTENT, USER MAPPING, AND ALIGNING TECHNICAL GOALS WITH ARCHITECTURAL VISION.",
+        specs: [
+            { k: "PHASE", v: "DISCOVERY_01" },
+            { k: "METHOD", v: "GOAL_ALIGNMENT" },
+            { k: "DELIVERABLE", v: "TECHNICAL_BLUEPRINT" },
+            { k: "TIMELINE", v: "WEEK_01" },
+        ],
+    },
+    {
+        title: "STRUCTURAL ARCHITECTURE & GRID SYSTEMS",
+        description:
+            "DESIGNING THE MONOLITH. WE CONSTRUCT THE UNDERLYING GRID, TYPE SCALES, AND VISUAL LANGUAGE THAT WILL COMMAND ATTENTION AND ENSURE STRUCTURAL INTEGRITY.",
+        specs: [
+            { k: "PHASE", v: "DESIGN_ARCH_02" },
+            { k: "FOUNDATION", v: "CSS_GRID_50PX" },
+            { k: "LANGUAGE", v: "BRUTAL_AESTHETIC" },
+            { k: "TOOL", v: "FIGMA_BLUEPRINTS" },
+        ],
+    },
+    {
+        title: "HIGH-PERFORMANCE TECHNICAL ENGINEERING",
+        description:
+            "EXECUTING THE VISION WITH GRIT. IMPLEMENTING PHYSICS ENGINES, RESPONSIVE SYSTEMS, AND GPU-ACCELERATED ANIMATIONS FOR A SEAMLESS USER JOURNEY.",
+        specs: [
+            { k: "PHASE", v: "ENGINEERING_03" },
+            { k: "STACK", v: "ASTRO_TYPESCRIPT" },
+            { k: "ENGINE", v: "MOTION_ONE_RAPIER" },
+            { k: "STATUS", v: "GPU_OPTIMIZED" },
+        ],
+    },
+    {
+        title: "KINETIC DISCOVERY & CONTINUOUS POLISH",
+        description:
+            "THE MONOLITH EVOLVES. CONTINUOUS PERFORMANCE AUDITS, INTERACTIVE DISCOVERY REFINEMENTS, AND POLISHING THE VOID TO PERFECTION.",
+        specs: [
+            { k: "PHASE", v: "EVOLUTION_04" },
+            { k: "AUDIT", v: "LIGHTHOUSE_PERF" },
+            { k: "POLISH", v: "MICRO_INTERACTIONS" },
+            { k: "LIFECYCLE", v: "CONTINUOUS_RELEASE" },
+        ],
+    },
+];
+---
+
+<section class="process-monolith section animate">
+    <div class="ghost-indices">
+        <span class="index">01</span>
+        <span class="index">02</span>
+        <span class="index">03</span>
+        <span class="index">04</span>
+    </div>
+
+    <Container>
+        <div class="intro-ledger">
+            <div class="bracket-label">[V_PROCESS]</div>
+            <h2 class="section-title">THE ARCHITECTURAL WORKFLOW</h2>
+        </div>
+
+        <div class="scroll-vessel">
+            {
+                steps.map((step, i) => (
+                    <div class={`process-block block-${i + 1}`}>
+                        <div class="content-wrapper">
+                            <h3 class="massive-step-title">{step.title}</h3>
+                            <p class="step-description">{step.description}</p>
+                        </div>
+
+                        <div class="tech-ledger">
+                            {step.specs.map((spec) => (
+                                <div class="ledger-row">
+                                    <span class="k">{spec.k}</span>
+                                    <span class="v">{spec.v}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                ))
+            }
+        </div>
+    </Container>
+</section>
+
+<style lang="scss">
+    @use "../../styles/variables" as *;
+    @use "../../styles/mixins" as *;
+
+    .process-monolith {
+        position: relative;
+        min-height: 150vh;
+        padding: 15rem 0;
+        overflow: hidden;
+        background: transparent;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .ghost-indices {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-around;
+        pointer-events: none;
+        padding: 0 5%;
+        z-index: 0;
+
+        .index {
+            font-size: clamp(10rem, 30vw, 40rem);
+            font-weight: 900;
+            line-height: 1;
+            opacity: 0.03;
+            color: $color-black;
+            letter-spacing: -0.05em;
+
+            :global(.dark) & {
+                color: $color-white;
+                opacity: 0.05;
+            }
+
+            &:nth-child(even) {
+                align-self: flex-end;
+            }
+        }
+    }
+
+    .intro-ledger {
+        margin-bottom: 8rem;
+        position: relative;
+        z-index: 2;
+
+        .bracket-label {
+            font-family: ui-monospace, monospace;
+            font-size: 0.7rem;
+            font-weight: 700;
+            opacity: 0.4;
+            letter-spacing: 0.2em;
+            margin-bottom: 1rem;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: 0.1em;
+            margin: 0;
+        }
+    }
+
+    .scroll-vessel {
+        display: flex;
+        flex-direction: column;
+        gap: 25rem; // Even more space for process phases
+        position: relative;
+        z-index: 1;
+    }
+
+    .process-block {
+        display: flex;
+        flex-direction: column;
+        gap: 4rem;
+        max-width: 90%;
+
+        @include screen(lg) {
+            max-width: 70%;
+        }
+
+        &.block-2,
+        &.block-4 {
+            align-self: flex-end;
+            text-align: right;
+
+            .tech-ledger {
+                align-self: flex-end;
+            }
+        }
+
+        &.block-3 {
+            align-self: center;
+            text-align: center;
+            .tech-ledger {
+                align-self: center;
+            }
+        }
+    }
+
+    .massive-step-title {
+        font-size: clamp(2rem, 5vw, 4rem);
+        font-weight: 900;
+        line-height: 1;
+        letter-spacing: -0.04em;
+        margin: 0 0 2rem 0;
+        text-transform: uppercase;
+        color: $color-black;
+
+        :global(.dark) & {
+            color: $color-white;
+        }
+    }
+
+    .step-description {
+        font-size: 1.125rem;
+        line-height: 1.6;
+        max-width: 60ch;
+        opacity: 0.8;
+        margin: 0;
+
+        .block-2 &,
+        .block-4 & {
+            margin-left: auto;
+        }
+        .block-3 & {
+            margin: 0 auto;
+        }
+    }
+
+    .tech-ledger {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        width: fit-content;
+        padding-top: 2rem;
+        border-top: 1px solid rgba($color-black, 0.1);
+
+        :global(.dark) & {
+            border-top-color: rgba($color-white, 0.1);
+        }
+
+        .ledger-row {
+            display: flex;
+            gap: 3rem;
+            justify-content: space-between;
+            font-family: ui-monospace, monospace;
+            font-size: 0.75rem;
+
+            .k {
+                opacity: 0.4;
+                font-weight: 600;
+            }
+
+            .v {
+                font-weight: 800;
+                text-transform: uppercase;
+            }
+        }
+    }
+
+    /* ── Animation Prep ── */
+    .process-block {
+        opacity: 0;
+        transform: translateY(40px);
+        will-change: transform, opacity;
+    }
+</style>
+
+<script>
+    import { animate, inView } from "motion";
+
+    function initProcess() {
+        const blocks = document.querySelectorAll(".process-block");
+
+        blocks.forEach((block) => {
+            inView(block, () => {
+                animate(block as any, { opacity: [0, 1], y: [40, 0] }, {
+                    duration: 1.2,
+                    easing: [0.16, 1, 0.3, 1],
+                } as any);
+            });
+        });
+    }
+
+    initProcess();
+    document.addEventListener("astro:page-load", initProcess);
+</script>

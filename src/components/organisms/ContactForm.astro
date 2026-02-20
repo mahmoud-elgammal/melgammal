@@ -1,0 +1,437 @@
+---
+
+---
+
+<form class="contact-form" id="contact-form" novalidate>
+    <!-- Field: Name -->
+    <div class="field" data-field="name">
+        <label class="field-label" for="cf-name">
+            <span class="field-num">01</span>
+            <span class="field-key">NAME</span>
+        </label>
+        <div class="field-input-wrap">
+            <input
+                type="text"
+                id="cf-name"
+                name="name"
+                autocomplete="name"
+                placeholder="Your name"
+                required
+                minlength="2"
+            />
+            <div class="seam"></div>
+        </div>
+        <span class="field-error" aria-live="polite"></span>
+    </div>
+
+    <!-- Field: Email -->
+    <div class="field" data-field="email">
+        <label class="field-label" for="cf-email">
+            <span class="field-num">02</span>
+            <span class="field-key">EMAIL</span>
+        </label>
+        <div class="field-input-wrap">
+            <input
+                type="email"
+                id="cf-email"
+                name="email"
+                autocomplete="email"
+                placeholder="your@email.com"
+                required
+            />
+            <div class="seam"></div>
+        </div>
+        <span class="field-error" aria-live="polite"></span>
+    </div>
+
+    <!-- Field: Subject -->
+    <div class="field" data-field="subject">
+        <label class="field-label" for="cf-subject">
+            <span class="field-num">03</span>
+            <span class="field-key">SUBJECT</span>
+        </label>
+        <div class="field-input-wrap">
+            <input
+                type="text"
+                id="cf-subject"
+                name="subject"
+                placeholder="What's this about?"
+                required
+                minlength="3"
+            />
+            <div class="seam"></div>
+        </div>
+        <span class="field-error" aria-live="polite"></span>
+    </div>
+
+    <!-- Field: Message -->
+    <div class="field" data-field="message">
+        <label class="field-label" for="cf-message">
+            <span class="field-num">04</span>
+            <span class="field-key">MESSAGE</span>
+        </label>
+        <div class="field-input-wrap">
+            <textarea
+                id="cf-message"
+                name="message"
+                placeholder="Tell me about your project..."
+                rows="5"
+                required
+                minlength="20"></textarea>
+            <div class="seam"></div>
+        </div>
+        <span class="field-error" aria-live="polite"></span>
+    </div>
+
+    <!-- Submit -->
+    <div class="form-footer">
+        <button type="submit" class="submit-btn" id="cf-submit">
+            <span class="btn-text">Send message</span>
+            <span class="btn-arrow">→</span>
+        </button>
+        <div class="form-status" id="cf-status" aria-live="polite"></div>
+    </div>
+</form>
+
+<style lang="scss">
+    @use "../../styles/variables" as *;
+    @use "../../styles/mixins" as *;
+
+    .contact-form {
+        display: flex;
+        flex-direction: column;
+        gap: 3.5rem;
+        width: 100%;
+        max-width: 600px;
+    }
+
+    /* ── Field ── */
+    .field {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        opacity: 0;
+        transform: translateY(16px);
+    }
+
+    .field-label {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        cursor: pointer;
+
+        .field-num {
+            font-family: ui-monospace, monospace;
+            font-size: 0.6rem;
+            font-weight: 900;
+            opacity: 0.2;
+            letter-spacing: 0.1em;
+        }
+
+        .field-key {
+            font-family: ui-monospace, monospace;
+            font-size: 0.65rem;
+            font-weight: 900;
+            letter-spacing: 0.2em;
+            opacity: 0.4;
+            transition: opacity 0.3s ease;
+        }
+    }
+
+    .field:focus-within .field-key {
+        opacity: 1;
+    }
+
+    /* ── Input / Textarea ── */
+    .field-input-wrap {
+        position: relative;
+    }
+
+    input,
+    textarea {
+        width: 100%;
+        background: transparent;
+        border: none;
+        padding: 0.75rem 0;
+        font-family: $font-sans;
+        font-size: 1.25rem;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+        color: $color-black;
+        outline: none;
+        resize: none;
+        transition: color 0.3s ease;
+
+        :global(.dark) & {
+            color: $color-white;
+        }
+
+        &::placeholder {
+            color: $color-black;
+            opacity: 0.15;
+            font-weight: 400;
+            :global(.dark) & {
+                color: $color-white;
+            }
+        }
+    }
+
+    /* ── Seam line ── */
+    .seam {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 1px;
+        background: rgba($color-black, 0.1);
+        :global(.dark) & {
+            background: rgba($color-white, 0.1);
+        }
+
+        &::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: $color-black;
+            transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            :global(.dark) & {
+                background: $color-white;
+            }
+        }
+    }
+
+    .field:focus-within .seam::after {
+        width: 100%;
+    }
+
+    /* ── Error state ── */
+    .field.has-error {
+        .seam::after {
+            width: 100%;
+            background: #ef4444;
+        }
+        input,
+        textarea {
+            color: #ef4444;
+        }
+        .field-key {
+            opacity: 1;
+            color: #ef4444;
+        }
+    }
+
+    .field-error {
+        font-family: ui-monospace, monospace;
+        font-size: 0.6rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        color: #ef4444;
+        opacity: 0;
+        transform: translateY(-4px);
+        transition: all 0.3s ease;
+        min-height: 1em;
+
+        &.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* ── Submit ── */
+    .form-footer {
+        display: flex;
+        align-items: center;
+        gap: 2rem;
+        padding-top: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .submit-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 1rem;
+        background: $color-black;
+        color: $color-white;
+        border: none;
+        padding: 1.1rem 2.5rem;
+        border-radius: 100px;
+        font-family: ui-monospace, monospace;
+        font-size: 0.7rem;
+        font-weight: 900;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+
+        :global(.dark) & {
+            background: $color-white;
+            color: $color-black;
+        }
+
+        .btn-arrow {
+            transition: transform 0.3s ease;
+        }
+
+        &:hover {
+            gap: 1.75rem;
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px -8px rgba(0, 0, 0, 0.3);
+            .btn-arrow {
+                transform: translateX(4px);
+            }
+        }
+
+        &:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+            &:hover {
+                gap: 1rem;
+            }
+        }
+
+        &.sending {
+            opacity: 0.6;
+        }
+    }
+
+    .form-status {
+        font-family: ui-monospace, monospace;
+        font-size: 0.65rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        opacity: 0;
+        transition: opacity 0.4s ease;
+
+        &.visible {
+            opacity: 1;
+        }
+
+        &.success {
+            color: #10b981;
+        }
+        &.error {
+            color: #ef4444;
+        }
+    }
+</style>
+
+<script>
+    import { animate, stagger } from "motion";
+
+    const VALIDATORS: Record<string, (v: string) => string | null> = {
+        name: (v) =>
+            v.trim().length < 2 ? "Name must be at least 2 characters" : null,
+        email: (v) =>
+            /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim())
+                ? null
+                : "Enter a valid email address",
+        subject: (v) =>
+            v.trim().length < 3
+                ? "Subject must be at least 3 characters"
+                : null,
+        message: (v) =>
+            v.trim().length < 20
+                ? "Message must be at least 20 characters"
+                : null,
+    };
+
+    function showError(field: Element, msg: string) {
+        field.classList.add("has-error");
+        const err = field.querySelector(".field-error")!;
+        err.textContent = `[ERR] ${msg}`;
+        err.classList.add("visible");
+    }
+
+    function clearError(field: Element) {
+        field.classList.remove("has-error");
+        const err = field.querySelector(".field-error")!;
+        err.textContent = "";
+        err.classList.remove("visible");
+    }
+
+    function validateField(field: Element): boolean {
+        const key = (field as HTMLElement).dataset.field!;
+        const input = field.querySelector("input, textarea") as
+            | HTMLInputElement
+            | HTMLTextAreaElement;
+        const validator = VALIDATORS[key];
+        if (!validator) return true;
+        const error = validator(input.value);
+        if (error) {
+            showError(field, error);
+            return false;
+        }
+        clearError(field);
+        return true;
+    }
+
+    function initContactForm() {
+        const form = document.getElementById(
+            "contact-form",
+        ) as HTMLFormElement | null;
+        if (!form) return;
+
+        const fields = form.querySelectorAll(".field");
+        const submitBtn = document.getElementById(
+            "cf-submit",
+        ) as HTMLButtonElement;
+        const statusEl = document.getElementById("cf-status")!;
+
+        // Staggered field reveal
+        animate(fields as any, { opacity: [0, 1], y: [16, 0] }, {
+            duration: 0.6,
+            delay: stagger(0.1, { startDelay: 0.2 }),
+            easing: [0.16, 1, 0.3, 1],
+        } as any);
+
+        // Live validation on blur
+        fields.forEach((field) => {
+            const input = field.querySelector("input, textarea");
+            input?.addEventListener("blur", () => validateField(field));
+            input?.addEventListener("input", () => {
+                if (field.classList.contains("has-error")) validateField(field);
+            });
+        });
+
+        // Submit
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            // Validate all
+            let valid = true;
+            fields.forEach((f) => {
+                if (!validateField(f)) valid = false;
+            });
+            if (!valid) {
+                // Shake invalid fields
+                const errorFields = form.querySelectorAll(".field.has-error");
+                animate(
+                    errorFields as any,
+                    { x: [0, -6, 6, -4, 4, 0] },
+                    { duration: 0.4, easing: "ease-in-out" },
+                );
+                return;
+            }
+
+            // Simulate send
+            submitBtn.disabled = true;
+            submitBtn.classList.add("sending");
+            submitBtn.querySelector(".btn-text")!.textContent = "Sending...";
+
+            await new Promise((r) => setTimeout(r, 1200));
+
+            statusEl.textContent = "[OK] Message sent. I'll be in touch soon.";
+            statusEl.className = "form-status visible success";
+            submitBtn.querySelector(".btn-text")!.textContent = "Sent ✓";
+            submitBtn.classList.remove("sending");
+        });
+    }
+
+    initContactForm();
+    document.addEventListener("astro:page-load", initContactForm);
+</script>

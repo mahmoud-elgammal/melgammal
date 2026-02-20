@@ -1,7 +1,7 @@
 ---
-import Head from "@components/Head.astro";
-import Header from "@components/Header.astro";
-import Footer from "@components/Footer.astro";
+import Head from "@components/atoms/Head.astro";
+import Header from "@components/organisms/Header.astro";
+import Footer from "@components/organisms/Footer.astro";
 import { SITE } from "@consts";
 
 type Props = {
@@ -9,19 +9,49 @@ type Props = {
   description: string;
 };
 
+import IntroLoader from "@components/organisms/IntroLoader.astro";
+import CommandMenu from "@components/organisms/CommandMenu.astro";
+
 const { title, description } = Astro.props;
 ---
 
-<!doctype html>
 <html lang="en">
   <head>
     <Head title={`${title} | ${SITE.NAME}`} description={description} />
   </head>
   <body>
+    <IntroLoader />
     <Header />
-    <main>
+    <CommandMenu />
+    <main id="page-main" style="opacity: 0;">
       <slot />
     </main>
     <Footer />
+    <script>
+      import Lenis from "lenis";
+      import { animate } from "motion";
+
+      const lenis = new Lenis();
+
+      function raf(time: number) {
+        lenis.raf(time);
+        requestAnimationFrame(raf);
+      }
+
+      requestAnimationFrame(raf);
+
+      /* ── Reveal page content after header entrance ── */
+      function revealPage() {
+        const main = document.getElementById("page-main");
+        if (main) {
+          animate(main as any, { opacity: [0, 1], y: [12, 0] }, {
+            duration: 0.6,
+            easing: [0.16, 1, 0.3, 1],
+          } as any);
+        }
+      }
+
+      document.addEventListener("header-ready", revealPage, { once: true });
+    </script>
   </body>
 </html>

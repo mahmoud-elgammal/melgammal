@@ -1,14 +1,15 @@
 ---
 import { type CollectionEntry, getCollection } from "astro:content";
 import PageLayout from "@layouts/PageLayout.astro";
-import Container from "@components/Container.astro";
-import FormattedDate from "@components/FormattedDate.astro";
-import { readingTime } from "@lib/utils";
-import BackToPrev from "@components/BackToPrev.astro";
+import Container from "@components/atoms/Container.astro";
+import BackToPrev from "@components/atoms/BackToPrev.astro";
+import BlogPostHero from "@components/organisms/BlogPostHero.astro";
+import BlogMonolithImage from "@components/organisms/BlogMonolithImage.astro";
+import BlogImageGallery from "@components/organisms/BlogImageGallery.astro";
 
 export async function getStaticPaths() {
   const posts = (await getCollection("blog"))
-    .filter(post => !post.data.draft)
+    .filter((post) => !post.data.draft)
     .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
   return posts.map((post) => ({
     params: { slug: post.slug },
@@ -18,32 +19,185 @@ export async function getStaticPaths() {
 type Props = CollectionEntry<"blog">;
 
 const post = Astro.props;
-const { Content } = await post.render();
+const { Content, headings } = await post.render();
 ---
 
 <PageLayout title={post.data.title} description={post.data.description}>
-  <Container>
-    <div class="animate">
-      <BackToPrev href="/blog">
-        Back to blog
-      </BackToPrev>
-    </div>
-    <div class="space-y-1 my-10">
-      <div class="animate flex items-center gap-1.5">
-        <div class="font-base text-sm">
-          <FormattedDate date={post.data.date} />
-        </div>
-        &bull;
-        <div class="font-base text-sm">
-          {readingTime(post.body)}
-        </div>
-      </div>
-      <div class="animate text-2xl font-semibold text-black dark:text-white">
-        {post.data.title}
-      </div>
-    </div>
-    <article class="animate">
+  <BlogPostHero
+    title={post.data.title}
+    date={post.data.date}
+    body={post.body}
+  />
+
+  {
+    post.data.image && (
+      <BlogMonolithImage src={post.data.image} alt={post.data.title} />
+    )
+  }
+
+  <Container size="sm" className="blog-content-vessel">
+    <article class="prose-monolith animate">
       <Content />
     </article>
+
+    <div class="post-footer animate">
+      <div class="bracket-label">[V_END_OF_TRANS]</div>
+      <div class="footer-divider"></div>
+      <BackToPrev href="/blog"> Return to knowledge base </BackToPrev>
+    </div>
   </Container>
+  <BlogImageGallery />
 </PageLayout>
+
+<style lang="scss">
+  @use "../../styles/variables" as *;
+  @use "../../styles/mixins" as *;
+
+  .blog-content-vessel {
+    padding-top: 2.5rem;
+    padding-bottom: 15rem;
+  }
+
+  .prose-monolith {
+    color: rgba($color-black, 0.85);
+    line-height: 1.8;
+    font-size: 1.125rem;
+
+    :global(.dark) & {
+      color: rgba($color-white, 0.85);
+    }
+
+    /* Global Article Styles */
+    :global(p) {
+      margin-bottom: 2.5rem;
+    }
+
+    :global(h2) {
+      font-size: 1.75rem;
+      font-weight: 800;
+      margin-top: 5rem;
+      margin-bottom: 2rem;
+      text-transform: uppercase;
+      letter-spacing: -0.02em;
+      color: $color-black;
+      :global(.dark) & {
+        color: $color-white;
+      }
+    }
+
+    :global(h3) {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-top: 4rem;
+      margin-bottom: 1.5rem;
+      color: $color-black;
+      :global(.dark) & {
+        color: $color-white;
+      }
+    }
+
+    :global(ul) {
+      list-style: none;
+      padding: 0;
+      margin-bottom: 3rem;
+      li {
+        position: relative;
+        padding-left: 1.5rem;
+        margin-bottom: 1rem;
+        &::before {
+          content: "//";
+          position: absolute;
+          left: 0;
+          opacity: 0.3;
+          font-family: ui-monospace, monospace;
+          font-weight: 700;
+        }
+      }
+    }
+
+    :global(pre) {
+      margin: 4rem 0;
+      padding: 2.5rem;
+      border-radius: 0.75rem;
+      background: #1c1917 !important;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      font-size: 0.9rem;
+      position: relative;
+      overflow: visible;
+
+      &::before {
+        content: "[CODE_SOURCE]";
+        position: absolute;
+        top: -12px;
+        left: 25px;
+        font-family: ui-monospace, monospace;
+        font-size: 0.6rem;
+        background: #1c1917;
+        padding: 0 0.6rem;
+        color: rgba(255, 255, 255, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+      }
+    }
+
+    :global(code) {
+      font-family: ui-monospace, monospace;
+      background: rgba($color-black, 0.05);
+      padding: 0.2rem 0.4rem;
+      border-radius: 0.25rem;
+      font-size: 0.85em;
+      :global(.dark) & {
+        background: rgba($color-white, 0.05);
+      }
+    }
+  }
+
+  .post-footer {
+    margin-top: 10rem;
+    padding-top: 5rem;
+    position: relative;
+
+    .bracket-label {
+      font-family: ui-monospace, monospace;
+      font-size: 0.6rem;
+      font-weight: 700;
+      opacity: 0.3;
+      letter-spacing: 0.2em;
+      margin-bottom: 1rem;
+    }
+
+    .footer-divider {
+      height: 1px;
+      background: rgba($color-black, 0.1);
+      width: 100%;
+      margin-bottom: 3rem;
+      :global(.dark) & {
+        background: rgba($color-white, 0.1);
+      }
+    }
+  }
+
+  .animate {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 1s cubic-bezier(0.16, 1, 0.3, 1);
+
+    &.in-view {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+</style>
+
+<script>
+  import { inView } from "motion";
+  function initBlogAnimate() {
+    const elements = document.querySelectorAll(".animate");
+    elements.forEach((el) => {
+      inView(el, () => {
+        el.classList.add("in-view");
+      });
+    });
+  }
+  initBlogAnimate();
+  document.addEventListener("astro:page-load", initBlogAnimate);
+</script>

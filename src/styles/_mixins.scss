@@ -1,0 +1,47 @@
+@use "variables" as *;
+
+@mixin dark {
+    :global(.dark) & {
+        @content;
+    }
+}
+
+@mixin hover {
+    @media (hover: hover) {
+        &:hover {
+            @content;
+        }
+    }
+}
+
+@mixin screen($size) {
+    @if $size ==sm {
+        @media (min-width: $screen-sm) {
+            @content;
+        }
+    }
+
+    @else if $size ==md {
+        @media (min-width: $screen-md) {
+            @content;
+        }
+    }
+
+    @else if $size ==lg {
+        @media (min-width: $screen-lg) {
+            @content;
+        }
+    }
+
+    @else if $size ==xl {
+        @media (min-width: $screen-xl) {
+            @content;
+        }
+    }
+
+    @else if $size ==2xl {
+        @media (min-width: $screen-2xl) {
+            @content;
+        }
+    }
+}

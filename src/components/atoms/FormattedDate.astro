@@ -1,0 +1,26 @@
+---
+interface Props {
+  date: Date;
+}
+
+const { date } = Astro.props;
+---
+
+<time datetime={date.toISOString()} class="formatted-date">
+  {
+    date.toLocaleDateString("en-us", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    })
+  }
+</time>
+
+<style lang="scss">
+  @use "../../styles/variables" as *;
+
+  .formatted-date {
+    // Basic styling if needed, or inherit
+    font-family: $font-sans;
+  }
+</style>
