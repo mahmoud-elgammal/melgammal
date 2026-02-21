@@ -311,7 +311,7 @@
 </style>
 
 <script>
-    import { animate } from "motion";
+    import { gsap } from "gsap";
 
     class ImageGallery {
         private overlay: HTMLElement | null = null;
@@ -408,45 +408,54 @@
 
         private open(index: number) {
             this.currentIndex = index;
-            this.overlay?.classList.add("active");
-            document.body.style.overflow = "hidden";
-            this.updateDisplay();
+            if (this.overlay) {
+                this.overlay.style.display = "block";
+                this.overlay.classList.add("active");
+                document.body.style.overflow = "hidden";
+                this.updateDisplay();
 
-            // Entrance animation
-            animate(
-                this.overlay as any,
-                { opacity: [0, 1] },
-                { duration: 0.4 },
-            );
+                // Entrance animation
+                gsap.fromTo(
+                    this.overlay,
+                    { opacity: 0 },
+                    { opacity: 1, duration: 0.4, ease: "power2.out" },
+                );
+            }
         }
 
         private close() {
-            animate(
-                this.overlay as any,
-                { opacity: 0 },
-                { duration: 0.3 },
-            ).then(() => {
-                this.overlay?.classList.remove("active");
-                document.body.style.overflow = "";
-            });
+            if (this.overlay) {
+                gsap.to(this.overlay, {
+                    opacity: 0,
+                    duration: 0.3,
+                    ease: "power2.in",
+                    onComplete: () => {
+                        this.overlay?.classList.remove("active");
+                        if (this.overlay) this.overlay.style.display = "none";
+                        document.body.style.overflow = "";
+                    },
+                });
+            }
         }
 
         private goTo(index: number) {
             if (index < 0 || index >= this.images.length) return;
 
             // Slide/Fade transition
-            animate(
-                this.focalImg as any,
-                { opacity: 0, x: [0, -20] },
-                { duration: 0.2 },
-            ).then(() => {
-                this.currentIndex = index;
-                this.updateDisplay();
-                animate(
-                    this.focalImg as any,
-                    { opacity: [0, 1], x: [20, 0] },
-                    { duration: 0.3 },
-                );
+            gsap.to(this.focalImg, {
+                opacity: 0,
+                x: -20,
+                duration: 0.2,
+                ease: "power2.in",
+                onComplete: () => {
+                    this.currentIndex = index;
+                    this.updateDisplay();
+                    gsap.fromTo(
+                        this.focalImg,
+                        { opacity: 0, x: 20 },
+                        { opacity: 1, x: 0, duration: 0.3, ease: "power2.out" },
+                    );
+                },
             });
         }
 

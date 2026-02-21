@@ -269,17 +269,29 @@ const {
 </style>
 
 <script>
-    import { inView } from "motion";
+    import { gsap } from "gsap";
+    import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+    gsap.registerPlugin(ScrollTrigger);
 
     function initProcessSections() {
         const animatedElements = document.querySelectorAll(".animate");
         animatedElements.forEach((el) => {
-            inView(el, (info) => {
-                el.classList.add("in-view");
+            gsap.from(el, {
+                opacity: 0,
+                y: 30,
+                duration: 1,
+                ease: "power4.out",
+                scrollTrigger: {
+                    trigger: el,
+                    start: "top 85%",
+                    toggleActions: "play none none none",
+                },
             });
         });
     }
 
-    initProcessSections();
-    document.addEventListener("astro:page-load", initProcessSections);
+    document.addEventListener("astro:page-load", () => {
+        initProcessSections();
+    });
 </script>

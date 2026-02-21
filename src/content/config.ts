@@ -60,8 +60,21 @@ const projects = defineCollection({
     gallery: z
       .array(
         z.object({
+          type: z.enum(["image", "ambient-video", "cinematic-video"]).default("image").optional(),
           src: z.string(),
-          alt: z.string(),
+          alt: z.string().optional(),
+          poster: z.string().optional(), // Used for video poster frames
+          caption: z.string().optional(),
+        }),
+      )
+      .optional(),
+    inlineMedia: z
+      .array(
+        z.object({
+          type: z.enum(["image", "ambient-video", "cinematic-video"]).default("image").optional(),
+          src: z.string(),
+          alt: z.string().optional(),
+          poster: z.string().optional(),
           caption: z.string().optional(),
         }),
       )

@@ -54,41 +54,7 @@ const {
 </div>
 
 <script>
-    import { animate } from "motion";
-
-    /* ── 3D Tilt micro-interaction ── */
-    function setupCardTilt() {
-        const card = document.getElementById(
-            "status-card-tilt",
-        ) as HTMLElement | null;
-        if (!card) return;
-
-        card.addEventListener("mousemove", (e: MouseEvent) => {
-            const rect = card.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            const centerX = rect.width / 2;
-            const centerY = rect.height / 2;
-
-            // Normalize to -1 → +1
-            const rotateY = ((x - centerX) / centerX) * 4; // ±4deg
-            const rotateX = ((centerY - y) / centerY) * 3; // ±3deg
-
-            animate(card as any, { rotateX, rotateY }, {
-                duration: 0.2,
-                easing: [0.23, 1, 0.32, 1],
-            } as any);
-        });
-
-        card.addEventListener("mouseleave", () => {
-            animate(card as any, { rotateX: 0, rotateY: 0, scale: 1 }, {
-                duration: 0.5,
-                easing: [0.23, 1, 0.32, 1],
-            } as any);
-        });
-    }
-
-    setupCardTilt();
+    // Component is purely static per user request to avoid any unprofessional "silly" movement.
 </script>
 
 <style lang="scss">
@@ -100,12 +66,16 @@ const {
         align-items: center;
         gap: 0.75rem;
         border-radius: 999px;
-        padding: 0.5rem 1.25rem 0.5rem 0.75rem;
+        padding: 0.5rem 1.25rem;
         max-width: 100%;
         perspective: 400px;
         transform-style: preserve-3d;
         cursor: default;
+        background-color: #fff;
         transition: box-shadow 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+
+        box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.05);
+        transform: rotate(-3deg) translate(0, 20px);
 
         :global(.dark) & {
             border-color: rgba(255, 255, 255, 0.1);
@@ -156,22 +126,9 @@ const {
         background: #10b981;
         border-radius: 50%;
         border: 2px solid $color-white;
-        animation: pulse-glow 2s ease-in-out infinite;
 
         :global(.dark) & {
             border-color: #1c1917;
-        }
-    }
-
-    @keyframes pulse-glow {
-        0%,
-        100% {
-            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6);
-            transform: scale(1);
-        }
-        50% {
-            box-shadow: 0 0 8px 4px rgba(16, 185, 129, 0.25);
-            transform: scale(1.15);
         }
     }
 
@@ -182,38 +139,14 @@ const {
         min-width: 0;
     }
 
-    /* ── Shimmer badge ── */
+    /* ── Solid badge ── */
     .status-badge {
         font-size: 0.75rem;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.04em;
         line-height: 1.2;
-
-        /* Shimmer gradient text */
-        background: linear-gradient(
-            90deg,
-            #10b981 0%,
-            #10b981 40%,
-            #34d399 50%,
-            #10b981 60%,
-            #10b981 100%
-        );
-        background-size: 200% 100%;
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        animation: shimmer 3s ease-in-out infinite;
-    }
-
-    @keyframes shimmer {
-        0%,
-        100% {
-            background-position: 100% 0;
-        }
-        50% {
-            background-position: -100% 0;
-        }
+        color: #10b981;
     }
 
     .role-line {

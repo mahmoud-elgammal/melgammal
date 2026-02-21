@@ -8,19 +8,21 @@
             <svg
                 width="16"
                 height="16"
-                viewBox="0 0 16 16"
+                viewBox="0 0 24 24"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
                 class="cmdk-search-icon"
             >
-                <path
-                    d="M7.33333 12.6667C10.2789 12.6667 12.6667 10.2789 12.6667 7.33333C12.6667 4.38781 10.2789 2 7.33333 2C4.38781 2 2 4.38781 2 7.33333C2 10.2789 4.38781 12.6667 7.33333 12.6667Z"
+                <circle
+                    cx="11"
+                    cy="11"
+                    r="7"
                     stroke="currentColor"
                     stroke-width="1.5"
                     stroke-linecap="round"
-                    stroke-linejoin="round"></path>
+                    stroke-linejoin="round"></circle>
                 <path
-                    d="M14 14L11.1 11.1"
+                    d="M20 20L16.414 16.414"
                     stroke="currentColor"
                     stroke-width="1.5"
                     stroke-linecap="round"
@@ -54,7 +56,7 @@
 </div>
 
 <script>
-    import { animate, stagger } from "motion";
+    import { gsap } from "gsap";
     // @ts-ignore
     import { tinykeys } from "tinykeys";
     import { getCommands, type Command } from "@lib/commands";
@@ -110,35 +112,83 @@
         document.addEventListener("cmdk-close", () => toggle(false));
     }
 
+    function lockScroll(lock: boolean) {
+        if (lock) {
+            // Get scrollbar width to prevent layout shift
+            const scrollbarWidth =
+                window.innerWidth - document.documentElement.clientWidth;
+            document.body.style.overflow = "hidden";
+            document.body.style.paddingRight = `${scrollbarWidth}px`;
+        } else {
+            document.body.style.overflow = "";
+            document.body.style.paddingRight = "";
+        }
+    }
+
     function toggle(open: boolean) {
         if (!overlay || !modal) return;
         isOpen = open;
         overlay.setAttribute("aria-hidden", String(!open));
 
+        lockScroll(open);
+
         if (open) {
             overlay.style.display = "flex";
-            animate(overlay as any, { opacity: [0, 1] }, { duration: 0.2 });
-            animate(
-                modal as any,
-                { scale: [0.98, 1], y: [8, 0], opacity: [0, 1] },
-                { duration: 0.3, easing: [0.23, 1, 0.32, 1] } as any,
+
+            // Dramatic backdrop blur fade in
+            gsap.fromTo(
+                overlay,
+                { opacity: 0, backdropFilter: "blur(0px) saturate(100%)" },
+                {
+                    opacity: 1,
+                    backdropFilter: "blur(24px) saturate(200%)",
+                    duration: 0.6,
+                    ease: "power3.out",
+                },
             );
+
+            // Architectural Modal 3D Reveal
+            gsap.fromTo(
+                modal,
+                {
+                    scale: 0.9,
+                    y: 60,
+                    rotationX: -15,
+                    opacity: 0,
+                    transformPerspective: 1200,
+                },
+                {
+                    scale: 1,
+                    y: 0,
+                    rotationX: 0,
+                    opacity: 1,
+                    duration: 0.8,
+                    ease: "expo.out",
+                    clearProps: "transformPerspective",
+                },
+            );
+
             input?.focus();
             input.value = "";
             renderResults("");
         } else {
-            animate(
-                overlay as any,
-                { opacity: 0 },
-                { duration: 0.2 },
-            ).finished.then(() => {
-                overlay.style.display = "none";
+            // Rapid cinematic exit
+            gsap.to(overlay, {
+                opacity: 0,
+                backdropFilter: "blur(0px) saturate(100%)",
+                duration: 0.3,
+                ease: "power2.in",
+                onComplete: () => {
+                    overlay.style.display = "none";
+                },
             });
-            animate(
-                modal as any,
-                { scale: 0.98, y: 8, opacity: 0 },
-                { duration: 0.2 },
-            );
+            gsap.to(modal, {
+                scale: 0.95,
+                y: 20,
+                opacity: 0,
+                duration: 0.3,
+                ease: "power2.in",
+            });
         }
     }
 
@@ -214,13 +264,41 @@
             resultsContainer.appendChild(item);
         });
 
-        // Stagger entrance for results
+        // Staggered cinematic entrance for results
         const items = resultsContainer.querySelectorAll(".cmdk-item");
-        animate(Array.from(items) as any, { opacity: [0, 1], x: [-4, 0] }, {
-            duration: 0.3,
-            delay: stagger(0.04),
-            easing: [0.23, 1, 0.32, 1],
-        } as any);
+        const headers = resultsContainer.querySelectorAll(
+            ".cmdk-section-header",
+        );
+
+        // Reset opacities first
+        gsap.set([headers, items], { opacity: 0 });
+
+        gsap.fromTo(
+            headers,
+            { opacity: 0, x: -10 },
+            {
+                opacity: 1,
+                x: 0,
+                duration: 0.6,
+                stagger: 0.1,
+                ease: "power3.out",
+                delay: 0.1,
+            },
+        );
+
+        gsap.fromTo(
+            items,
+            { opacity: 0, y: 15, scale: 0.98 },
+            {
+                opacity: 1,
+                y: 0,
+                scale: 1,
+                duration: 0.6,
+                stagger: 0.03,
+                ease: "back.out(1.2)",
+                delay: 0.15,
+            },
+        );
     }
 
     function setSelection(index: number) {
@@ -230,8 +308,17 @@
         const selected = resultsContainer?.querySelector(
             `[data-index="${index}"]`,
         );
-        selected?.classList.add("selected");
-        selected?.scrollIntoView({ block: "nearest" });
+        if (selected) {
+            selected.classList.add("selected");
+            selected.scrollIntoView({ block: "nearest" });
+
+            // Micro-interaction on selection change
+            gsap.fromTo(
+                selected,
+                { x: -4 },
+                { x: 0, duration: 0.3, ease: "back.out(2)" },
+            );
+        }
     }
 
     function updateSelection(delta: number) {
@@ -258,7 +345,7 @@
     init();
 </script>
 
-<style lang="scss">
+<style lang="scss" is:global>
     @use "../../styles/variables" as *;
 
     .cmdk-overlay {
@@ -275,34 +362,65 @@
     }
 
     .cmdk-modal {
+        position: relative;
         width: 100%;
-        max-width: 640px;
+        max-width: 680px;
         height: fit-content;
         max-height: 480px;
-        background: rgba(255, 255, 255, 0.85);
-        backdrop-filter: blur(20px) saturate(180%);
-        border-radius: 0.875rem;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(24px) saturate(200%);
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        border-radius: 0; // Architectural sharp edges
         box-shadow:
-            0 0 0 1px rgba(0, 0, 0, 0.05),
-            0 32px 64px -16px rgba(0, 0, 0, 0.2);
+            0 40px 80px -20px rgba(0, 0, 0, 0.25),
+            0 0 0 1px rgba(0, 0, 0, 0.05);
         display: flex;
         flex-direction: column;
         overflow: hidden;
 
+        /* Technical Grid Overlay */
+        &::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
+            background-size: 20px 20px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
         :global(.dark) & {
-            background: rgba(28, 25, 23, 0.85);
+            background: rgba(15, 15, 15, 0.95);
+            border-color: rgba(255, 255, 255, 0.1);
             box-shadow:
-                0 0 0 1px rgba(255, 255, 255, 0.1),
-                0 32px 64px -16px rgba(0, 0, 0, 0.5);
+                0 40px 80px -20px rgba(0, 0, 0, 0.8),
+                0 0 0 1px rgba(255, 255, 255, 0.05);
+
+            &::before {
+                background-image:
+                    linear-gradient(
+                        rgba(255, 255, 255, 0.02) 1px,
+                        transparent 1px
+                    ),
+                    linear-gradient(
+                        90deg,
+                        rgba(255, 255, 255, 0.02) 1px,
+                        transparent 1px
+                    );
+            }
         }
     }
 
     .cmdk-header {
+        position: relative;
+        z-index: 1;
         display: flex;
         align-items: center;
-        padding: 1.25rem 1rem;
-        gap: 0.75rem;
-        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        padding: 1.5rem 1.25rem;
+        gap: 1rem;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 
         :global(.dark) & {
             border-color: rgba(255, 255, 255, 0.05);
@@ -328,13 +446,16 @@
         background: transparent;
         border: none;
         outline: none;
-        font-size: 1rem;
+        font-family: inherit;
+        font-size: 1.1rem;
         font-weight: 500;
+        letter-spacing: -0.01em;
         color: $color-black;
         width: 100%;
 
         &::placeholder {
             color: rgba(0, 0, 0, 0.3);
+            font-weight: 400;
         }
 
         :global(.dark) & {
@@ -346,10 +467,12 @@
     }
 
     .cmdk-results {
+        position: relative;
+        z-index: 1;
         flex: 1;
         overflow-y: auto;
-        padding: 0.75rem 0.5rem;
-        min-height: 280px;
+        padding: 1rem 0.5rem;
+        min-height: 320px;
 
         // Hide scrollbar but keep functionality
         scrollbar-width: none;
@@ -385,30 +508,42 @@
     }
 
     .cmdk-item {
+        position: relative;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 0.5rem 0.75rem;
-        border-radius: 0.5rem;
+        padding: 0.875rem 1rem;
+        margin: 0.25rem 0.5rem;
+        border-radius: 6px; // Sharp
         cursor: pointer;
         opacity: 0; // Initial state for entrance animation
         transition:
-            background 0.1s ease,
-            transform 0.1s ease;
+            background 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+            transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         will-change: transform, background;
 
         &.selected {
-            background: rgba(255, 255, 255, 0.5);
-            box-shadow:
-                0 0 0 1px rgba(0, 0, 0, 0.03),
-                0 4px 12px -2px rgba(0, 0, 0, 0.05);
-            transform: scale(1.002) translateY(-0.5px);
+            background: rgba(0, 0, 0, 0.05);
+            transform: scale(1.02); // Architectural pop
+
+            &::before {
+                content: "";
+                position: absolute;
+                left: -0.25rem;
+                top: 50%;
+                transform: translateY(-50%);
+                height: 60%;
+                width: 3px;
+                background: $color-black;
+                border-radius: 2px;
+            }
 
             :global(.dark) & {
-                background: rgba(255, 255, 255, 0.08);
-                box-shadow:
-                    0 0 0 1px rgba(255, 255, 255, 0.05),
-                    0 4px 12px -2px rgba(0, 0, 0, 0.2);
+                background: rgba(255, 255, 255, 0.1);
+
+                &::before {
+                    background: $color-white;
+                }
             }
 
             .cmdk-item-title {
@@ -448,9 +583,12 @@
         transition: all 0.1s ease;
 
         :global(svg) {
-            width: 0.875rem !important;
-            height: 0.875rem !important;
+            width: 1.125rem !important; // Fixed size
+            height: 1.125rem !important; // Fixed size
+            min-width: 1.125rem;
+            min-height: 1.125rem;
             display: block;
+            stroke-width: 1.5; // Thinner, crisper icons
         }
 
         :global(.dark) & {
@@ -536,15 +674,16 @@
     }
 
     .cmdk-footer {
-        padding: 0.625rem 1rem;
-        background: rgba(0, 0, 0, 0.01);
+        position: relative;
+        z-index: 1;
+        padding: 0.75rem 1.25rem;
+        background: transparent;
         display: flex;
         gap: 1.5rem;
-        border-top: 1px solid rgba(0, 0, 0, 0.03);
+        border-top: 1px solid rgba(0, 0, 0, 0.1);
 
         :global(.dark) & {
-            background: rgba(255, 255, 255, 0.005);
-            border-color: rgba(255, 255, 255, 0.03);
+            border-color: rgba(255, 255, 255, 0.1);
         }
     }
 

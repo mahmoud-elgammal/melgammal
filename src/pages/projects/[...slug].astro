@@ -3,6 +3,10 @@ import { type CollectionEntry, getCollection } from "astro:content";
 import PageLayout from "@layouts/PageLayout.astro";
 import Container from "@components/atoms/Container.astro";
 import BackToPrev from "@components/atoms/BackToPrev.astro";
+import MediaSwiper from "@components/molecules/MediaSwiper.astro";
+import InteractiveMedia from "@components/molecules/InteractiveMedia.astro";
+import CustomVideoPlayer from "@components/molecules/CustomVideoPlayer.astro";
+import ProjectCard from "@components/molecules/ProjectCard.astro";
 
 export async function getStaticPaths() {
   const projects = (await getCollection("projects"))
@@ -41,9 +45,19 @@ const {
   stats,
   timeline,
   gallery,
+  inlineMedia,
 } = project.data;
 
 const brandColor = color || "#8B5CF6";
+
+// Pre-process inline gallery data
+const inlineLightboxGallery = (inlineMedia || [])
+  .filter((i) => i.type !== "cinematic-video")
+  .map((i) => ({
+    src: i.src,
+    type: i.type || "image",
+  }));
+const inlineGalleryJsonString = JSON.stringify(inlineLightboxGallery);
 
 const statusConfig: Record<
   string,
@@ -57,97 +71,52 @@ const st = statusConfig[status] || statusConfig.shipped;
 ---
 
 <PageLayout title={title} description={description}>
+  <!-- ═══════════════ EDITORIAL HERO ═══════════════ -->
+  <section class="editorial-hero" data-brand={brandColor}>
+    <Container size="lg">
+      <h1 class="editorial-title animate" id="cs-title">{title}</h1>
+
+      <div class="editorial-meta animate">
+        <div class="meta-col">
+          <span class="meta-label">Project Type</span>
+          <span class="meta-val">{client || "Product"}</span>
+        </div>
+        <div class="meta-col">
+          <span class="meta-label">Stage</span>
+          <span class="meta-val">{status || "Leader"}</span>
+        </div>
+        <div class="meta-col">
+          <span class="meta-label">Deliverables</span>
+          <span class="meta-val"
+            >{
+              role ||
+                (tags && tags.length > 0
+                  ? tags.join(", ")
+                  : "Strategy & Research, Product Design, Frontend Engineering")
+            }</span
+          >
+        </div>
+      </div>
+    </Container>
+  </section>
+
   <!-- ═══════════════ IMAGE MONOLITH ═══════════════ -->
   {
     imageWeb && (
-      <div class="cs-image-monolith animate" style={`--brand: ${brandColor}`}>
-        <div class="image-inner">
-          <div class="web-frame">
-            <img src={imageWeb} alt={`${title} — web`} loading="eager" />
-          </div>
-          {imageMobile && (
-            <div class="mobile-frame">
-              <div class="iphone-bezel">
-                <img
-                  src={imageMobile}
-                  alt={`${title} — mobile`}
-                  loading="lazy"
-                />
-              </div>
-            </div>
-          )}
-        </div>
+      <div class="editorial-image-monolith animate">
+        <img src={imageWeb} alt={`${title} cover`} loading="eager" />
       </div>
     )
   }
 
-  <!-- ═══════════════ HERO ═══════════════ -->
-  <section
-    class="cs-hero"
-    style={`--brand: ${brandColor}`}
-    data-brand={brandColor}
-  >
-    <Container size="lg">
-      <div class="cs-hero-layout">
-        <h1 class="cs-title animate" id="cs-title">{title}</h1>
 
-        {
-          (demoURL || repoURL) && (
-            <div class="cs-links animate">
-              {demoURL && (
-                <a
-                  href={demoURL}
-                  target="_blank"
-                  rel="noopener"
-                  class="cs-link cs-link--primary"
-                >
-                  <span>View Live</span>
-                  <span class="link-arrow">↗</span>
-                </a>
-              )}
-              {repoURL && (
-                <a
-                  href={repoURL}
-                  target="_blank"
-                  rel="noopener"
-                  class="cs-link cs-link--secondary"
-                >
-                  <span>Source</span>
-                  <span class="link-arrow">↗</span>
-                </a>
-              )}
-            </div>
-          )
-        }
-      </div>
-    </Container>
-    <div class="hero-decorative"><div class="technical-grid"></div></div>
-  </section>
-
-  <!-- ═══════════════ STATS BAR ═══════════════ -->
-  {
-    stats && stats.length > 0 && (
-      <section
-        class="cs-stats animate"
-        id="cs-stats"
-        style={`--brand: ${brandColor}`}
-      >
-        <div class="stats-inner">
-          {stats.map((s, i) => (
-            <div class="stat-item" style={`--delay: ${i * 0.12}s`}>
-              <span class="stat-value" data-count-target={s.value}>
-                {s.value}
-              </span>
-              <span class="stat-label">{s.label}</span>
-            </div>
-          ))}
-        </div>
-      </section>
-    )
-  }
 
   <!-- ═══════════════ OVERVIEW ═══════════════ -->
-  <section class="cs-overview" id="cs-overview">
+  <section
+    class="cs-overview"
+    id="cs-overview"
+    data-scroll-personality="cinematic"
+  >
     <Container size="md">
       <div class="overview-grid">
         <div class="overview-body animate">
@@ -156,27 +125,89 @@ const st = statusConfig[status] || statusConfig.shipped;
           </article>
 
           {
-            gallery && gallery.length > 0 && (
-              <div class="inline-gallery animate">
-                {gallery.map((img, i) => (
-                  <figure class="inline-item" style={`--delay: ${i * 0.15}s`}>
-                    <div class="image-reveal">
-                      <img src={img.src} alt={img.alt} loading="lazy" />
-                    </div>
-                    {img.caption && (
-                      <figcaption class="inline-caption">
-                        {img.caption}
-                      </figcaption>
-                    )}
-                  </figure>
-                ))}
+            inlineMedia && inlineMedia.length > 0 && (
+              <div class="inline-media-showcase">
+                {inlineMedia.map((item, index) => {
+                  const isCinematic = item.type === "cinematic-video";
+                  let lightboxIndex = -1;
+                  if (!isCinematic) {
+                    lightboxIndex = inlineLightboxGallery.findIndex(
+                      (g) => g.src === item.src,
+                    );
+                  }
+                  return (
+                    <figure class="inline-media-block animate">
+                      <div class="media-wrapper">
+                        {isCinematic ? (
+                          <CustomVideoPlayer
+                            src={item.src}
+                            poster={item.poster}
+                            autoPlay={false}
+                          />
+                        ) : (
+                          <InteractiveMedia
+                            type={item.type as "image" | "ambient-video"}
+                            src={item.src}
+                            poster={item.poster}
+                            alt={item.alt || `Inline Media ${index + 1}`}
+                            galleryJson={inlineGalleryJsonString}
+                            galleryIndex={lightboxIndex}
+                          />
+                        )}
+                      </div>
+                      {item.caption && (
+                        <figcaption class="slide-caption">
+                          {item.caption}
+                        </figcaption>
+                      )}
+                    </figure>
+                  );
+                })}
               </div>
             )
           }
         </div>
       </div>
     </Container>
+
+    <!-- Massive Bleed Swiper -->
+    {
+      gallery && gallery.length > 0 && (
+        <div class="cs-gallery animate">
+          <MediaSwiper items={gallery as any} />
+        </div>
+      )
+    }
   </section>
+
+  <!-- ═══════════════ PROJECT IMPACT ═══════════════ -->
+  {
+    stats && stats.length > 0 && (
+      <section class="cs-impact animate" id="cs-impact">
+        <Container size="md">
+          <div class="impact-header">
+            <h2 class="impact-headline">Small details, massive reach</h2>
+            <div class="impact-intro-grid">
+              <div class="impact-intro-label">Impact</div>
+              <div class="impact-intro-text">
+                Metrics and outcomes achieved over the course of the project lifecycle, demonstrating tangible value and scaling potential.
+              </div>
+            </div>
+          </div>
+          
+          <div class="impact-list">
+            <div class="impact-divider"></div>
+            {stats.map((s, i) => (
+              <div class="impact-row" style={`--delay: ${i * 0.1}s`}>
+                <div class="impact-val" data-count-target={s.value}>{s.value}</div>
+                <div class="impact-label">{s.label}</div>
+              </div>
+            ))}
+          </div>
+        </Container>
+      </section>
+    )
+  }
 
   <!-- ═══════════════ GANTT TIMELINE ═══════════════ -->
   {
@@ -241,28 +272,43 @@ const st = statusConfig[status] || statusConfig.shipped;
       <div class="bracket-label">[V_END_OF_CASE]</div>
       <div class="footer-divider"></div>
       <BackToPrev href="/work">Return to work</BackToPrev>
-      {
-        nextProject && nextProject.slug !== project.slug && (
-          <a href={`/projects/${nextProject.slug}`} class="next-project">
-            <div class="next-label">NEXT_CASE →</div>
-            <div class="next-title">{nextProject.data.title}</div>
-          </a>
-        )
-      }
     </div>
   </Container>
+
+  <!-- ═══════════════ MONUMENTAL NEXT CASE STUDY ═══════════════ -->
+  {
+    nextProject && nextProject.slug !== project.slug && (
+      <section class="cs-next-case">
+        <!-- Massive background typography -->
+        <div class="next-bg-text" aria-hidden="true">next case study</div>
+        
+        <!-- Standard Project Card -->
+        <div class="next-project-wrapper">
+          <ProjectCard project={nextProject} />
+        </div>
+      </section>
+    )
+  }
 
   <!-- ═══════════════ FLOATING DOCK (ACTIONS) ═══════════════ -->
   <nav class="cs-dock" id="cs-dock" style={`--brand: ${brandColor}`}>
     <div class="dock-inner">
-      <a href="/work" class="dock-pill" title="Back to Work">
-        <span>← Work</span>
-      </a>
+      <button class="dock-pill chapters-trigger" id="chapters-trigger" title="Page Chapters">
+        <span class="dock-label">Index</span>
+        <div class="chapters-popover" id="chapters-popover">
+            <div class="chapters-header">CHAPTERS</div>
+            <div class="chapters-list" id="chapters-list">
+                <!-- Build dynamically -->
+            </div>
+            <div class="popover-arrow"></div>
+        </div>
+      </button>
 
       <div class="dock-divider"></div>
 
       <button class="dock-pill" data-action="top" title="Scroll to Top">
         <div class="scroll-progress-ring">
+          <span class="progress-percent">0%</span>
           <svg width="32" height="32" viewBox="0 0 32 32">
             <circle
               class="progress-ring-bg"
@@ -305,9 +351,36 @@ const st = statusConfig[status] || statusConfig.shipped;
         )
       }
 
-      <button class="dock-pill" data-action="share" title="Copy Link">
-        <span>Share</span>
-      </button>
+      <div class="share-wrapper">
+        <div class="share-popover" id="share-popover">
+          <div class="share-items">
+            <a href={`https://wa.me/?text=${encodeURIComponent(`${title} - ${Astro.url}`)}`} target="_blank" rel="noopener" class="share-item" title="Share on WhatsApp">
+               <span class="share-icon">WA</span>
+               <span class="share-name">WhatsApp</span>
+            </a>
+            <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(Astro.url.toString())}`} target="_blank" rel="noopener" class="share-item" title="Share on Facebook">
+               <span class="share-icon">FB</span>
+               <span class="share-name">Facebook</span>
+            </a>
+            <a href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(Astro.url.toString())}`} target="_blank" rel="noopener" class="share-item" title="Share on LinkedIn">
+               <span class="share-icon">IN</span>
+               <span class="share-name">LinkedIn</span>
+            </a>
+            <a href={`https://www.reddit.com/submit?url=${encodeURIComponent(Astro.url.toString())}&title=${encodeURIComponent(title)}`} target="_blank" rel="noopener" class="share-item" title="Share on Reddit">
+               <span class="share-icon">RD</span>
+               <span class="share-name">Reddit</span>
+            </a>
+            <button class="share-item" data-action="copy-link" title="Copy URL">
+               <span class="share-icon">CP</span>
+               <span class="share-name">Copy</span>
+            </button>
+          </div>
+          <div class="popover-arrow"></div>
+        </div>
+        <button class="dock-pill share-trigger" data-action="share" title="Share Project">
+          <span>Share</span>
+        </button>
+      </div>
 
       <div class="dock-divider"></div>
 
@@ -324,186 +397,85 @@ const st = statusConfig[status] || statusConfig.shipped;
 <style lang="scss">
   @use "../../styles/variables" as *;
 
-  /* ── Hero ── */
-  .cs-hero {
+  /* ── Editorial Hero ── */
+  .editorial-hero {
     position: relative;
-    padding: 4rem 0 4rem; /* Adjusted padding */
-    background: transparent; /* Clean background */
-    overflow: visible; /* Let content breathe */
-
-    /* Removed gradients/decorations */
+    padding: 8rem 0 4rem;
+    background: transparent;
   }
 
-  .cs-title {
-    font-size: clamp(2.5rem, 6vw, 5rem);
-    font-weight: 900;
-    letter-spacing: -0.04em;
-    line-height: 1;
-    margin: 0;
+  .editorial-title {
+    font-size: clamp(4rem, 12vw, 10rem);
+    font-family: $font-serif;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    margin: 0 0 6rem 0;
     color: $color-black;
     :global(.dark) & {
       color: $color-white;
     }
   }
 
-  /* ── Links ── */
-  .cs-links {
+  .editorial-meta {
     display: flex;
-    align-items: center;
-    gap: 1rem;
-    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid rgba($color-black, 0.1);
+    :global(.dark) & {
+      border-color: rgba($color-white, 0.1);
+    }
+
+    @media (max-width: $screen-md) {
+      flex-direction: column;
+      gap: 2rem;
+    }
   }
 
-  .cs-link {
-    display: inline-flex;
-    align-items: center;
+  .meta-col {
+    display: flex;
+    flex-direction: column;
     gap: 0.5rem;
-    font-family: ui-monospace, monospace;
-    font-size: 0.65rem;
-    font-weight: 900;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    text-decoration: none;
-    padding: 0.75rem 1.75rem;
-    border-radius: 100px;
-    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    flex: 1;
 
-    &--primary {
-      background: $color-black;
+    &:first-child {
+      flex: 1.5;
+    }
+  }
+
+  .meta-label {
+    font-family: ui-sans-serif, system-ui, sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: $color-black;
+    line-height: 1;
+    :global(.dark) & {
       color: $color-white;
-      :global(.dark) & {
-        background: $color-white;
-        color: $color-black;
-      }
-      &:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 12px 30px -8px rgba(0, 0, 0, 0.3);
-      }
     }
-    &--secondary {
-      background: transparent;
-      color: $color-black;
-      border: 1px solid rgba($color-black, 0.15);
-      :global(.dark) & {
-        color: $color-white;
-        border-color: rgba($color-white, 0.15);
-      }
-      &:hover {
-        border-color: rgba($color-black, 0.4);
-        transform: translateY(-2px);
-      }
-    }
-    .link-arrow {
-      transition: transform 0.3s ease;
-    }
-    &:hover .link-arrow {
-      transform: translate(2px, -2px);
+  }
+
+  .meta-val {
+    font-family: ui-sans-serif, system-ui, sans-serif;
+    font-size: 0.9rem;
+    color: rgba($color-black, 0.6);
+    line-height: 1.4;
+    :global(.dark) & {
+      color: rgba($color-white, 0.6);
     }
   }
 
   /* ── Image Monolith ── */
-  .cs-image-monolith {
-    position: relative;
+  .editorial-image-monolith {
     width: 100%;
-    padding: 0; /* Full bleed */
-    background: transparent; /* No background */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    /* No pseudo-elements (gradients) */
-  }
-
-  .image-inner {
-    position: relative;
-    width: 100%;
-    max-width: 100%; /* Full width */
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-  }
-  .web-frame {
-    width: 100%;
-    border-radius: 0; /* No radius for full bleed */
-    overflow: hidden;
-    /* box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.5); */ /* Optional: remove shadow if full bleed */
-    background: #000;
-    position: relative;
-    z-index: 1;
+    margin-top: 2rem;
     img {
       width: 100%;
       height: auto;
-      min-height: 60vh; /* Ensure it has presence */
-      object-fit: cover;
       display: block;
+      object-fit: cover;
     }
-  }
-  .mobile-frame {
-    position: absolute;
-    bottom: -5%;
-    right: 5%; /* Moved in slightly */
-    width: 18%; /* Slightly smaller */
-    z-index: 2;
-    .iphone-bezel {
-      border: 4px solid #1a1a1a;
-      border-radius: 2rem;
-      background: #000;
-      overflow: hidden;
-      aspect-ratio: 9/19;
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
-      img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-      }
-    }
-  }
-
-  /* ═══════════════ STATS BAR ═══════════════ */
-  .cs-stats {
-    padding: 0;
-  }
-  .stats-inner {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    border-top: 1px solid rgba($color-black, 0.06);
-    border-bottom: 1px solid rgba($color-black, 0.06);
-    :global(.dark) & {
-      border-color: rgba($color-white, 0.06);
-    }
-  }
-  .stat-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 3rem 2rem;
-    border-right: 1px solid rgba($color-black, 0.04);
-    transition: opacity 0.4s ease;
-    :global(.dark) & {
-      border-color: rgba($color-white, 0.04);
-    }
-    &:last-child {
-      border-right: none;
-    }
-  }
-  .stat-value {
-    font-size: clamp(2rem, 4vw, 3rem);
-    font-weight: 900;
-    letter-spacing: -0.04em;
-    line-height: 1;
-    color: $color-black;
-    :global(.dark) & {
-      color: $color-white;
-    }
-  }
-  .stat-label {
-    font-family: ui-monospace, monospace;
-    font-size: 0.6rem;
-    font-weight: 700;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    opacity: 0.4;
   }
 
   /* ═══════════════ OVERVIEW ═══════════════ */
@@ -747,50 +719,6 @@ const st = statusConfig[status] || statusConfig.shipped;
     }
   }
 
-  .inline-gallery {
-    margin-top: 6rem;
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 4rem;
-    &.animate {
-      opacity: 1;
-    }
-  }
-
-  .inline-item {
-    margin: 0;
-    width: 100%;
-    .image-reveal {
-      border-radius: 1.5rem;
-      overflow: hidden;
-      background: rgba($color-black, 0.03);
-      border: 1px solid rgba($color-black, 0.05);
-      :global(.dark) & {
-        background: rgba($color-white, 0.03);
-        border-color: rgba($color-white, 0.05);
-      }
-      img {
-        width: 100%;
-        height: auto;
-        display: block;
-        transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-      }
-      &:hover img {
-        transform: scale(1.02);
-      }
-    }
-    figcaption {
-      margin-top: 1.5rem;
-      font-family: ui-monospace, monospace;
-      font-size: 0.65rem;
-      font-weight: 700;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      opacity: 0.4;
-      text-align: center;
-    }
-  }
-
   /* ═══════════════ SECTION HEADERS ═══════════════ */
   .section-header {
     margin-bottom: 4rem;
@@ -814,6 +742,152 @@ const st = statusConfig[status] || statusConfig.shipped;
     :global(.dark) & {
       color: $color-white;
     }
+  }
+
+  /* ═══════════════ INLINE MEDIA SHOWCASE ═══════════════ */
+  .inline-media-showcase {
+    display: flex;
+    flex-direction: column;
+    gap: 4rem;
+    margin-top: 5rem;
+  }
+
+  .inline-media-block {
+    margin: 0;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+
+    .media-wrapper {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background: rgba($color-black, 0.05);
+      border-radius: 1rem;
+      overflow: hidden;
+      :global(.dark) & {
+        background: rgba($color-white, 0.05);
+      }
+    }
+
+    .slide-caption {
+      font-family: ui-monospace, monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.05em;
+      font-weight: 500;
+      opacity: 0.5;
+      text-align: right;
+    }
+  }
+
+  /* ═══════════════ PROJECT IMPACT ═══════════════ */
+  .cs-impact {
+    padding: 2rem 0 8rem;
+    position: relative;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .impact-header {
+    display: flex;
+    flex-direction: column;
+    gap: 6rem;
+    margin-bottom: 5rem;
+  }
+
+  .impact-headline {
+    font-family: ui-sans-serif, system-ui, sans-serif;
+    font-size: clamp(2.5rem, 5vw, 4rem);
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    color: $color-black;
+    margin: 0;
+    :global(.dark) & { color: $color-white; }
+  }
+
+  .impact-intro-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    align-items: start;
+
+    @media (max-width: $screen-md) {
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+  }
+
+  .impact-intro-label {
+    font-family: ui-sans-serif, system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: $color-black;
+    :global(.dark) & { color: $color-white; }
+  }
+
+  .impact-intro-text {
+    font-family: ui-sans-serif, system-ui, sans-serif;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: rgba($color-black, 0.8);
+    :global(.dark) & { color: rgba($color-white, 0.8); }
+  }
+
+  .impact-list {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .impact-divider {
+    height: 1px;
+    width: 100%;
+    background: rgba($color-black, 0.1);
+    :global(.dark) & { background: rgba($color-white, 0.1); }
+  }
+
+  .impact-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    align-items: center;
+    padding: 3rem 0;
+    border-bottom: 1px solid rgba($color-black, 0.1);
+    
+    :global(.dark) & {
+        border-color: rgba($color-white, 0.1);
+    }
+    
+    @media (max-width: $screen-md) {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+      padding: 2.5rem 0;
+    }
+  }
+
+  .impact-val {
+    font-family: $font-serif;
+    font-size: clamp(3rem, 8vw, 6rem); /* Scaled down significantly */
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    color: $color-black;
+    font-variant-numeric: tabular-nums;
+    text-align: left;
+    
+    :global(.dark) & { color: $color-white; }
+  }
+
+  .impact-label {
+    font-family: ui-sans-serif, system-ui, sans-serif;
+    font-size: 1.05rem;
+    line-height: 1.5;
+    color: rgba($color-black, 0.7);
+    max-width: 400px; /* Widened slightly */
+    text-align: left; /* Enforce left alignment */
+    
+    :global(.dark) & { color: rgba($color-white, 0.7); }
   }
 
   /* ═══════════════ GANTT TIMELINE ═══════════════ */
@@ -1006,6 +1080,50 @@ const st = statusConfig[status] || statusConfig.shipped;
     }
   }
 
+  /* ═══════════════ MONUMENTAL NEXT CASE STUDY ═══════════════ */
+  .cs-next-case {
+    position: relative;
+    width: 100%;
+    min-height: 85vh; /* Near full viewport */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background: transparent;
+    border-top: 1px solid rgba($color-black, 0.05);
+    :global(.dark) & {
+        border-color: rgba($color-white, 0.05);
+    }
+  }
+
+  .next-project-wrapper {
+    position: relative;
+    z-index: 2;
+    width: 90%;
+    max-width: 480px;
+  }
+
+  .next-bg-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: clamp(8rem, 18vw, 24rem); /* Massive, viewport-responsive */
+    font-family: ui-sans-serif, system-ui, sans-serif;
+    font-weight: 900;
+    letter-spacing: -0.04em;
+    white-space: nowrap;
+    line-height: 1;
+    color: rgba($color-black, 0.03); /* Stark, barely-there typography behind the card */
+    pointer-events: none;
+    z-index: 1;
+    user-select: none;
+
+    :global(.dark) & {
+        color: rgba($color-white, 0.02);
+    }
+  }
+
   /* ═══════════════ FOOTER ═══════════════ */
   .cs-footer {
     padding: 5rem 0 12rem;
@@ -1024,49 +1142,6 @@ const st = statusConfig[status] || statusConfig.shipped;
       margin-bottom: 3rem;
       :global(.dark) & {
         background: rgba($color-white, 0.1);
-      }
-    }
-  }
-
-  .next-project {
-    display: block;
-    margin-top: 4rem;
-    padding: 2rem 0;
-    border-top: 1px solid rgba($color-black, 0.06);
-    text-decoration: none;
-    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    :global(.dark) & {
-      border-color: rgba($color-white, 0.06);
-    }
-
-    &:hover {
-      transform: translateX(8px);
-      .next-title {
-        opacity: 1;
-      }
-      .next-label {
-        letter-spacing: 0.3em;
-      }
-    }
-    .next-label {
-      font-family: ui-monospace, monospace;
-      font-size: 0.6rem;
-      font-weight: 700;
-      opacity: 0.35;
-      letter-spacing: 0.1em;
-      // text-transform: uppercase; // Removed
-      margin-bottom: 0.75rem;
-      transition: letter-spacing 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .next-title {
-      font-size: clamp(1.25rem, 3vw, 2rem);
-      font-weight: 900;
-      letter-spacing: -0.03em;
-      color: $color-black;
-      opacity: 0.7;
-      transition: opacity 0.4s ease;
-      :global(.dark) & {
-        color: $color-white;
       }
     }
   }
@@ -1094,19 +1169,308 @@ const st = statusConfig[status] || statusConfig.shipped;
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.6rem 0.85rem;
+    padding: 0.6rem 1rem;
     border-radius: 100px;
-    // Premium High Contrast
+    // Monumental Solid Aesthetic
     background: #000000;
-    border: 2px solid rgba(255, 255, 255, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     box-shadow:
-      0 20px 50px -10px rgba(0, 0, 0, 0.7),
-      0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+      0 30px 60px -12px rgba(0, 0, 0, 0.6),
+      0 0 0 1px rgba(255, 255, 255, 0.05) inset;
 
     :global(.dark) & {
       background: #ffffff;
-      border: 2px solid rgba(0, 0, 0, 0.2);
-      box-shadow: 0 20px 50px -10px rgba(255, 255, 255, 0.3);
+      border: 1px solid rgba(0, 0, 0, 0.15);
+      box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.1);
+    }
+  }
+
+  .dock-divider {
+    width: 1px;
+    height: 1.5rem;
+    background: rgba(255, 255, 255, 0.15);
+    :global(.dark) & {
+      background: rgba(0, 0, 0, 0.1);
+    }
+  }
+
+  /* ── Chapters Popover ── */
+  .chapters-trigger {
+    position: relative;
+  }
+
+  .chapters-popover {
+    position: absolute;
+    bottom: calc(100% + 1.5rem);
+    left: 0;
+    min-width: 220px;
+    background: #000;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 1.5rem;
+    padding: 1rem;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(15px) scale(0.95);
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+    
+    &.open {
+        opacity: 1;
+        pointer-events: auto;
+        transform: translateY(0) scale(1);
+    }
+
+    :global(.dark) & {
+        background: #fff;
+        border-color: rgba(0,0,0,0.1);
+        box-shadow: 0 25px 50px rgba(0,0,0,0.1);
+    }
+  }
+
+  .chapters-header {
+    font-family: ui-monospace, monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    opacity: 0.4;
+    margin-bottom: 1rem;
+    padding-left: 0.75rem;
+    color: #fff;
+    :global(.dark) & { color: #000; }
+  }
+
+  .chapters-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  :global(.chapter-link) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 0.75rem;
+    border-radius: 0.85rem;
+    text-decoration: none;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.75rem;
+    font-weight: 700;
+    transition: all 0.2s ease;
+    
+    :global(.dark) & { color: rgba(0,0,0,0.7); }
+
+    &:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff;
+        transform: translateX(5px);
+        :global(.dark) & {
+            background: rgba(0,0,0,0.05);
+            color: #000;
+        }
+    }
+
+    &::before {
+        content: "[";
+        opacity: 0.3;
+        margin-right: 0.5rem;
+    }
+    &::after {
+        content: "]";
+        opacity: 0.3;
+        margin-left: 0.5rem;
+    }
+  }
+
+  .scroll-progress-ring {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .progress-percent {
+    font-family: ui-monospace, monospace;
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--brand);
+    min-width: 2.5rem;
+    text-align: right;
+  }
+
+  .progress-ring-bg {
+    stroke: rgba(255, 255, 255, 0.1);
+    :global(.dark) & {
+        stroke: rgba(0, 0, 0, 0.1);
+    }
+  }
+
+  .progress-ring-fill {
+    stroke: var(--brand);
+    stroke-linecap: square;
+    stroke-dasharray: 88;
+    stroke-dashoffset: 88;
+  }
+
+  .dock-pill {
+    position: relative;
+    padding: 0.6rem 1.25rem;
+    border-radius: 100px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    white-space: nowrap;
+
+    :global(.dark) & {
+        color: rgba(0, 0, 0, 0.8);
+    }
+
+    &:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff;
+        transform: translateY(-2px);
+        
+        :global(.dark) & {
+            background: rgba(0, 0, 0, 0.05);
+            color: #000;
+        }
+    }
+
+    &--live {
+        background: var(--brand);
+        color: #fff !important;
+        box-shadow: 0 10px 20px -5px var(--brand);
+        overflow: hidden;
+        
+        &::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.6s ease;
+        }
+
+        &:hover {
+            transform: translateY(-4px) scale(1.05);
+            box-shadow: 0 15px 30px -8px var(--brand);
+            &::before {
+                transform: translateX(100%);
+            }
+        }
+    }
+  }
+
+  /* ── Share Popover ── */
+  .share-wrapper {
+    position: relative;
+  }
+
+  .share-popover {
+    position: absolute;
+    bottom: calc(100% + 1.5rem);
+    left: 50%;
+    transform: translateX(-50%) scale(0.9);
+    background: rgba(0, 0, 0, 0.9);
+    backdrop-filter: blur(25px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 1.5rem;
+    padding: 0.75rem;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    z-index: 1000;
+
+    &.open {
+        opacity: 1;
+        pointer-events: auto;
+        transform: translateX(-50%) scale(1);
+    }
+
+    :global(.dark) & {
+        background: rgba(255, 255, 255, 0.95);
+        border-color: rgba(0, 0, 0, 0.1);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    }
+  }
+
+  .share-items {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 160px;
+  }
+
+  .share-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 1rem;
+    border-radius: 0.85rem;
+    text-decoration: none;
+    color: rgba(255, 255, 255, 0.7);
+    font-family: ui-monospace, monospace;
+    font-size: 0.7rem;
+    font-weight: 700;
+    transition: all 0.3s ease;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+
+    :global(.dark) & {
+        color: rgba(0, 0, 0, 0.6);
+    }
+
+    .share-icon {
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 6px;
+        font-size: 0.6rem;
+        
+        :global(.dark) & {
+            background: rgba(0, 0, 0, 0.05);
+        }
+    }
+
+    &:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff;
+        
+        :global(.dark) & {
+            background: rgba(0, 0, 0, 0.05);
+            color: #000;
+        }
+
+        .share-icon {
+            background: var(--brand);
+            color: #fff;
+        }
+    }
+  }
+
+  .popover-arrow {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 8px 8px 0 8px;
+    border-color: rgba(0, 0, 0, 0.9) transparent transparent transparent;
+    
+    :global(.dark) & {
+        border-color: rgba(255, 255, 255, 0.95) transparent transparent transparent;
     }
   }
   .dock-pill {
@@ -1232,9 +1596,7 @@ const st = statusConfig[status] || statusConfig.shipped;
   .animate {
     opacity: 0;
     transform: translateY(20px);
-    transition:
-      opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1),
-      transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: opacity, transform;
     &.in-view {
       opacity: 1;
       transform: translateY(0);
@@ -1405,11 +1767,15 @@ const st = statusConfig[status] || statusConfig.shipped;
 <!-- ═══════════════ SCRIPT ═══════════════ -->
 <!-- ══════════════════════════════════════════ -->
 <script>
-  import { inView } from "motion";
+  import { gsap } from "gsap";
+  import { ScrollTrigger } from "gsap/ScrollTrigger";
+  import { ScrollToPlugin } from "gsap/ScrollToPlugin";
+
+  gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
 
   function initCaseStudy() {
     // ── Brand theme takeover ──
-    const hero = document.querySelector(".cs-hero") as HTMLElement;
+    const hero = document.querySelector(".editorial-hero") as HTMLElement;
     if (hero) {
       const brand = hero.dataset.brand || "#8B5CF6";
       document.documentElement.style.setProperty("--brand", brand);
@@ -1418,25 +1784,56 @@ const st = statusConfig[status] || statusConfig.shipped;
       const baseBg = isDark ? "#1c1917" : "#f5f5f4";
       document.body.style.background = `color-mix(in srgb, ${brand} 3%, ${baseBg})`;
 
-      inView(hero, () => {
-        hero.classList.add("in-view");
+      gsap.to(hero, {
+        opacity: 1,
+        y: 0,
+        duration: 1,
+        ease: "power4.out",
+        scrollTrigger: {
+          trigger: hero,
+          start: "top 90%",
+        },
       });
     }
 
     // ── Scroll animations (standard) ──
     document
       .querySelectorAll(
-        ".cs-image-monolith.animate, .cs-stats.animate, .cs-overview .animate, .cs-gallery .animate, .cs-cta .animate, .cs-footer.animate, .cs-gantt-section .animate, .gantt-container.animate",
+        ".editorial-image-monolith.animate, .editorial-meta.animate, .editorial-title.animate, .cs-overview .animate, .cs-gallery .animate, .cs-impact.animate, .cs-impact .animate, .cs-cta .animate, .cs-footer.animate, .cs-gantt-section .animate, .gantt-container.animate",
       )
       .forEach((el) => {
-        inView(
-          el,
-          () => {
-            el.classList.add("in-view");
+        gsap.to(el, {
+          opacity: 1,
+          y: 0,
+          duration: 1.2,
+          ease: "power4.out",
+          scrollTrigger: {
+            trigger: el,
+            start: "top 92%",
+            toggleActions: "play none none none",
           },
-          { margin: "0px 0px -60px 0px" },
-        );
+        });
       });
+
+    // ── Impact Row Stagger ──
+    const impactRows = document.querySelectorAll(".impact-row");
+    if (impactRows.length > 0) {
+      gsap.fromTo(impactRows, 
+        { opacity: 0, y: 30 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 1,
+          stagger: 0.15,
+          ease: "power3.out",
+          scrollTrigger: {
+            trigger: ".cs-impact",
+            start: "top 80%",
+            toggleActions: "play none none none"
+          }
+        }
+      );
+    }
 
     // ── Granular Prose Reveals & Highlights ──
     const highlights = [
@@ -1472,76 +1869,167 @@ const st = statusConfig[status] || statusConfig.shipped;
           }
         });
 
-        inView(
-          el as HTMLElement,
-          (info) => {
-            el.classList.add("in-view");
-            el.querySelectorAll(".txt-highlight").forEach((span) =>
-              span.classList.add("in-view"),
-            );
+        gsap.to(el, {
+          opacity: 1,
+          y: 0,
+          duration: 0.8,
+          ease: "power4.out",
+          scrollTrigger: {
+            trigger: el,
+            start: "top 95%",
+            onEnter: () => {
+              el.classList.add("in-view");
+              el.querySelectorAll(".txt-highlight").forEach((span) =>
+                span.classList.add("in-view"),
+              );
+            },
           },
-          { margin: "0px 0px -10px 0px" },
-        );
+        });
       });
 
     // ── Gantt Timeline Reveals ──
     document.querySelectorAll(".gantt-bar").forEach((bar) => {
-      inView(
-        bar as HTMLElement,
-        () => {
-          bar.classList.add("in-view");
+      gsap.to(bar, {
+        scrollTrigger: {
+          trigger: bar,
+          start: "top 90%",
+          onEnter: () => bar.classList.add("in-view"),
         },
-        { margin: "0px 0px -100px 0px" },
-      );
+      });
     });
 
-    // ── Floating Dock ──
+    // ── Floating Dock (GSAP Refined) ──
     const dock = document.getElementById("cs-dock");
-    if (dock && hero) {
-      const obs = new IntersectionObserver(
-        ([e]) => {
-          dock.classList.toggle("visible", !e.isIntersecting);
-        },
-        { threshold: 0, rootMargin: "0px 0px -100px 0px" },
-      );
-      obs.observe(hero);
-
-      // Top Button
+    if (dock) {
       const topBtn = dock.querySelector('[data-action="top"]');
-      const progressFill = dock.querySelector(
-        ".progress-ring-fill",
-      ) as SVGCircleElement;
+      const progressFill = dock.querySelector(".progress-ring-fill") as SVGCircleElement;
+      const shareBtn = dock.querySelector('[data-action="share"]');
 
-      topBtn?.addEventListener("click", () => {
-        window.scrollTo({ top: 0, behavior: "smooth" });
+      // 1. Visibility & Hide on Scroll logic
+      ScrollTrigger.create({
+        trigger: "body",
+        start: "top -500", // Start after hero
+        onUpdate: (self) => {
+          const isScrollingDown = self.direction === 1;
+          const isAtTop = self.scroll() < 400;
+          const isAtBottom = self.progress > 0.92; // Show when near footer
+          
+          if (isAtTop) {
+            dock.classList.remove("visible");
+          } else if (isAtBottom) {
+            dock.classList.add("visible");
+          } else {
+            // Hide on scroll down, show on scroll up
+            dock.classList.toggle("visible", !isScrollingDown);
+          }
+
+          // 2. Specialized Progress logic
+          const progressPercent = dock.querySelector(".progress-percent") as HTMLElement;
+          if (progressFill) {
+            const progress = self.progress; // 0 to 1
+            const radius = progressFill.r.baseVal.value;
+            const circumference = 2 * Math.PI * radius;
+            const offset = circumference - progress * circumference;
+            progressFill.style.strokeDasharray = `${circumference}`;
+            progressFill.style.strokeDashoffset = `${offset}`;
+            
+            if (progressPercent) {
+                progressPercent.innerText = Math.round(progress * 100) + "%";
+            }
+          }
+        }
       });
 
-      // Scroll Progress Logic
-      const updateScrollProgress = () => {
-        const winScroll = window.scrollY;
-        const height =
-          document.documentElement.scrollHeight -
-          document.documentElement.clientHeight;
-        const scrolled = winScroll / height;
+      topBtn?.addEventListener("click", () => {
+        gsap.to(window, { scrollTo: 0, duration: 1.2, ease: "power4.inOut" });
+      });
 
-        if (progressFill) {
-          const radius = progressFill.r.baseVal.value;
-          const circumference = 2 * Math.PI * radius;
-          const offset = circumference - scrolled * circumference;
-          progressFill.style.strokeDasharray = `${circumference}`;
-          progressFill.style.strokeDashoffset = `${offset}`;
-        }
-      };
+      // Chapter Index Logic
+      const chaptersTrigger = dock.querySelector("#chapters-trigger");
+      const chaptersPopover = dock.querySelector("#chapters-popover");
+      const chaptersList = dock.querySelector("#chapters-list");
+      
+      const sections = [
+        { id: "cs-title", label: "Intro" },
+        { id: "cs-overview", label: "Overview" },
+        { id: "cs-impact", label: "Impact" },
+        { id: "cs-gantt", label: "Timeline" },
+        { id: "cs-next-case", label: "Next" }
+      ];
 
-      window.addEventListener("scroll", updateScrollProgress);
-      updateScrollProgress(); // Initial call
+      if (chaptersList) {
+        chaptersList.innerHTML = sections.map(s => {
+          const el = document.getElementById(s.id);
+          if (!el) return "";
+          return `<a href="#${s.id}" class="chapter-link" data-target="${s.id}">${s.label}</a>`;
+        }).join("");
 
-      // Share Button
-      const shareBtn = dock.querySelector('[data-action="share"]');
-      shareBtn?.addEventListener("click", () => {
+        chaptersList.querySelectorAll(".chapter-link").forEach(link => {
+            link.addEventListener("click", (e) => {
+                e.preventDefault();
+                const target = link.getAttribute("data-target");
+                if (target) {
+                    gsap.to(window, { 
+                        scrollTo: `#${target}`, 
+                        duration: 1.2, 
+                        ease: "power4.inOut" 
+                    });
+                    chaptersPopover?.classList.remove("open");
+                }
+            });
+        });
+      }
+
+      if (chaptersTrigger && chaptersPopover) {
+        chaptersTrigger.addEventListener("click", (e) => {
+          e.stopPropagation();
+          chaptersPopover.classList.toggle("open");
+          if (sharePopover) sharePopover.classList.remove("open");
+        });
+      }
+
+      // Share Popover Logic
+      const shareTrigger = dock.querySelector(".share-trigger");
+      const sharePopover = dock.querySelector(".share-popover");
+      
+      if (shareTrigger && sharePopover) {
+        shareTrigger.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const isOpen = sharePopover.classList.toggle("open");
+          
+          if (isOpen) {
+            gsap.fromTo(".share-item", 
+              { opacity: 0, y: 15, scale: 0.95 },
+              { 
+                opacity: 1, 
+                y: 0, 
+                scale: 1, 
+                stagger: 0.05, 
+                duration: 0.4, 
+                ease: "back.out(1.4)" 
+              }
+            );
+          }
+        });
+
+        // Close on outside click
+        document.addEventListener("click", (e) => {
+          const target = e.target as Node;
+          if (!sharePopover.contains(target) && !shareTrigger.contains(target)) {
+            sharePopover.classList.remove("open");
+          }
+          if (chaptersPopover && chaptersTrigger && !chaptersPopover.contains(target) && !chaptersTrigger.contains(target)) {
+            chaptersPopover.classList.remove("open");
+          }
+        });
+      }
+
+      // Copy link inside popover
+      const copyBtn = dock.querySelector('[data-action="copy-link"]');
+      copyBtn?.addEventListener("click", () => {
         navigator.clipboard.writeText(window.location.href).then(() => {
-          const span = shareBtn.querySelector("span");
-          if (span) {
+          const span = copyBtn.querySelector(".share-name");
+          if (span instanceof HTMLElement) {
             const original = span.innerText;
             span.innerText = "Copied!";
             setTimeout(() => (span.innerText = original), 2000);
@@ -1550,14 +2038,40 @@ const st = statusConfig[status] || statusConfig.shipped;
       });
     }
 
+    // ── Next Case Background Animation ──
+    const nextBgText = document.querySelector(".next-bg-text");
+    if (nextBgText) {
+      // Horizontal Parallax on Scroll
+      gsap.to(nextBgText, {
+        x: -150,
+        scrollTrigger: {
+          trigger: ".cs-next-case",
+          start: "top bottom",
+          end: "bottom top",
+          scrub: 1,
+        },
+      });
+
+      // Subtle "Living" Drift
+      gsap.to(nextBgText, {
+        xPercent: -2,
+        duration: 15,
+        repeat: -1,
+        yoyo: true,
+        ease: "sine.inOut",
+      });
+    }
+
     return () => {
       document.body.style.background = "";
     };
   }
 
-  const cleanup = initCaseStudy();
+  let cleanup: (() => void) | undefined;
   document.addEventListener("astro:before-swap", () => cleanup?.());
   document.addEventListener("astro:page-load", () => {
-    if (window.location.pathname.startsWith("/projects/")) initCaseStudy();
+    if (window.location.pathname.startsWith("/projects/")) {
+      cleanup = initCaseStudy();
+    }
   });
 </script>

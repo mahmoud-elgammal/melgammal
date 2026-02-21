@@ -240,7 +240,7 @@ const description =
 </style>
 
 <script>
-    import { animate } from "motion";
+    import { gsap } from "gsap";
 
     function initContact() {
         const meta = document.getElementById("ct-meta");
@@ -250,51 +250,32 @@ const description =
         const info = document.getElementById("ct-info");
         const form = document.getElementById("ct-form");
 
-        // Set initial states via JS only (no CSS opacity:0 to avoid permanent invisibility)
-        [meta, title, sub, div, info, form].forEach((el) => {
-            if (el) {
-                el.style.opacity = "0";
-            }
+        if (!title) return;
+
+        const tl = gsap.timeline({
+            defaults: { duration: 0.8, ease: "power4.out" },
         });
-        if (title) title.style.transform = "translateY(20px)";
 
-        const ease = [0.16, 1, 0.3, 1] as any;
-
-        if (meta)
-            animate(
-                meta as any,
-                { opacity: [0, 1] },
-                { duration: 0.5, delay: 0.05, easing: "ease-out" },
-            );
-        if (title)
-            animate(
-                title as any,
-                { opacity: [0, 1], y: [20, 0] },
-                { duration: 0.8, delay: 0.15, easing: ease },
-            );
-        if (sub)
-            animate(
-                sub as any,
-                { opacity: [0, 1] },
-                { duration: 0.6, delay: 0.35, easing: "ease-out" },
-            );
-        if (div)
-            animate(
-                div as any,
-                { opacity: [0, 1], scaleX: [0, 1] },
-                { duration: 0.8, delay: 0.45, easing: ease },
-            );
-        if (info)
-            animate(
-                info as any,
-                { opacity: [0, 1], y: [12, 0] },
-                { duration: 0.6, delay: 0.55, easing: ease },
-            );
-        if (form)
-            animate(
-                form as any,
-                { opacity: [0, 1], y: [12, 0] },
-                { duration: 0.6, delay: 0.6, easing: ease },
+        tl.fromTo(meta, { opacity: 0 }, { opacity: 1, duration: 0.5 }, 0.05)
+            .fromTo(title, { opacity: 0, y: 20 }, { opacity: 1, y: 0 }, 0.15)
+            .fromTo(sub, { opacity: 0 }, { opacity: 1, duration: 0.6 }, 0.35)
+            .fromTo(
+                div,
+                { opacity: 0, scaleX: 0 },
+                { opacity: 1, scaleX: 1, transformOrigin: "left" },
+                0.45,
+            )
+            .fromTo(
+                info,
+                { opacity: 0, y: 12 },
+                { opacity: 1, y: 0, duration: 0.6 },
+                0.55,
+            )
+            .fromTo(
+                form,
+                { opacity: 0, y: 12 },
+                { opacity: 1, y: 0, duration: 0.6 },
+                0.6,
             );
     }
 

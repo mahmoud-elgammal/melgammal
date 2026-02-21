@@ -24,18 +24,30 @@ const projects = (await getCollection("projects"))
 
 <PageLayout title={HOME.TITLE} description={HOME.DESCRIPTION}>
     <Container>
-        <div class="status-card-wrapper" id="hero-status-card">
-            <StatusCard />
+        <div class="title-container" data-scroll-personality="cinematic">
+            <div
+                class="status-card-wrapper"
+                id="hero-status-card"
+                style="opacity: 0;"
+            >
+                <StatusCard
+                    name="Mahmoud Elgammal"
+                    role="Brand Lead"
+                    status="OPEN TO WORK"
+                    description="Crafting digital experiences."
+                />
+            </div>
+            <h1 class="display-title" id="hero-title" style="opacity: 0;">
+                Transform Your Ideas<br />
+                Into Interactive<br />
+                Masterpieces.
+            </h1>
         </div>
-        <h1 class="display-title" id="hero-title">
-            Transform Your Ideas<br />
-            Into Interactive<br />
-            Masterpieces.
-        </h1>
         <div class="content-wrapper">
-            <About />
-
-            <section class="animate section">
+            <section
+                class="animate section"
+                data-scroll-personality="technical"
+            >
                 <div class="section-header">
                     <h5 class="section-title">Recent projects</h5>
                     <Link href="/projects"> See all projects </Link>
@@ -50,10 +62,10 @@ const projects = (await getCollection("projects"))
                     }
                 </ul>
             </section>
-
+            <About />
             <Expertise />
 
-            <section class="animate section">
+            <section class="animate section" data-scroll-personality="default">
                 <div class="section-header">
                     <h5 class="section-title">Latest posts</h5>
                     <Link href="/blog"> See all posts </Link>
@@ -69,13 +81,18 @@ const projects = (await getCollection("projects"))
                 </ul>
             </section>
 
-            <Testimonials />
+            <section data-scroll-personality="cinematic">
+                <Testimonials />
+            </section>
         </div>
     </Container>
 </PageLayout>
 
 <script>
-    import { animate, inView, stagger } from "motion";
+    import { gsap } from "gsap";
+    import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+    gsap.registerPlugin(ScrollTrigger);
 
     /* ── Wait for IntroLoader curtain ── */
     function waitForLoader(): Promise<void> {
@@ -102,82 +119,233 @@ const projects = (await getCollection("projects"))
         });
     }
 
-    /* ── Build word spans for title animation ── */
-    function buildTitleWords(heroTitle: HTMLElement): HTMLElement[] {
-        const lines = [
-            "Transform Your Ideas",
-            "Into Interactive",
-            "Masterpieces.",
-        ];
-        heroTitle.innerHTML = "";
-        const allWords: HTMLElement[] = [];
-        lines.forEach((line) => {
-            const lineEl = document.createElement("div");
-            lineEl.classList.add("line-container");
-            line.split(" ").forEach((word) => {
-                const span = document.createElement("span");
-                span.classList.add("word");
-                span.textContent = word;
-                span.style.opacity = "0";
-                span.style.transform = "translateY(110%) rotateX(-12deg)";
-                span.style.filter = "blur(4px)";
-                lineEl.appendChild(span);
-                allWords.push(span);
+    /* ── Custom GSAP ASCII Scrambler ── */
+    /* ── Custom GSAP ASCII Scrambler ── */
+    function setupAsciiHoverEffect(wordDivs: HTMLElement[]) {
+        const chars = "_+-*/=<>!@#$%^&()[]{}\\/|?".split("");
+        const brandMessage = "MELGAMMAL"; // Core brand identifier
+
+        wordDivs.forEach((wordDiv) => {
+            const spans = Array.from(
+                wordDiv.querySelectorAll(".char-span"),
+            ) as HTMLElement[];
+            const originalTexts = spans.map((span) => span.textContent || "");
+            let isHovered = false;
+
+            // Lock width AFTER the entrance animation finishes to prevent layout jump during scramble
+            // while preserving strictly natural font spacing.
+            // Using a short timeout to ensure the DOM has fully painted the injected spans
+            setTimeout(() => {
+                spans.forEach((span) => {
+                    const width = span.getBoundingClientRect().width;
+                    if (width > 0) {
+                        span.style.width = `${width}px`;
+                        span.style.textAlign = "center";
+                    }
+                });
+            }, 50);
+
+            wordDiv.addEventListener("mouseenter", () => {
+                isHovered = true;
+
+                spans.forEach((span, i) => {
+                    gsap.killTweensOf(span); // Stop any outgoing animations immediately
+
+                    // Scramble phase (continuous glitching while hovered)
+                    gsap.to(span, {
+                        duration: 1.5, // Arbitrary long duration, we rely on mouseleave to stop
+                        ease: "none",
+                        repeat: -1, // Infinite repeat while hovered
+                        onUpdate: function () {
+                            if (isHovered && Math.random() > 0.3) {
+                                span.textContent =
+                                    chars[
+                                        Math.floor(Math.random() * chars.length)
+                                    ];
+                            }
+                        },
+                    });
+                });
             });
-            heroTitle.appendChild(lineEl);
+
+            wordDiv.addEventListener("mouseleave", () => {
+                isHovered = false;
+
+                spans.forEach((span, i) => {
+                    const orig = originalTexts[i];
+                    gsap.killTweensOf(span); // Stop scrambling immediately
+
+                    // Immediately resolve back to original text with a quick sequential sweep
+                    gsap.to(span, {
+                        duration: 0.05,
+                        delay: i * 0.02,
+                        onStart: () => {
+                            span.textContent = orig;
+                        },
+                    });
+                });
+            });
         });
-        return allWords;
+    }
+
+    declare global {
+        interface Window {
+            heroAnimationContext: gsap.Context;
+        }
     }
 
     async function animateHero() {
         await waitForLoader();
 
-        const statusCard = document.getElementById("hero-status-card");
-        const heroTitle = document.getElementById("hero-title");
+        // Create a root GSAP context for better memory management and ScrollTrigger reliability
+        const ctx = gsap.context(() => {
+            const statusCard = document.getElementById("hero-status-card");
+            const heroTitle = document.getElementById("hero-title");
 
-        let words: HTMLElement[] = [];
-        if (heroTitle) words = buildTitleWords(heroTitle);
+            const tl = gsap.timeline();
 
-        if (statusCard) {
-            animate(
-                statusCard as any,
-                { opacity: [0, 1], y: [40, 0], scale: [0.95, 1] },
-                {
-                    duration: 0.6,
-                    delay: 0.1,
-                    easing: [0.34, 1.56, 0.64, 1],
-                } as any,
-            );
-        }
-        if (words.length > 0) {
-            animate(
-                words as any,
-                {
-                    opacity: [0, 1],
-                    y: ["110%", "0%"],
-                    rotateX: [-12, 0],
-                    filter: ["blur(4px)", "blur(0px)"],
-                },
-                {
-                    duration: 0.65,
-                    delay: stagger(0.06),
-                    easing: [0.16, 1, 0.3, 1],
-                } as any,
-            );
-        }
+            if (heroTitle) {
+                const lines = [
+                    "Transform Your Ideas",
+                    "Into Interactive",
+                    "Masterpieces.",
+                ];
+                heroTitle.innerHTML = "";
+                const allSpans: HTMLElement[] = [];
 
-        /* ── Scroll Reveals for Sections ── */
-        document.querySelectorAll(".animate").forEach((el) => {
-            inView(el, () => {
-                animate(el as any, { opacity: [0, 1], y: [20, 0] }, {
-                    duration: 0.8,
-                    easing: [0.16, 1, 0.3, 1],
-                } as any);
+                lines.forEach((line) => {
+                    const lineDiv = document.createElement("div");
+                    lineDiv.style.display = "flex";
+                    lineDiv.style.flexWrap = "wrap";
+
+                    // Process word by word to keep them together
+                    const words = line.split(" ");
+                    words.forEach((word, wordIndex) => {
+                        const wordDiv = document.createElement("div");
+                        wordDiv.style.display = "flex";
+                        wordDiv.classList.add("hover-word");
+                        wordDiv.style.cursor = "default";
+
+                        word.split("").forEach((char) => {
+                            const wrapper = document.createElement("span");
+                            wrapper.style.display = "inline-block";
+                            wrapper.style.overflow = "hidden";
+                            wrapper.style.lineHeight = "0.9"; // Tighter bounding box
+                            wrapper.style.padding = "0.05em 0"; // Prevent clipping
+
+                            const span = document.createElement("span");
+                            span.classList.add("char-span");
+                            span.textContent = char;
+                            span.style.display = "inline-block";
+                            span.style.willChange = "transform, opacity";
+
+                            wrapper.appendChild(span);
+                            wordDiv.appendChild(wrapper);
+                            allSpans.push(span);
+                        });
+
+                        lineDiv.appendChild(wordDiv);
+
+                        // Add space after word (except last word)
+                        if (wordIndex < words.length - 1) {
+                            const spaceSpan = document.createElement("span");
+                            spaceSpan.innerHTML = "&nbsp;";
+                            lineDiv.appendChild(spaceSpan);
+                        }
+                    });
+
+                    heroTitle.appendChild(lineDiv);
+                });
+
+                // 1. Reveal the overall container first (avoids layout jumping)
+                tl.fromTo(
+                    heroTitle,
+                    { opacity: 0 },
+                    { opacity: 1, duration: 0.1 },
+                );
+
+                // 2. Cinematic character stagger entrance
+                tl.fromTo(
+                    allSpans,
+                    {
+                        opacity: 0,
+                        y: "110%", // Come from below the mask
+                        rotationZ: 10,
+                        rotationX: -60,
+                        scale: 0.8,
+                        transformPerspective: 800,
+                    },
+                    {
+                        opacity: 1,
+                        y: "0%",
+                        rotationZ: 0,
+                        rotationX: 0,
+                        scale: 1,
+                        duration: 3,
+                        stagger: 0.03, // Slight speedup compared to footer for the main title
+                        ease: "power4.out",
+                        onComplete: () => {
+                            const wordDivs = Array.from(
+                                heroTitle.querySelectorAll(".hover-word"),
+                            ) as HTMLElement[];
+                            setupAsciiHoverEffect(wordDivs);
+                        },
+                    },
+                    "-=0.1",
+                );
+            }
+
+            if (statusCard) {
+                tl.fromTo(
+                    statusCard,
+                    {
+                        opacity: 0,
+                        y: 15,
+                        filter: "blur(6px)",
+                    },
+                    {
+                        opacity: 1,
+                        y: 0,
+                        filter: "blur(0px)",
+                        duration: 0.8, // Luxurious, slow fade
+                        ease: "power2.out",
+                    },
+                    "<2", // Start exactly 1.5s after the title begins scrambling, eliminating the wait
+                );
+            }
+
+            /* ── Scroll Reveals for Sections ── */
+            // Important: using fromTo ensures reliability over `.from` when dealing with opacity
+            document.querySelectorAll(".animate").forEach((el) => {
+                gsap.fromTo(
+                    el,
+                    { opacity: 0, y: 30 },
+                    {
+                        opacity: 1,
+                        y: 0,
+                        duration: 0.8,
+                        ease: "power2.out",
+                        scrollTrigger: {
+                            trigger: el,
+                            start: "top 85%",
+                            toggleActions: "play none none none",
+                        },
+                    },
+                );
             });
         });
+
+        // Store context to clean up if needed in view transitions
+        window.heroAnimationContext = ctx;
     }
 
-    animateHero();
+    document.addEventListener("astro:page-load", () => {
+        // Clean up previous context if it exists (Astro View Transitions)
+        if (window.heroAnimationContext) {
+            window.heroAnimationContext.revert();
+        }
+        animateHero();
+    });
 </script>
 
 <style lang="scss">
@@ -186,38 +354,45 @@ const projects = (await getCollection("projects"))
 
     /* ── Hero Animation Targets ── */
 
-    #hero-status-card {
+    #hero-status-card,
+    #hero-title {
         opacity: 0; // Initially hidden, Motion will animate in
+    }
+
+    .title-container {
+        position: relative;
+        width: 100%;
+        margin-top: 4rem;
+        margin-bottom: 3rem;
+        z-index: 10;
+
+        @include screen(md) {
+            margin-top: 8rem;
+            margin-bottom: 5rem;
+        }
+    }
+
+    .status-card-wrapper {
+        position: absolute;
+        top: -5rem;
+        left: 2rem;
+        z-index: 20;
+        pointer-events: auto; /* Required to catch hover while absolutely positioned over text */
     }
 
     .display-title {
         font-size: 2.5rem;
         line-height: 1.1;
         font-weight: 700;
-        margin-bottom: 2rem;
         color: $color-black;
-        margin-top: 0;
+        margin: 0;
 
         :global(.dark) & {
             color: $color-white;
         }
 
         @include screen(md) {
-            font-size: 8rem;
-        }
-
-        /* Word-level animation containers */
-        :global(.line-container) {
-            display: block;
-            overflow: hidden;
-            perspective: 600px;
-        }
-
-        :global(.word) {
-            display: inline-block;
-            margin-right: 0.3em;
-            transform-origin: bottom center;
-            will-change: transform, opacity;
+            font-size: 8.2rem;
         }
     }
 

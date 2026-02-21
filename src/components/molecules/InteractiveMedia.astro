@@ -1,0 +1,173 @@
+---
+interface Props {
+    src: string;
+    type?: "image" | "ambient-video" | "gif";
+    alt?: string;
+    poster?: string;
+    customClass?: string;
+    galleryJson?: string;
+    galleryIndex?: number;
+}
+
+const {
+    src,
+    type = "image",
+    alt = "Interactive Media",
+    poster,
+    customClass = "",
+    galleryJson = "[]",
+    galleryIndex = 0,
+} = Astro.props;
+const mediaId = `media-${Math.random().toString(36).substring(2, 9)}`;
+---
+
+<div
+    class={`interactive-media-wrapper ${customClass}`}
+    id={mediaId}
+    data-gallery-json={galleryJson}
+    data-gallery-index={galleryIndex}
+>
+    <!-- The actual media -->
+    {
+        type === "image" || type === "gif" ? (
+            <img src={src} alt={alt} loading="lazy" class="base-media" />
+        ) : (
+            <video
+                src={src}
+                poster={poster}
+                muted
+                loop
+                playsinline
+                autoplay
+                class="base-media"
+            />
+        )
+    }
+
+    <!-- Hover Cursor Overlay -->
+    <div class="hover-view-cursor">
+        <span class="cursor-label"
+            >{type === "ambient-video" ? "WATCH" : "VIEW"}</span
+        >
+    </div>
+</div>
+
+<style lang="scss">
+    .interactive-media-wrapper {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        cursor: none; /* Hide default cursor */
+
+        .base-media {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition:
+                transform 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+                filter 0.6s ease;
+        }
+
+        &:hover .base-media {
+            transform: scale(1.02);
+            filter: brightness(0.9);
+        }
+
+        /* ── High Contrast 'VIEW' Cursor ── */
+        .hover-view-cursor {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 80px;
+            height: 80px;
+            background: #fff;
+            color: #000;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: ui-monospace, monospace;
+            font-size: 0.8rem;
+            font-weight: 900;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            pointer-events: none; /* Let clicks pass through */
+            z-index: 10;
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.8);
+            mix-blend-mode: exclusion;
+
+            transition:
+                opacity 0.2s ease,
+                transform 0.1s ease-out;
+
+            .interactive-media-wrapper:hover & {
+                opacity: 1;
+            }
+
+            .interactive-media-wrapper:active & {
+                transform: translate(-50%, -50%) scale(0.9);
+            }
+        }
+    }
+</style>
+
+<script>
+    function initInteractiveMedia() {
+        const triggers = document.querySelectorAll(
+            ".interactive-media-wrapper",
+        );
+
+        triggers.forEach((container) => {
+            const cursor = container.querySelector(
+                ".hover-view-cursor",
+            ) as HTMLElement;
+
+            // Mouse Tracking
+            container.addEventListener("mousemove", (e: Event) => {
+                const mouseEvent = e as MouseEvent;
+                if (!cursor) return;
+                const rect = container.getBoundingClientRect();
+                const x = mouseEvent.clientX - rect.left;
+                const y = mouseEvent.clientY - rect.top;
+
+                requestAnimationFrame(() => {
+                    cursor.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
+                });
+            });
+
+            container.addEventListener("mouseleave", () => {
+                if (cursor) cursor.style.opacity = "0";
+            });
+            container.addEventListener("mouseenter", () => {
+                if (cursor) cursor.style.opacity = "1";
+            });
+
+            // Dispatch global event on click
+            container.addEventListener("click", () => {
+                const htmlContainer = container as HTMLElement;
+                const galleryJsonStr = htmlContainer.dataset.galleryJson;
+                const startIndex = parseInt(
+                    htmlContainer.dataset.galleryIndex || "0",
+                    10,
+                );
+
+                if (!galleryJsonStr) return;
+
+                try {
+                    const galleryItems = JSON.parse(galleryJsonStr);
+                    const event = new CustomEvent("open-lightbox", {
+                        detail: { items: galleryItems, startIndex },
+                    });
+                    document.dispatchEvent(event);
+                } catch (e) {
+                    console.error("Failed to parse lightbox gallery data", e);
+                }
+            });
+        });
+    }
+
+    document.addEventListener("astro:page-load", initInteractiveMedia);
+</script>

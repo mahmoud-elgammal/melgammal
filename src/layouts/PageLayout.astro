@@ -11,6 +11,7 @@ type Props = {
 
 import IntroLoader from "@components/organisms/IntroLoader.astro";
 import CommandMenu from "@components/organisms/CommandMenu.astro";
+import MediaLightbox from "@components/organisms/MediaLightbox.astro";
 
 const { title, description } = Astro.props;
 ---
@@ -23,35 +24,157 @@ const { title, description } = Astro.props;
     <IntroLoader />
     <Header />
     <CommandMenu />
-    <main id="page-main" style="opacity: 0;">
+    <main id="page-main" class="page-content" style="opacity: 0;">
       <slot />
     </main>
     <Footer />
+    <MediaLightbox />
     <script>
       import Lenis from "lenis";
-      import { animate } from "motion";
+      import { gsap } from "gsap";
+      import { ScrollTrigger } from "gsap/ScrollTrigger";
 
-      const lenis = new Lenis();
+      gsap.registerPlugin(ScrollTrigger);
 
-      function raf(time: number) {
-        lenis.raf(time);
-        requestAnimationFrame(raf);
+      // ── Scroll Personality Presets ──
+      const personalities = {
+        default: { lerp: 0.12, multiplier: 1 },
+        technical: { lerp: 0.22, multiplier: 1.4 },
+        cinematic: { lerp: 0.05, multiplier: 0.75 },
+        frozen: { lerp: 0.02, multiplier: 0.4 },
+      };
+
+      // Proxied state for animation
+      const scrollState = { ...personalities.default };
+
+      const lenis = new Lenis({
+        lerp: scrollState.lerp,
+        wheelMultiplier: scrollState.multiplier,
+        smoothWheel: true,
+      });
+
+      // Synchronize Lenis with GSAP ScrollTrigger
+      lenis.on("scroll", ScrollTrigger.update);
+
+      gsap.ticker.add((time) => {
+        lenis.raf(time * 1000);
+      });
+
+      gsap.ticker.lagSmoothing(0);
+
+      // ── Dynamic Personality Transitioner ──
+      function initScrollPersonalities() {
+        const sections = document.querySelectorAll("[data-scroll-personality]");
+
+        sections.forEach((section) => {
+          const personalityKey =
+            section.getAttribute("data-scroll-personality") || "default";
+          const target =
+            personalities[personalityKey as keyof typeof personalities] ||
+            personalities.default;
+
+          ScrollTrigger.create({
+            trigger: section,
+            start: "top 80%",
+            end: "bottom 20%",
+            onEnter: () => transitionTo(target),
+            onEnterBack: () => transitionTo(target),
+          });
+        });
       }
 
-      requestAnimationFrame(raf);
+      function transitionTo(target: { lerp: number; multiplier: number }) {
+        gsap.to(scrollState, {
+          lerp: target.lerp,
+          multiplier: target.multiplier,
+          duration: 1.2,
+          ease: "power2.inOut",
+          onUpdate: () => {
+            // @ts-ignore - Updating Lenis internal state for real-time reactivity
+            lenis.options.lerp = scrollState.lerp;
+            // @ts-ignore
+            lenis.options.wheelMultiplier = scrollState.multiplier;
+          },
+        });
+      }
 
       /* ── Reveal page content after header entrance ── */
       function revealPage() {
         const main = document.getElementById("page-main");
-        if (main) {
-          animate(main as any, { opacity: [0, 1], y: [12, 0] }, {
-            duration: 0.6,
-            easing: [0.16, 1, 0.3, 1],
-          } as any);
+        if (main && main.style.opacity !== "1") {
+          gsap.fromTo(
+            main,
+            { opacity: 0, y: 12 },
+            {
+              opacity: 1,
+              y: 0,
+              duration: 0.6,
+              ease: "power4.out",
+              onComplete: () => {
+                gsap.set(main, { clearProps: "transform" }); // Release fixed elements
+                initScrollPersonalities();
+                ScrollTrigger.refresh();
+              },
+            },
+          );
         }
       }
 
-      document.addEventListener("header-ready", revealPage, { once: true });
+      function handlePageReveal() {
+        // @ts-ignore
+        if (window.headerReady) {
+          revealPage();
+        } else {
+          document.addEventListener("header-ready", revealPage, { once: true });
+        }
+      }
+
+      // ── View Transitions Handlers ──
+
+      // Reset scroll proxy on navigation
+      document.addEventListener("astro:before-swap", () => {
+        lenis.destroy();
+        ScrollTrigger.getAll().forEach((t) => t.kill());
+      });
+
+      document.addEventListener("astro:page-load", () => {
+        // Re-calculate all triggers for the new DOM
+        ScrollTrigger.refresh();
+        handlePageReveal();
+      });
+
+      // Initial reveal call
+      handlePageReveal();
     </script>
   </body>
 </html>
+
+<style>
+  /* ── Stacking context for the Sticky Footer reveal ── */
+  html,
+  body {
+    height: 100%;
+  }
+
+  /* ── Page Flow and Defaults ── */
+  html,
+  body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* The main content sits above the footer and scrolls normally */
+  .page-content {
+    position: relative;
+    z-index: 2;
+    background: var(
+      --color-light-bg,
+      #f4f4f5
+    ); /* Assuming SCSS context for existing global vars, fallback to white/black if not */
+  }
+
+  :global(.dark) .page-content {
+    background: var(--color-dark-bg, #09090b);
+  }
+</style>

@@ -9,7 +9,7 @@ const artifacts = (await getCollection("playground"))
     .filter((item) => !item.data.draft)
     .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 
-const title = `Playground | ${SITE.TITLE}`;
+const title = `Playground | ${SITE.NAME}`;
 const description =
     "Technical artifacts, open-source tools, and digital experiments.";
 ---
@@ -28,8 +28,8 @@ const description =
                 <h1 class="page-title" id="pg-title">Playground</h1>
             </section>
 
-            <!-- Artifact list -->
-            <div class="artifacts-list" id="pg-list">
+            <!-- Artifact Grid -->
+            <div class="artifacts-grid" id="pg-list">
                 {
                     artifacts.map((artifact, i) => (
                         <PlaygroundItem
@@ -96,77 +96,71 @@ const description =
         margin: 0;
     }
 
-    /* ── List ── */
-    .artifacts-list {
-        display: flex;
-        flex-direction: column;
+    /* ── Architectural Grid ── */
+    .artifacts-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+        gap: 2rem;
+
+        @media (max-width: $screen-sm) {
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
     }
 </style>
 
 <script>
-    import { animate, inView } from "motion";
+    import { gsap } from "gsap";
+    import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+    gsap.registerPlugin(ScrollTrigger);
 
     function initPlayground() {
         const title = document.getElementById("pg-title");
         const headerTop = document.querySelector(
             ".header-top",
         ) as HTMLElement | null;
-        const items = document.querySelectorAll(".playground-item");
+        const items = document.querySelectorAll(".playground-card");
 
-        // Set initial states via JS (not CSS) so they're always reset correctly
-        if (headerTop) headerTop.style.opacity = "0";
-        if (title) {
-            title.style.opacity = "0";
-            title.style.transform = "translateY(30px)";
-        }
-        items.forEach((el) => {
-            (el as HTMLElement).style.opacity = "0";
-            (el as HTMLElement).style.transform = "translateY(24px)";
-        });
+        const tl = gsap.timeline();
 
         // Header metadata fade in
         if (headerTop) {
-            animate(
-                headerTop as any,
-                { opacity: [0, 1] } as any,
-                {
-                    duration: 0.5,
-                    delay: 0.05,
-                    easing: "ease-out",
-                } as any,
+            tl.fromTo(
+                headerTop,
+                { opacity: 0 },
+                { opacity: 1, duration: 0.5 },
+                0.05,
             );
         }
 
         // Title reveal
         if (title) {
-            animate(
-                title as any,
-                { opacity: [0, 1], y: [30, 0] },
-                { duration: 0.8, delay: 0.15, easing: [0.16, 1, 0.3, 1] },
+            tl.fromTo(
+                title,
+                { opacity: 0, y: 30 },
+                { opacity: 1, y: 0, duration: 0.8, ease: "power4.out" },
+                0.15,
             );
         }
 
-        // Staggered item reveals on scroll — fire once only
+        // Staggered item reveals on scroll
         items.forEach((item) => {
-            const stop = inView(
-                item,
-                () => {
-                    stop(); // unsubscribe immediately so it only fires once
-                    animate(
-                        item as any,
-                        { opacity: [0, 1], y: [24, 0] },
-                        { duration: 0.6, easing: [0.16, 1, 0.3, 1] },
-                    ).then(() => {
-                        // Clear inline styles so CSS hover states work cleanly
-                        (item as HTMLElement).style.transform = "";
-                        (item as HTMLElement).style.opacity = "";
-                    });
+            gsap.from(item, {
+                opacity: 0,
+                y: 24,
+                duration: 0.6,
+                ease: "power4.out",
+                scrollTrigger: {
+                    trigger: item,
+                    start: "top 95%",
+                    toggleActions: "play none none none",
                 },
-                { margin: "0px 0px -60px 0px" },
-            );
+            });
         });
     }
 
-    initPlayground();
-    document.addEventListener("astro:page-load", initPlayground);
+    document.addEventListener("astro:page-load", () => {
+        initPlayground();
+    });
 </script>

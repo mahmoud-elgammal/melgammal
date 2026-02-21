@@ -146,19 +146,27 @@ const { title, data } = Astro.props;
 </style>
 
 <script>
-    import { inView } from "motion";
+    import { gsap } from "gsap";
+    import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+    gsap.registerPlugin(ScrollTrigger);
 
     function initLedger() {
         const ledgers = document.querySelectorAll(".animate-ledger");
 
         ledgers.forEach((ledger) => {
-            inView(ledger, () => {
-                const rows = ledger.querySelectorAll(".ledger-row");
-                rows.forEach((row, index) => {
-                    setTimeout(() => {
-                        row.classList.add("revealed");
-                    }, index * 100);
-                });
+            const rows = ledger.querySelectorAll(".v-inner");
+
+            gsap.to(rows, {
+                y: 0,
+                duration: 0.8,
+                stagger: 0.1,
+                ease: "power4.out",
+                scrollTrigger: {
+                    trigger: ledger,
+                    start: "top 90%",
+                    toggleActions: "play none none none",
+                },
             });
         });
     }

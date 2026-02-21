@@ -63,7 +63,10 @@ const work = await Promise.all(
 </PageLayout>
 
 <script>
-    import { animate, inView, stagger, scroll } from "motion";
+    import { gsap } from "gsap";
+    import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+    gsap.registerPlugin(ScrollTrigger);
 
     /* ── Utilities ── */
     function wrapCharacters(element: HTMLElement) {
@@ -119,23 +122,21 @@ const work = await Promise.all(
         /* ── Branded Brute Scroll Reveals & Progress ── */
         const bruteItemsElements =
             document.querySelectorAll(".work-item-brute");
+
         bruteItemsElements.forEach((item) => {
             // 1. Entrance Reveal
-            inView(
-                item,
-                () => {
-                    animate(
-                        item as any,
-                        {
-                            opacity: [0, 1],
-                            y: [60, 0],
-                            filter: ["blur(10px)", "blur(0px)"],
-                        },
-                        { duration: 1.2, easing: [0.16, 1, 0.3, 1] } as any,
-                    );
+            gsap.from(item, {
+                opacity: 0,
+                y: 60,
+                filter: "blur(10px)",
+                duration: 1.2,
+                ease: "power2.out",
+                scrollTrigger: {
+                    trigger: item,
+                    start: "top 95%",
+                    toggleActions: "play none none none",
                 },
-                { margin: "0px 0px -50px 0px" },
-            );
+            });
 
             // 2. Scroll-Linked Progress (Letter by Letter)
             const narrative = item.querySelector(".brute-narrative");
@@ -145,27 +146,28 @@ const work = await Promise.all(
 
                 const isDark =
                     document.documentElement.classList.contains("dark");
-                const dimColor = isDark
-                    ? "rgba(255,255,255,0.15)"
-                    : "rgba(0,0,0,0.15)";
                 const activeColor = isDark
                     ? "rgba(255,255,255,0.9)"
                     : "rgba(0,0,0,0.9)";
 
-                scroll(
-                    animate(chars as any, { color: [dimColor, activeColor] }, {
-                        delay: stagger(0.0005),
-                    } as any),
-                    {
-                        target: narrative,
-                        offset: ["start 0.95", "end 0.05"],
+                gsap.to(chars, {
+                    color: activeColor,
+                    duration: 0.1,
+                    stagger: 0.05,
+                    scrollTrigger: {
+                        trigger: narrative,
+                        start: "top 95%",
+                        end: "bottom 5%",
+                        scrub: 0.5,
                     },
-                );
+                });
             }
         });
     }
 
-    initAboutAnimations();
+    document.addEventListener("astro:page-load", () => {
+        initAboutAnimations();
+    });
 </script>
 
 <style lang="scss">

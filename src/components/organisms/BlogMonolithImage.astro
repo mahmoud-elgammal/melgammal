@@ -9,7 +9,10 @@ interface Props {
 const { src, alt } = Astro.props;
 ---
 
-<section class="blog-monolith-image-section">
+<section
+    class="blog-monolith-image-section"
+    data-scroll-personality="cinematic"
+>
     <Container size="sm">
         <div class="monolith-wrapper animate" data-gallery-image>
             <div class="monolith-inner" id="monolith-hero">
@@ -210,38 +213,48 @@ const { src, alt } = Astro.props;
     .animate {
         opacity: 0;
         transform: translateY(40px) scale(0.98);
-        transition: all 1.2s cubic-bezier(0.16, 1, 0.3, 1);
-
-        &.in-view {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-        }
     }
 </style>
 
 <script>
-    import { inView, scroll, animate } from "motion";
+    import { gsap } from "gsap";
+    import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+    gsap.registerPlugin(ScrollTrigger);
 
     function initMonolithParallax() {
         const monolith = document.getElementById("monolith-hero");
         const crosshair = document.getElementById("hud-crosshair");
-        const wrapper = monolith?.closest(".animate");
+        const wrapper = monolith?.closest(".animate") as HTMLElement | null;
 
         if (wrapper) {
-            inView(wrapper, () => {
-                wrapper.classList.add("in-view");
+            gsap.to(wrapper, {
+                opacity: 1,
+                y: 0,
+                scale: 1,
+                duration: 1.2,
+                ease: "power4.out",
+                scrollTrigger: {
+                    trigger: wrapper,
+                    start: "top 90%",
+                    toggleActions: "play none none none",
+                },
             });
         }
 
         if (monolith) {
-            scroll(
-                animate(monolith as any, {
-                    y: [0, -60],
-                    scale: [1, 1.02],
-                    rotateX: [0, 8],
-                }),
-                { target: monolith as any, offset: ["start end", "end start"] },
-            );
+            gsap.to(monolith, {
+                y: -60,
+                scale: 1.02,
+                rotateX: 8,
+                ease: "none",
+                scrollTrigger: {
+                    trigger: monolith,
+                    start: "top bottom",
+                    end: "bottom top",
+                    scrub: true,
+                },
+            });
 
             monolith.addEventListener("mousemove", (e) => {
                 if (!crosshair) return;
@@ -261,6 +274,7 @@ const { src, alt } = Astro.props;
         }
     }
 
-    initMonolithParallax();
-    document.addEventListener("astro:page-load", initMonolithParallax);
+    document.addEventListener("astro:page-load", () => {
+        initMonolithParallax();
+    });
 </script>

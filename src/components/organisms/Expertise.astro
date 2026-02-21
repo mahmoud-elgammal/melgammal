@@ -2,11 +2,11 @@
 
 ---
 
-<section class="expertise-section animate" id="expertise-container">
-    <div class="expertise-header">
-        <h5 class="section-title">Expertise</h5>
-    </div>
-
+<section
+    class="expertise-section animate"
+    id="expertise-container"
+    data-scroll-personality="technical"
+>
     <div class="architectural-void" id="prism-board">
         <!-- Blueprint Grid System -->
         <div class="technical-grid"></div>
@@ -105,9 +105,17 @@
 
 <script>
     import Matter from "matter-js";
-    import { animate, stagger } from "motion";
+    import { gsap } from "gsap";
 
-    const { Engine, Events, Runner, Bodies, Composite, Body, Vector } = Matter;
+    const {
+        Engine,
+        Events,
+        Runner,
+        Bodies,
+        Composite,
+        Body: MatterBody,
+        Vector,
+    } = Matter;
 
     let engine: any;
     let runner: any;
@@ -117,7 +125,7 @@
     let coordY: HTMLElement | null;
     let tagBodies: {
         element: HTMLElement;
-        body: Matter.Body;
+        body: any;
         rect: DOMRect;
         renderedOnce: boolean;
         depth: number;
@@ -215,7 +223,7 @@
 
                     if (dist < 400 * depth) {
                         const pull = 0.001 * depth * (1 - dist / (400 * depth));
-                        Body.applyForce(body, body.position, {
+                        MatterBody.applyForce(body, body.position, {
                             x: dx * pull,
                             y: dy * pull,
                         });
@@ -230,7 +238,7 @@
                     const distSq = dx * dx + dy * dy;
                     if (distSq < 12000) {
                         const push = 0.0003 / (distSq + 1);
-                        Body.applyForce(body, body.position, {
+                        MatterBody.applyForce(body, body.position, {
                             x: -dx * push,
                             y: -dy * push,
                         });
@@ -271,18 +279,21 @@
             });
 
             if (tagsToReveal.length > 0) {
-                animate(
+                gsap.fromTo(
                     tagsToReveal,
                     {
-                        opacity: [0, 1],
-                        scale: [0.8, 1],
-                        filter: ["blur(10px)", "blur(0px)"],
+                        opacity: 0,
+                        scale: 0.8,
+                        filter: "blur(10px)",
                     },
                     {
+                        opacity: 1,
+                        scale: 1,
+                        filter: "blur(0px)",
                         duration: 1.5,
-                        delay: stagger(0.06),
-                        easing: [0.16, 1, 0.3, 1],
-                    } as any,
+                        stagger: 0.06,
+                        ease: "power4.out",
+                    },
                 );
             }
         });
@@ -303,7 +314,6 @@
         display: flex;
         flex-direction: column;
         gap: 2.5rem;
-        margin-top: 10rem;
         user-select: none;
     }
 

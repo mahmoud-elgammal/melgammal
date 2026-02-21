@@ -35,7 +35,11 @@ const { Content, headings } = await post.render();
     )
   }
 
-  <Container size="sm" className="blog-content-vessel">
+  <Container
+    size="sm"
+    className="blog-content-vessel"
+    data-scroll-personality="cinematic"
+  >
     <article class="prose-monolith animate">
       <Content />
     </article>
@@ -179,25 +183,32 @@ const { Content, headings } = await post.render();
   .animate {
     opacity: 0;
     transform: translateY(20px);
-    transition: all 1s cubic-bezier(0.16, 1, 0.3, 1);
-
-    &.in-view {
-      opacity: 1;
-      transform: translateY(0);
-    }
   }
 </style>
 
 <script>
-  import { inView } from "motion";
+  import { gsap } from "gsap";
+  import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+  gsap.registerPlugin(ScrollTrigger);
+
   function initBlogAnimate() {
     const elements = document.querySelectorAll(".animate");
     elements.forEach((el) => {
-      inView(el, () => {
-        el.classList.add("in-view");
+      gsap.to(el, {
+        opacity: 1,
+        y: 0,
+        duration: 1,
+        ease: "power4.out",
+        scrollTrigger: {
+          trigger: el,
+          start: "top 90%",
+          toggleActions: "play none none none",
+        },
       });
     });
   }
-  initBlogAnimate();
-  document.addEventListener("astro:page-load", initBlogAnimate);
+  document.addEventListener("astro:page-load", () => {
+    initBlogAnimate();
+  });
 </script>

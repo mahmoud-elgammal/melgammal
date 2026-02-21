@@ -2,6 +2,7 @@ import type { Site, Metadata, Socials } from "@types";
 
 export const SITE: Site = {
   NAME: "Mahmoud S. El-Gammal",
+  TITLE: "Mahmoud S. El-Gammal",
   EMAIL: "hello@melgammal.com",
   NUM_POSTS_ON_HOMEPAGE: 3,
   NUM_WORKS_ON_HOMEPAGE: 2,

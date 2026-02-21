@@ -17,46 +17,75 @@ const formattedDate = date.toLocaleDateString("en-US", {
 });
 
 const paddedIndex = String(index + 1).padStart(2, "0");
+
+// Unique ID for GSAP scoping
+const id = `playground-${index}`;
+
+// Assign a brand color purely via math on index for variety (since playground items don't have predefined colors)
+const colors = ["#10b981", "#3b82f6", "#8b5cf6", "#f43f5e", "#f59e0b"];
+const itemColor = colors[index % colors.length];
 ---
 
-<div class="playground-item" data-index={index}>
-    <!-- Seam top -->
-    <div class="seam-line"></div>
+<div class="playground-card" id={id} style={`--item-color: ${itemColor}`}>
+    <!-- Colossal Background Index Watermark -->
+    <div class="watermark-index">{paddedIndex}</div>
 
-    <div class="item-inner">
-        <!-- Index -->
-        <div class="item-num" aria-hidden="true">{paddedIndex}</div>
+    <!-- Architectural Base -->
+    <div class="card-visuals">
+        <div class="parallax-grid technical-base"></div>
+        <div class="brand-reveal-layer"></div>
+    </div>
 
-        <!-- Content -->
-        <div class="item-content">
-            <!-- Meta row -->
-            <div class="item-meta">
-                <span class="item-date">{formattedDate}</span>
+    <!-- Content Structure -->
+    <div class="content-wrapper">
+        <div class="meta-header">
+            <span class="date">{formattedDate}</span>
+            <div class="tags">
                 {tags?.map((tag) => <span class="tag">{tag}</span>)}
             </div>
-
-            <!-- Title -->
-            <h3 class="item-title">
-                {title}
-                <span class="title-arrow" aria-hidden="true">↗</span>
-            </h3>
-
-            <!-- Description — always visible -->
-            <p class="item-description">{description}</p>
         </div>
 
-        <!-- Links -->
-        <div class="item-links">
+        <div class="core-info">
+            <!-- Kinetic Typography Title -->
+            <div class="title-container">
+                <h3 class="static-title">{title}</h3>
+                <div class="kinetic-marquee">
+                    <div class="marquee-track">
+                        <span>{title.toUpperCase()} // </span>
+                        <span>{title.toUpperCase()} // </span>
+                        <span>{title.toUpperCase()} // </span>
+                        <span>{title.toUpperCase()} // </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Description that vanishes on hover -->
+            <p class="description">{description}</p>
+        </div>
+
+        <!-- Heavy Structural Action Buttons (Slide in on hover) -->
+        <div class="action-dock">
             {
                 demoURL && (
                     <a
                         href={demoURL}
                         target="_blank"
                         rel="noopener"
-                        class="item-link"
+                        class="dock-btn primary"
+                        aria-label={`View Live Demo of ${title}`}
                     >
-                        <span>DEMO</span>
-                        <span class="link-arrow">↗</span>
+                        <span class="btn-text">LIVE DEMO</span>
+                        <svg
+                            class="btn-icon"
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                        >
+                            <path d="M5 12h14M12 5l7 7-7 7" />
+                        </svg>
                     </a>
                 )
             }
@@ -66,292 +95,362 @@ const paddedIndex = String(index + 1).padStart(2, "0");
                         href={repoURL}
                         target="_blank"
                         rel="noopener"
-                        class="item-link"
+                        class="dock-btn secondary"
+                        aria-label={`View Source Code of ${title}`}
                     >
-                        <span>SOURCE</span>
-                        <span class="link-arrow">↗</span>
+                        <span class="btn-text">SOURCE</span>
+                        <svg
+                            class="btn-icon github-icon"
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                        >
+                            <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" />
+                        </svg>
                     </a>
                 )
             }
         </div>
     </div>
-
-    <!-- Hover fill -->
-    <div class="hover-fill" aria-hidden="true"></div>
 </div>
 
 <style lang="scss">
     @use "../../styles/variables" as *;
     @use "../../styles/mixins" as *;
 
-    /* ── Item shell ── */
-    .playground-item {
+    .playground-card {
         position: relative;
-        cursor: pointer;
+        width: 100%;
+        border-radius: 1.5rem;
+        background: $color-white;
+        border: 1px solid rgba($color-black, 0.05);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
         overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        transition:
+            transform 0.5s cubic-bezier(0.23, 1, 0.32, 1),
+            box-shadow 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+        cursor: crosshair;
 
-        &:last-child::after {
-            content: "";
-            display: block;
-            height: 1px;
-            background: rgba($color-black, 0.08);
-            :global(.dark) & {
-                background: rgba($color-white, 0.08);
-            }
-        }
-    }
-
-    /* ── Seam line ── */
-    .seam-line {
-        height: 1px;
-        background: rgba($color-black, 0.08);
-        position: relative;
-        overflow: hidden;
         :global(.dark) & {
-            background: rgba($color-white, 0.08);
+            background: rgba($color-white, 0.03);
+            border-color: rgba($color-white, 0.1);
         }
 
-        &::after {
-            content: "";
-            position: absolute;
-            inset: 0;
-            background: $color-black;
-            transform: scaleX(0);
-            transform-origin: left;
-            transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-            :global(.dark) & {
-                background: $color-white;
+        &:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.1);
+
+            .brand-reveal-layer {
+                clip-path: circle(150% at 50% 50%);
+            }
+
+            .static-title {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            .kinetic-marquee {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+            .marquee-track {
+                animation: scrollText 12s linear infinite;
+            }
+
+            .description {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+
+            .watermark-index {
+                opacity: 0.15;
+                transform: translate(20px, -20px) scale(1.1);
+            }
+
+            .action-dock {
+                opacity: 1;
+                pointer-events: auto;
+                transform: translateY(0);
             }
         }
     }
 
-    .playground-item:hover .seam-line::after {
-        transform: scaleX(1);
-    }
-
-    /* ── Hover fill (background sweep) ── */
-    .hover-fill {
+    /* ── Architectural Background ── */
+    .card-visuals {
         position: absolute;
         inset: 0;
-        background: $color-black;
-        transform: scaleY(0);
-        transform-origin: bottom;
-        transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
         z-index: 0;
         pointer-events: none;
+        overflow: hidden;
+    }
+
+    .technical-base {
+        position: absolute;
+        inset: -50%;
+        background-size: 30px 30px;
+        background-image:
+            linear-gradient(to right, rgba(0, 0, 0, 0.03) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
+        opacity: 0.5;
+
         :global(.dark) & {
-            background: $color-white;
+            background-image:
+                linear-gradient(
+                    to right,
+                    rgba(255, 255, 255, 0.03) 1px,
+                    transparent 1px
+                ),
+                linear-gradient(
+                    to bottom,
+                    rgba(255, 255, 255, 0.03) 1px,
+                    transparent 1px
+                );
         }
     }
 
-    .playground-item:hover .hover-fill {
-        transform: scaleY(1);
-    }
-
-    /* ── Inner grid ── */
-    .item-inner {
-        position: relative;
+    .brand-reveal-layer {
+        position: absolute;
+        inset: 0;
+        background: var(--item-color);
+        clip-path: circle(0% at 50% 100%);
+        transition: clip-path 0.7s cubic-bezier(0.7, 0, 0.3, 1);
         z-index: 1;
-        display: grid;
-        grid-template-columns: 5rem 1fr auto;
-        gap: 2.5rem;
-        padding: 2.75rem 0;
-        align-items: start;
-        transition: padding 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-
-        @media (max-width: $screen-md) {
-            grid-template-columns: 3.5rem 1fr;
-            gap: 1.5rem;
-            .item-links {
-                display: none;
-            }
-        }
     }
 
-    .playground-item:hover .item-inner {
-        padding: 2.75rem 1rem;
-    }
-
-    /* ── Index number ── */
-    .item-num {
+    .watermark-index {
+        position: absolute;
+        top: -1rem;
+        right: -1rem;
         font-family: ui-monospace, monospace;
-        font-size: 0.65rem;
+        font-size: 14rem;
         font-weight: 900;
-        letter-spacing: 0.1em;
-        padding-top: 0.5rem;
-        transition: all 0.4s ease;
-        color: rgba($color-black, 0.2);
-        :global(.dark) & {
-            color: rgba($color-white, 0.2);
-        }
-    }
-
-    .playground-item:hover .item-num {
-        color: rgba($color-white, 0.4);
-        :global(.dark) & {
-            color: rgba($color-black, 0.4);
-        }
+        line-height: 1;
+        color: var(--item-color);
+        opacity: 0.03;
+        z-index: 0;
+        pointer-events: none;
+        transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
     }
 
     /* ── Content ── */
-    .item-content {
+    .content-wrapper {
+        position: relative;
+        z-index: 2;
+        padding: 2.5rem;
         display: flex;
         flex-direction: column;
-        gap: 1rem;
+        gap: 2rem;
+        height: 100%;
+        min-height: 320px;
+
+        @media (max-width: $screen-sm) {
+            padding: 1.5rem;
+            min-height: 280px;
+        }
     }
 
-    .item-meta {
+    .meta-header {
         display: flex;
-        align-items: center;
-        gap: 1rem;
-        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: flex-start;
+        transition: color 0.4s ease;
+
+        .playground-card:hover & {
+            color: $color-white;
+        }
     }
 
-    .item-date {
+    .date {
         font-family: ui-monospace, monospace;
-        font-size: 0.6rem;
+        font-size: 0.75rem;
         font-weight: 700;
-        letter-spacing: 0.15em;
-        opacity: 0.35;
-        transition: opacity 0.3s ease;
+        letter-spacing: 0.1em;
+        opacity: 0.5;
+    }
+
+    .tags {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        justify-content: flex-end;
     }
 
     .tag {
         font-family: ui-monospace, monospace;
-        font-size: 0.55rem;
+        font-size: 0.65rem;
         font-weight: 800;
-        letter-spacing: 0.15em;
-        padding: 0.2rem 0.5rem;
-        border: 1px solid rgba($color-black, 0.12);
-        opacity: 0.5;
-        transition: all 0.3s ease;
-        :global(.dark) & {
-            border-color: rgba($color-white, 0.12);
-        }
+        letter-spacing: 0.1em;
+        padding: 0.25rem 0.6rem;
+        border: 1px solid currentColor;
+        border-radius: 99px;
+        opacity: 0.6;
     }
 
-    .playground-item:hover .item-date,
-    .playground-item:hover .tag {
-        opacity: 0.5;
-        color: $color-white;
-        border-color: rgba($color-white, 0.25);
-        :global(.dark) & {
-            color: $color-black;
-            border-color: rgba($color-black, 0.25);
-        }
-    }
-
-    /* ── Title ── */
-    .item-title {
-        font-size: clamp(1.75rem, 3.5vw, 2.75rem);
-        font-weight: 900;
-        letter-spacing: -0.04em;
-        line-height: 1;
-        margin: 0;
+    .core-info {
+        margin-top: auto;
         display: flex;
-        align-items: baseline;
-        gap: 0.5rem;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    /* ── Title Typography ── */
+    .title-container {
+        position: relative;
+        min-height: 3rem;
+    }
+
+    .static-title {
+        font-size: clamp(2rem, 4vw, 2.5rem);
+        font-weight: 900;
+        letter-spacing: -0.03em;
+        line-height: 1.1;
+        margin: 0;
         color: $color-black;
-        transition:
-            color 0.4s ease,
-            letter-spacing 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+
         :global(.dark) & {
             color: $color-white;
         }
     }
 
-    .playground-item:hover .item-title {
-        color: $color-white;
-        letter-spacing: -0.02em;
-        :global(.dark) & {
-            color: $color-black;
-        }
-    }
-
-    .title-arrow {
-        font-size: 1.25rem;
-        font-weight: 300;
-        opacity: 0;
-        transform: translate(-6px, 2px);
-        display: inline-block;
-        transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    .playground-item:hover .title-arrow {
-        opacity: 0.6;
-        transform: translate(0, 0);
-    }
-
-    /* ── Description ── */
-    .item-description {
-        font-size: 0.9rem;
-        line-height: 1.65;
-        max-width: 52ch;
-        margin: 0;
-        color: rgba($color-black, 0.45);
-        transition: color 0.4s ease;
-        :global(.dark) & {
-            color: rgba($color-white, 0.45);
-        }
-    }
-
-    .playground-item:hover .item-description {
-        color: rgba($color-white, 0.65);
-        :global(.dark) & {
-            color: rgba($color-black, 0.65);
-        }
-    }
-
-    /* ── Links ── */
-    .item-links {
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-        padding-top: 0.4rem;
-        align-items: flex-end;
-    }
-
-    .item-link {
+    .kinetic-marquee {
+        position: absolute;
+        inset: 0;
+        left: -2.5rem; /* Extend fully to the padding edge */
+        width: calc(100% + 5rem);
         display: flex;
         align-items: center;
-        gap: 0.4rem;
-        text-decoration: none;
-        font-family: ui-monospace, monospace;
-        font-size: 0.6rem;
+        overflow: hidden;
+        opacity: 0;
+        transform: translateY(20px);
+        transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+        mask-image: linear-gradient(
+            to right,
+            transparent,
+            black 10%,
+            black 90%,
+            transparent
+        );
+    }
+
+    .marquee-track {
+        display: flex;
+        white-space: nowrap;
+        color: $color-white;
+    }
+
+    .marquee-track span {
+        font-size: 4rem;
         font-weight: 900;
-        letter-spacing: 0.2em;
-        color: rgba($color-black, 0.3);
-        transition: all 0.3s ease;
+        letter-spacing: -0.02em;
+        line-height: 1;
+        padding-right: 2rem;
+        /* Text stroke effect for the aggressive marquee */
+        color: transparent;
+        -webkit-text-stroke: 1px rgba(255, 255, 255, 0.5);
+
+        &:hover {
+            color: $color-white;
+            -webkit-text-stroke: 0px;
+        }
+    }
+
+    @keyframes scrollText {
+        0% {
+            transform: translateX(0);
+        }
+        100% {
+            transform: translateX(
+                -50%
+            ); /* Scroll halfway (since we duplicated text) */
+        }
+    }
+
+    .description {
+        font-size: 1rem;
+        line-height: 1.6;
+        color: rgba($color-black, 0.6);
+        max-width: 45ch;
+        margin: 0;
+        transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+
         :global(.dark) & {
-            color: rgba($color-white, 0.3);
+            color: rgba($color-white, 0.6);
+        }
+    }
+
+    /* ── Heavy Dock Buttons ── */
+    .action-dock {
+        position: absolute;
+        bottom: 2.5rem;
+        left: 2.5rem;
+        right: 2.5rem;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        opacity: 0;
+        pointer-events: none;
+        transform: translateY(30px);
+        transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+
+        @media (max-width: $screen-sm) {
+            bottom: 1.5rem;
+            left: 1.5rem;
+            right: 1.5rem;
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .dock-btn {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1.25rem 1.5rem;
+        border-radius: 0.75rem;
+        text-decoration: none;
+        transition: all 0.3s ease;
+
+        &.primary {
+            background: $color-white;
+            color: var(--item-color);
+
+            &:hover {
+                transform: scale(1.02);
+                box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            }
         }
 
-        .link-arrow {
+        &.secondary {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            color: $color-white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+
+            &:hover {
+                background: rgba(255, 255, 255, 0.2);
+                transform: scale(1.02);
+            }
+        }
+
+        .btn-text {
+            font-family: ui-monospace, monospace;
+            font-size: 0.875rem;
+            font-weight: 800;
+            letter-spacing: 0.1em;
+        }
+
+        .btn-icon {
             transition: transform 0.3s ease;
         }
 
-        &:hover {
-            color: $color-black;
-            .link-arrow {
-                transform: translate(2px, -2px);
-            }
-            :global(.dark) & {
-                color: $color-white;
-            }
-        }
-    }
-
-    .playground-item:hover .item-link {
-        color: rgba($color-white, 0.5);
-        :global(.dark) & {
-            color: rgba($color-black, 0.5);
-        }
-
-        &:hover {
-            color: $color-white;
-            :global(.dark) & {
-                color: $color-black;
-            }
+        &:hover .btn-icon:not(.github-icon) {
+            transform: translate(4px, -4px);
         }
     }
 </style>

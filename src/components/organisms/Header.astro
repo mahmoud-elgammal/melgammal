@@ -65,7 +65,7 @@ import { NAV_SHORTCUTS } from "@lib/shortcuts";
 </header>
 
 <script>
-    import { animate, stagger } from "motion";
+    import { gsap } from "gsap";
     // @ts-ignore
     import { tinykeys } from "tinykeys";
     import { NAV_SHORTCUTS } from "@lib/shortcuts";
@@ -115,74 +115,87 @@ import { NAV_SHORTCUTS } from "@lib/shortcuts";
         await waitForLoader();
 
         const brand = document.getElementById("header-brand");
-        const navLinks = document.querySelectorAll(
-            ".header-nav-link",
-        ) as NodeListOf<HTMLElement>;
-        const seps = document.querySelectorAll(
-            ".header-sep",
-        ) as NodeListOf<HTMLElement>;
+        const navLinks = document.querySelectorAll(".header-nav-link");
+        const seps = document.querySelectorAll(".header-sep");
         const cta = document.getElementById("header-cta");
         const lang = document.getElementById("header-lang");
+
+        const tl = gsap.timeline({
+            onComplete: () => {
+                // @ts-ignore
+                window.headerReady = true;
+                document.dispatchEvent(new CustomEvent("header-ready"));
+            },
+        });
 
         // 1. Brand name — letter unfold
         if (brand) {
             const letters = splitBrandLetters(brand);
-            brand.style.opacity = "1"; // Unhide parent — letters start at opacity 0
-            animate(letters as any, { opacity: [0, 1], y: [12, 0] }, {
-                duration: 0.5,
-                delay: stagger(0.03),
-                easing: [0.16, 1, 0.3, 1],
-            } as any);
+            brand.style.opacity = "1";
+            tl.fromTo(
+                letters,
+                { opacity: 0, y: 12 },
+                {
+                    opacity: 1,
+                    y: 0,
+                    duration: 0.5,
+                    stagger: 0.03,
+                    ease: "power4.out",
+                },
+            );
         }
 
         // 2. Nav links cascade from left
         if (navLinks.length > 0) {
-            animate(
-                Array.from(navLinks) as any,
-                { opacity: [0, 1], x: [-8, 0] },
+            tl.fromTo(
+                navLinks,
+                { opacity: 0, x: -8 },
                 {
+                    opacity: 1,
+                    x: 0,
                     duration: 0.4,
-                    delay: stagger(0.06),
-                    easing: [0.16, 1, 0.3, 1],
-                } as any,
+                    stagger: 0.06,
+                    ease: "power4.out",
+                },
+                "-=0.3",
             );
         }
 
         // 3. Separators fade + scale
         if (seps.length > 0) {
-            animate(
-                Array.from(seps) as any,
-                { opacity: [0, 0.5], scale: [0.5, 1] },
+            tl.fromTo(
+                seps,
+                { opacity: 0, scale: 0.5 },
                 {
+                    opacity: 0.5,
+                    scale: 1,
                     duration: 0.3,
-                    delay: stagger(0.06),
-                    easing: [0, 0, 0.2, 1],
-                } as any,
+                    stagger: 0.06,
+                    ease: "power1.out",
+                },
+                "-=0.4",
             );
         }
 
         // 4. CTA button scales in
         if (cta) {
-            animate(cta as any, { opacity: [0, 1], scale: [0.9, 1] }, {
-                duration: 0.4,
-                delay: 0.4,
-                easing: [0.34, 1.56, 0.64, 1],
-            } as any);
+            tl.fromTo(
+                cta,
+                { opacity: 0, scale: 0.9 },
+                { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(1.7)" },
+                "-=0.2",
+            );
         }
 
         // 5. Language switch fades in
         if (lang) {
-            animate(lang as any, { opacity: [0, 1], y: [8, 0] }, {
-                duration: 0.4,
-                delay: 0.5,
-                easing: [0.16, 1, 0.3, 1],
-            } as any);
+            tl.fromTo(
+                lang,
+                { opacity: 0, y: 8 },
+                { opacity: 1, y: 0, duration: 0.4, ease: "power4.out" },
+                "-=0.2",
+            );
         }
-
-        // Signal that header is ready — page content can now reveal
-        setTimeout(() => {
-            document.dispatchEvent(new CustomEvent("header-ready"));
-        }, 650);
     }
 
     /* ── Micro-interaction: Magnetic hover on nav links ── */
@@ -199,21 +212,21 @@ import { NAV_SHORTCUTS } from "@lib/shortcuts";
                 const distX = (e.clientX - centerX) / (rect.width / 2);
                 const distY = (e.clientY - centerY) / (rect.height / 2);
 
-                animate(
-                    link as any,
-                    {
-                        x: distX * 3,
-                        y: distY * 2,
-                    },
-                    { duration: 0.2, easing: [0.23, 1, 0.32, 1] } as any,
-                );
+                gsap.to(link, {
+                    x: distX * 3,
+                    y: distY * 2,
+                    duration: 0.2,
+                    ease: "power2.out",
+                });
             });
 
             link.addEventListener("mouseleave", () => {
-                animate(link as any, { x: 0, y: 0 }, {
+                gsap.to(link, {
+                    x: 0,
+                    y: 0,
                     duration: 0.4,
-                    easing: [0.23, 1, 0.32, 1],
-                } as any);
+                    ease: "power2.out",
+                });
             });
         });
     }
@@ -224,35 +237,42 @@ import { NAV_SHORTCUTS } from "@lib/shortcuts";
         if (!brand) return;
 
         brand.addEventListener("mouseenter", () => {
-            const letters = brand.querySelectorAll(
-                ".brand-letter",
-            ) as NodeListOf<HTMLElement>;
+            const letters = brand.querySelectorAll(".brand-letter");
             letters.forEach((letter) => {
                 const randomRotate = (Math.random() - 0.5) * 6; // ±3deg
                 const randomY = (Math.random() - 0.5) * 4; // ±2px
-                animate(letter as any, { rotate: randomRotate, y: randomY }, {
+                gsap.to(letter, {
+                    rotate: randomRotate,
+                    y: randomY,
                     duration: 0.3,
-                    easing: [0.23, 1, 0.32, 1],
-                } as any);
+                    ease: "power2.out",
+                });
             });
         });
 
         brand.addEventListener("mouseleave", () => {
-            const letters = brand.querySelectorAll(
-                ".brand-letter",
-            ) as NodeListOf<HTMLElement>;
-            animate(Array.from(letters) as any, { rotate: 0, y: 0 }, {
+            const letters = brand.querySelectorAll(".brand-letter");
+            gsap.to(letters, {
+                rotate: 0,
+                y: 0,
                 duration: 0.4,
-                delay: stagger(0.02),
-                easing: [0.23, 1, 0.32, 1],
-            } as any);
+                stagger: 0.02,
+                ease: "power2.out",
+            });
         });
     }
 
     /* ── Init ── */
-    animateHeader();
-    setupMagneticHover();
-    setupBrandScatter();
+    function initHeader() {
+        // @ts-ignore
+        window.headerReady = false;
+        animateHeader();
+        setupMagneticHover();
+        setupBrandScatter();
+    }
+
+    initHeader();
+    document.addEventListener("astro:page-load", initHeader);
 
     /* ── Keyboard shortcuts ── */
 

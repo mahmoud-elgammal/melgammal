@@ -1,0 +1,386 @@
+---
+interface Props {
+    src: string;
+    poster?: string;
+    autoPlay?: boolean;
+}
+
+const { src, poster, autoPlay = false } = Astro.props;
+// Generate unique ID since multiple players might exist on page
+const playerId = `player-${Math.random().toString(36).substring(2, 9)}`;
+---
+
+<div class="custom-video-player" id={playerId}>
+    <video
+        class="video-element"
+        src={src}
+        poster={poster}
+        playsinline
+        muted={autoPlay}
+        loop={autoPlay}
+        autoplay={autoPlay}></video>
+
+    <!-- Severe High-Contrast Mute Button -->
+    <div class="hud-top-right">
+        <button class="stark-mute-toggle" aria-label="Toggle Mute">
+            <span class="mute-text"
+                >SOUND <span class="mute-state">{autoPlay ? "OFF" : "ON"}</span
+                ></span
+            >
+        </button>
+    </div>
+
+    <!-- Stark Black & White Cursor -->
+    <div class="stark-cursor" id={`cursor-${playerId}`}>
+        <div class="cursor-label play-label">PLAY</div>
+        <div class="cursor-label pause-label">PAUSE</div>
+    </div>
+
+    <!-- Minimal Scrubber Line -->
+    <div class="scrub-area" id={`scrubber-${playerId}`}>
+        <div class="hairline-progress">
+            <div class="progress-fill"></div>
+            <div class="progress-glow"></div>
+        </div>
+    </div>
+</div>
+
+<style lang="scss">
+    @use "../../styles/variables" as *;
+
+    .custom-video-player {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        background: #000; /* Deep black void background */
+        overflow: hidden;
+        cursor: none; /* We hide the cursor because the custom cursor element tracks it */
+
+        /* Show UI on hover */
+        .hud-top-right {
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        &:hover .hud-top-right {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .video-element {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        transition:
+            transform 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+            filter 0.6s ease;
+
+        .custom-video-player:hover & {
+            transform: scale(1.03);
+            filter: brightness(0.95);
+        }
+    }
+
+    /* ── High-Contrast HUD Elements ── */
+    .hud-top-right {
+        position: absolute;
+        top: 2rem;
+        right: 2rem;
+        z-index: 10;
+        pointer-events: none;
+    }
+
+    .stark-mute-toggle {
+        background: #000;
+        color: #fff;
+        border: 2px solid #000;
+        border-radius: 0; /* Sharp corners */
+        padding: 0.5rem 1rem;
+        cursor: pointer;
+        pointer-events: auto;
+        font-family: ui-monospace, monospace;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        transition: all 0.2s ease;
+
+        &:hover {
+            background: #fff;
+            color: #000;
+            border-color: #fff;
+        }
+
+        &.is-muted {
+            background: #fff;
+            color: #000;
+            border-color: #fff;
+
+            &:hover {
+                background: #000;
+                color: #fff;
+                border-color: #000;
+            }
+        }
+    }
+
+    /* ── Stark Typography Cursor ── */
+    .stark-cursor {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100px;
+        height: 100px;
+        background: #fff;
+        color: #000;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: ui-monospace, monospace;
+        font-size: 0.85rem;
+        font-weight: 900;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        pointer-events: none;
+        z-index: 20;
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.8);
+        mix-blend-mode: exclusion;
+
+        transition:
+            opacity 0.2s ease,
+            transform 0.1s ease-out;
+
+        .cursor-label {
+            position: absolute;
+            transition:
+                opacity 0.2s ease,
+                transform 0.2s ease;
+        }
+
+        .play-label {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .pause-label {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        .custom-video-player:hover & {
+            opacity: 1;
+        }
+
+        .custom-video-player.is-playing & {
+            .play-label {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            .pause-label {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .custom-video-player:active & {
+            transform: translate(-50%, -50%) scale(0.9);
+        }
+    }
+
+    /* ── Massive Interactive Scrubber ── */
+    .scrub-area {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 60px; /* Massive hit area */
+        z-index: 15;
+        cursor: pointer;
+        display: flex;
+        align-items: flex-end;
+        pointer-events: auto;
+
+        &:hover .hairline-progress {
+            height: 12px; /* Super thick on hover */
+            background: rgba(255, 255, 255, 0.2);
+        }
+    }
+
+    .hairline-progress {
+        position: relative;
+        width: 100%;
+        height: 2px;
+        background: rgba(255, 255, 255, 0.15);
+        transition:
+            height 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+            background 0.3s ease;
+    }
+
+    .progress-fill {
+        height: 100%;
+        width: 0%;
+        background: #fff;
+        position: relative;
+        z-index: 2;
+        transition: width 0.1s linear; /* Smooth fluid linear tracking */
+    }
+
+    .progress-glow {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: var(--progress, 0%);
+        background: #fff;
+        filter: blur(8px);
+        opacity: 0;
+        z-index: 1;
+        transition:
+            opacity 0.3s ease,
+            width 0.1s linear;
+    }
+</style>
+
+<script>
+    function initCustomPlayers() {
+        const players = document.querySelectorAll(".custom-video-player");
+
+        players.forEach((container) => {
+            const video = container.querySelector(
+                ".video-element",
+            ) as HTMLVideoElement;
+            const progress = container.querySelector(
+                ".progress-fill",
+            ) as HTMLElement;
+
+            const cursorElement = container.querySelector(
+                ".stark-cursor",
+            ) as HTMLElement;
+            const scrubArea = container.querySelector(
+                ".scrub-area",
+            ) as HTMLElement;
+            const muteToggle = container.querySelector(
+                ".stark-mute-toggle",
+            ) as HTMLElement;
+            const muteState = container.querySelector(
+                ".mute-state",
+            ) as HTMLElement;
+
+            if (!video) return;
+
+            // Fast Cursor Tracking for real-time feel
+            container.addEventListener("mousemove", (e: Event) => {
+                const mouseEvent = e as MouseEvent;
+                if (!cursorElement) return;
+                const rect = container.getBoundingClientRect();
+                const x = mouseEvent.clientX - rect.left;
+                const y = mouseEvent.clientY - rect.top;
+
+                requestAnimationFrame(() => {
+                    cursorElement.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
+                });
+            });
+
+            // Prevent cursor clipping
+            container.addEventListener("mouseleave", () => {
+                if (cursorElement) cursorElement.style.opacity = "0";
+            });
+            container.addEventListener("mouseenter", () => {
+                if (cursorElement) cursorElement.style.opacity = "1";
+            });
+
+            // Handle Autoplay init
+            if (video.autoplay || video.loop) {
+                video.play().catch(() => {
+                    container.classList.remove("is-playing");
+                });
+                container.classList.add("is-playing");
+                if (video.muted && muteToggle)
+                    muteToggle.classList.add("is-muted");
+            }
+
+            // Massive click target (the whole container acts as play/pause except overlays)
+            container.addEventListener("click", (e) => {
+                const target = e.target as HTMLElement;
+                // Ignore clicks that land on interactable overlays
+                if (
+                    target.closest(".refined-mute-toggle") ||
+                    target.closest(".scrub-area")
+                )
+                    return;
+
+                if (video.paused) {
+                    video.play();
+                    container.classList.add("is-playing");
+                } else {
+                    video.pause();
+                    container.classList.remove("is-playing");
+                }
+            });
+
+            // Mute Toggle Interaction
+            if (muteToggle) {
+                muteToggle.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    video.muted = !video.muted;
+
+                    if (video.muted) {
+                        muteToggle.classList.add("is-muted");
+                        if (muteState) muteState.innerText = "OFF";
+                    } else {
+                        muteToggle.classList.remove("is-muted");
+                        if (muteState) muteState.innerText = "ON";
+                    }
+                });
+            }
+
+            // Scrub Area Interaction
+            if (scrubArea) {
+                scrubArea.addEventListener("click", (e: Event) => {
+                    e.stopPropagation();
+                    const mouseEvent = e as MouseEvent;
+                    const rect = scrubArea.getBoundingClientRect();
+                    const x = mouseEvent.clientX - rect.left;
+                    const percent = Math.max(0, Math.min(x / rect.width, 1));
+                    if (video.duration) {
+                        video.currentTime = percent * video.duration;
+                    }
+                });
+
+                // Smooth scrub dragging
+                let isDragging = false;
+                scrubArea.addEventListener(
+                    "mousedown",
+                    () => (isDragging = true),
+                );
+                window.addEventListener("mouseup", () => (isDragging = false));
+                window.addEventListener("mousemove", (e) => {
+                    if (!isDragging) return;
+                    const rect = scrubArea.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const percent = Math.max(0, Math.min(x / rect.width, 1));
+                    if (video.duration) {
+                        video.currentTime = percent * video.duration;
+                    }
+                });
+            }
+
+            // Update hairline scrubber Glow & Width
+            video.addEventListener("timeupdate", () => {
+                if (!video.duration) return;
+                const percent = (video.currentTime / video.duration) * 100;
+                progress.style.width = `${percent}%`;
+            });
+
+            // Reset on end
+            video.addEventListener("ended", () => {
+                container.classList.remove("is-playing");
+            });
+        });
+    }
+
+    document.addEventListener("astro:page-load", initCustomPlayers);
+</script>

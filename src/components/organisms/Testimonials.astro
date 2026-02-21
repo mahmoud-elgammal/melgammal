@@ -261,33 +261,43 @@ const setB_loop = [...setB, ...setB];
 </style>
 
 <script>
-    import { animate, scroll } from "motion";
+    import { gsap } from "gsap";
+    import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+    gsap.registerPlugin(ScrollTrigger);
 
     function initTestimonials() {
         const trackLTR = document.querySelector(".track-ltr .track-inner");
         const trackRTL = document.querySelector(".track-rtl .track-inner");
 
         if (trackLTR) {
-            scroll(
-                animate(
-                    trackLTR as any,
-                    { x: ["-25%", "0%"] }, // Parallax shift linked to scroll
-                    { easing: "linear" } as any,
-                ),
-            );
+            gsap.to(trackLTR, {
+                x: "25%",
+                ease: "none",
+                scrollTrigger: {
+                    trigger: ".testimonials-kinetic",
+                    start: "top bottom",
+                    end: "bottom top",
+                    scrub: true,
+                },
+            });
         }
 
         if (trackRTL) {
-            scroll(
-                animate(
-                    trackRTL as any,
-                    { x: ["0%", "-25%"] }, // Opposite direction parallax shift
-                    { easing: "linear" } as any,
-                ),
-            );
+            gsap.to(trackRTL, {
+                x: "-25%",
+                ease: "none",
+                scrollTrigger: {
+                    trigger: ".testimonials-kinetic",
+                    start: "top bottom",
+                    end: "bottom top",
+                    scrub: true,
+                },
+            });
         }
     }
 
-    initTestimonials();
-    document.addEventListener("astro:page-load", initTestimonials);
+    document.addEventListener("astro:page-load", () => {
+        initTestimonials();
+    });
 </script>

@@ -107,56 +107,46 @@ const projects = (await getCollection("projects"))
 </style>
 
 <script>
-    import { animate, stagger } from "motion";
+    import { gsap } from "gsap";
 
     function initWork() {
         const meta = document.getElementById("wk-meta");
         const title = document.getElementById("wk-title");
         const items = document.querySelectorAll("#wk-grid li");
 
-        // Set initial states via JS
+        const tl = gsap.timeline();
+
         if (meta) {
-            meta.style.opacity = "0";
+            tl.fromTo(
+                meta,
+                { opacity: 0 },
+                { opacity: 1, duration: 0.5 },
+                0.05,
+            );
         }
+
         if (title) {
-            title.style.opacity = "0";
-            title.style.transform = "translateY(20px)";
+            tl.fromTo(
+                title,
+                { opacity: 0, y: 20 },
+                { opacity: 1, y: 0, duration: 0.8, ease: "power4.out" },
+                0.15,
+            );
         }
-        items.forEach((el) => {
-            (el as HTMLElement).style.opacity = "0";
-            (el as HTMLElement).style.transform = "translateY(24px)";
-        });
-
-        const ease = [0.16, 1, 0.3, 1] as any;
-
-        if (meta)
-            animate(
-                meta as any,
-                { opacity: [0, 1] } as any,
-                { duration: 0.5, delay: 0.05 } as any,
-            );
-        if (title)
-            animate(
-                title as any,
-                { opacity: [0, 1], y: [20, 0] } as any,
-                { duration: 0.8, delay: 0.15, easing: ease } as any,
-            );
 
         if (items.length) {
-            animate(
-                items as any,
-                { opacity: [0, 1], y: [24, 0] } as any,
+            tl.fromTo(
+                items,
+                { opacity: 0, y: 24 },
                 {
+                    opacity: 1,
+                    y: 0,
                     duration: 0.7,
-                    delay: stagger(0.12, { startDelay: 0.35 }),
-                    easing: ease,
-                } as any,
-            ).then(() => {
-                items.forEach((el) => {
-                    (el as HTMLElement).style.transform = "";
-                    (el as HTMLElement).style.opacity = "";
-                });
-            });
+                    stagger: 0.12,
+                    ease: "power4.out",
+                },
+                0.35,
+            );
         }
     }
 

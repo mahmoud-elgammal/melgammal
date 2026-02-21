@@ -13,14 +13,42 @@ const brandColor = color || "#8B5CF6";
 const subtitle = tags && tags.length > 0 ? tags[0] : "Project";
 ---
 
-<div class="visual-card">
+<div class="visual-card" style={`--brand-bg: ${brandColor}`}>
     <a
         href={`/projects/${project.slug}`}
         class="card-link"
         aria-label={`View ${title}`}
     >
-        <div class="visual-hero" style={`--brand-bg: ${brandColor}`}>
+        <div class="visual-hero">
+            <!-- Architectural Background -->
+            <div class="base-layer"></div>
+            <div class="technical-grid parallax-grid"></div>
+
+            <!-- Expanding Brand Hit -->
+            <div class="brand-reveal-layer"></div>
+
+            <!-- Kinetic Marquee -->
+            <div class="internal-marquee parallax-marquee">
+                <div class="marquee-track">
+                    <span>{title.toUpperCase()} // </span>
+                    <span>{title.toUpperCase()} // </span>
+                    <span>{title.toUpperCase()} // </span>
+                    <span>{title.toUpperCase()} // </span>
+                </div>
+            </div>
+
+            <!-- FX Layers -->
             <div class="noise-overlay"></div>
+
+            <!-- Dynamic Lighting 3D Effect -->
+            <div class="glare-container">
+                <div class="glare"></div>
+            </div>
+
+            <!-- Precision Target Cursor -->
+            <div class="action-ring">
+                <span>EXPLORE</span>
+            </div>
             <div class="mockup-container">
                 {
                     imageWeb && (
@@ -50,7 +78,24 @@ const subtitle = tags && tags.length > 0 ? tags[0] : "Project";
         </div>
 
         <div class="card-info">
-            <h3 class="project-name">{title}</h3>
+            <h3 class="project-name">
+                <span class="project-title-text">{title}</span>
+                <span class="project-arrow">
+                    <svg
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2.5"
+                    >
+                        <path
+                            d="M5 12h14M12 5l7 7-7 7"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"></path>
+                    </svg>
+                </span>
+            </h3>
             <p class="project-subtitle">{subtitle}</p>
         </div>
     </a>
@@ -63,26 +108,25 @@ const subtitle = tags && tags.length > 0 ? tags[0] : "Project";
     .visual-card {
         width: 100%;
         transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+        cursor: none; // Hide default cursor over this area for the custom badge
 
         &:hover {
-            transform: translateY(-8px);
-
             .visual-hero {
                 box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.15);
             }
 
-            .web-mockup {
-                transform: scale(1.02) translateY(-10px);
-            }
-            .mobile-mockup {
-                transform: scale(1.05) translate(10px, -15px);
-            }
-
             .project-name {
                 color: $color-black;
+                transform: translateX(4px);
             }
             :global(.dark) & .project-name {
                 color: $color-white;
+            }
+
+            .project-arrow {
+                opacity: 1;
+                transform: translateX(0);
+                color: var(--brand-bg);
             }
         }
     }
@@ -97,7 +141,7 @@ const subtitle = tags && tags.length > 0 ? tags[0] : "Project";
     /* ── Visual Section ── */
     .visual-hero {
         position: relative;
-        background: var(--brand-bg);
+        background: transparent;
         border-radius: 2.25rem;
         aspect-ratio: 4 / 3;
         overflow: hidden;
@@ -106,10 +150,92 @@ const subtitle = tags && tags.length > 0 ? tags[0] : "Project";
         justify-content: center;
         padding: 2.5rem;
         box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.1);
-        transition: all 0.5s ease;
+        will-change: transform;
 
         @include screen(lg) {
             padding: 3.5rem;
+        }
+    }
+
+    .base-layer {
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.03);
+        z-index: 0;
+
+        :global(.dark) & {
+            background: rgba(255, 255, 255, 0.03);
+        }
+    }
+
+    .brand-reveal-layer {
+        position: absolute;
+        inset: 0;
+        background: var(--brand-bg);
+        z-index: 1;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+    }
+
+    .visual-card:hover .brand-reveal-layer {
+        opacity: 1;
+    }
+
+    .technical-grid {
+        position: absolute;
+        inset: -20%;
+        background-image:
+            linear-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+        background-size: 30px 30px;
+        z-index: 2;
+        opacity: 0.6;
+
+        :global(.dark) & {
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(
+                    90deg,
+                    rgba(255, 255, 255, 0.05) 1px,
+                    transparent 1px
+                );
+        }
+    }
+
+    .internal-marquee {
+        position: absolute;
+        top: 50%;
+        left: -50%;
+        width: 200%;
+        transform: translateY(-50%) rotate(-10deg);
+        z-index: 3;
+        color: #000;
+        font-size: clamp(4rem, 10vw, 8rem);
+        font-weight: 900;
+        white-space: nowrap;
+        opacity: 0.04;
+        pointer-events: none;
+        user-select: none;
+        mix-blend-mode: overlay;
+
+        :global(.dark) & {
+            color: #fff;
+            opacity: 0.08;
+        }
+
+        .marquee-track {
+            display: inline-block;
+            animation: marquee-scroll 30s linear infinite;
+        }
+    }
+
+    @keyframes marquee-scroll {
+        0% {
+            transform: translateX(0);
+        }
+        100% {
+            transform: translateX(-50%);
         }
     }
 
@@ -121,6 +247,39 @@ const subtitle = tags && tags.length > 0 ? tags[0] : "Project";
             rgba(0, 0, 0, 0.1) 0%,
             rgba(255, 255, 255, 0.05) 100%
         );
+        z-index: 4;
+        pointer-events: none;
+    }
+
+    .glare-container {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+        border-radius: 2.25rem;
+        pointer-events: none;
+        z-index: 5;
+        opacity: 0;
+        transition: opacity 0.4s ease;
+    }
+
+    .visual-card:hover .glare-container {
+        opacity: 1;
+    }
+
+    .glare {
+        position: absolute;
+        width: 150%;
+        height: 150%;
+        top: -25%;
+        left: -25%;
+        background: radial-gradient(
+            circle at center,
+            rgba(255, 255, 255, 0.3) 0%,
+            rgba(255, 255, 255, 0) 50%
+        );
+        mix-blend-mode: overlay;
+        will-change: transform;
+        transform: translate(0, 0);
     }
 
     .mockup-container {
@@ -130,6 +289,7 @@ const subtitle = tags && tags.length > 0 ? tags[0] : "Project";
         display: flex;
         align-items: center;
         justify-content: center;
+        z-index: 6;
     }
 
     .web-mockup {
@@ -138,7 +298,7 @@ const subtitle = tags && tags.length > 0 ? tags[0] : "Project";
         overflow: hidden;
         box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.35);
         background: #000;
-        transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+        will-change: transform;
 
         img {
             width: 100%;
@@ -152,7 +312,7 @@ const subtitle = tags && tags.length > 0 ? tags[0] : "Project";
         width: 28%;
         bottom: -10%;
         right: -2%;
-        transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1) 0.1s;
+        will-change: transform;
 
         .iphone-frame {
             border: 6px solid #1a1a1a;
@@ -179,15 +339,36 @@ const subtitle = tags && tags.length > 0 ? tags[0] : "Project";
     }
 
     .project-name {
-        font-size: 1.25rem;
-        font-weight: 700;
+        font-size: 1.5rem;
+        font-weight: 800;
         margin: 0;
-        color: rgba(0, 0, 0, 0.85);
+        color: rgba(0, 0, 0, 0.9);
         letter-spacing: -0.02em;
-        transition: color 0.3s ease;
+        transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        will-change: transform, color;
 
         :global(.dark) & {
-            color: rgba(255, 255, 255, 0.85);
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .project-arrow {
+            display: inline-flex;
+            opacity: 0;
+            transform: translateX(-15px);
+            transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+            color: rgba(
+                0,
+                0,
+                0,
+                0.5
+            ); // Fallback until hover overrides with brand color
+
+            :global(.dark) & {
+                color: rgba(255, 255, 255, 0.5);
+            }
         }
     }
 
@@ -202,4 +383,310 @@ const subtitle = tags && tags.length > 0 ? tags[0] : "Project";
             color: rgba(255, 255, 255, 0.4);
         }
     }
+
+    .web-mockup,
+    .mobile-mockup {
+        filter: grayscale(1) contrast(1.1);
+        transition: filter 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+    }
+
+    .visual-card:hover .web-mockup,
+    .visual-card:hover .mobile-mockup {
+        filter: grayscale(0) contrast(1);
+    }
+
+    /* ── Action Ring (Minimalist Target) ── */
+    .action-ring {
+        position: fixed; /* Fixed to viewport instead of absolute to container */
+        top: 0;
+        left: 0;
+        width: 120px;
+        height: 120px;
+        border: 1px solid rgba(255, 255, 255, 0.8);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+        z-index: 100;
+        opacity: 0;
+        transform: scale(0);
+        will-change: transform, opacity;
+        mix-blend-mode: exclusion;
+        color: #fff;
+        font-size: 0.85rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+
+        /* Subtle inner pulse for depth */
+        box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.05);
+
+        span {
+            will-change: transform;
+        }
+    }
 </style>
+
+<script>
+    import { gsap } from "gsap";
+    import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+    gsap.registerPlugin(ScrollTrigger);
+
+    function initProjectCardInteractions() {
+        const cards = document.querySelectorAll(".visual-card");
+        if (cards.length === 0) return;
+
+        // Ensure we don't duplicate context on Astro page load
+        if ((window as any).projectCardsContext) {
+            (window as any).projectCardsContext.revert();
+        }
+
+        (window as any).projectCardsContext = gsap.context(() => {
+            cards.forEach((card) => {
+                const visualHero = card.querySelector(
+                    ".visual-hero",
+                ) as HTMLElement;
+                const webMockup = card.querySelector(
+                    ".web-mockup",
+                ) as HTMLElement;
+                const mobileMockup = card.querySelector(
+                    ".mobile-mockup",
+                ) as HTMLElement;
+                const badge = card.querySelector(".action-ring") as HTMLElement;
+                const brandReveal = card.querySelector(
+                    ".brand-reveal-layer",
+                ) as HTMLElement;
+                const parallaxGrid = card.querySelector(
+                    ".parallax-grid",
+                ) as HTMLElement;
+                const parallaxMarquee = card.querySelector(
+                    ".parallax-marquee",
+                ) as HTMLElement;
+                const glare = card.querySelector(".glare") as HTMLElement;
+
+                let bounds: DOMRect; // Keep bounds for visualHero parallax calculations
+
+                // 1. Scroll-Triggered Entrance Animation
+                gsap.fromTo(
+                    card,
+                    {
+                        y: 80,
+                        opacity: 0,
+                        rotationX: 10,
+                        scale: 0.95,
+                        transformPerspective: 1200,
+                    },
+                    {
+                        y: 0,
+                        opacity: 1,
+                        rotationX: 0,
+                        scale: 1,
+                        duration: 1.2,
+                        ease: "power3.out",
+                        scrollTrigger: {
+                            trigger: card,
+                            start: "top 85%",
+                            toggleActions: "play none none none",
+                        },
+                    },
+                );
+
+                // Fluid Ring Tracking
+                const badgeX = gsap.quickTo(badge, "x", {
+                    duration: 0.3,
+                    ease: "power3",
+                });
+                const badgeY = gsap.quickTo(badge, "y", {
+                    duration: 0.3,
+                    ease: "power3",
+                });
+
+                card.addEventListener("mouseenter", (e: Event) => {
+                    bounds = visualHero.getBoundingClientRect(); // Still needed for internal parallax math
+
+                    // Reveal Architectural Ring
+                    gsap.killTweensOf(badge);
+                    gsap.to(badge, {
+                        opacity: 1,
+                        scale: 1,
+                        duration: 0.8,
+                        ease: "back.out(1.5)",
+                    });
+
+                    // Continuous Ring Slow Spin
+                    gsap.to(badge, {
+                        rotation: "+=360",
+                        duration: 12,
+                        repeat: -1,
+                        ease: "none",
+                        overwrite: "auto",
+                    });
+                    gsap.to(visualHero, {
+                        scale: 0.98,
+                        duration: 0.6,
+                        ease: "power3.out",
+                    });
+
+                    // Pop Mockups
+                    if (webMockup)
+                        gsap.to(webMockup, {
+                            scale: 1.05,
+                            duration: 0.8,
+                            ease: "power3.out",
+                        });
+                    if (mobileMockup)
+                        gsap.to(mobileMockup, {
+                            scale: 1.1,
+                            duration: 0.8,
+                            ease: "power3.out",
+                        });
+                });
+
+                card.addEventListener("mousemove", (e: Event) => {
+                    const mouseEvent = e as MouseEvent;
+                    if (!bounds) bounds = visualHero.getBoundingClientRect(); // Ensure bounds is set
+
+                    const clientX = mouseEvent.clientX;
+                    const clientY = mouseEvent.clientY;
+
+                    // Local coordinates for internal elements parallax math (still relative to visualHero)
+                    const x = clientX - bounds.left;
+                    const y = clientY - bounds.top;
+
+                    // Normalize from -1 to 1 based on center of card
+                    const xNorm = (x / bounds.width - 0.5) * 2;
+                    const yNorm = (y / bounds.height - 0.5) * 2;
+
+                    // Move Ring using pure viewport coordinates (offset by half width: 60)
+                    if (badge) {
+                        badgeX(clientX - 60);
+                        badgeY(clientY - 60);
+                    }
+
+                    // Intense 3D Parallax on the entire hero
+                    gsap.to(visualHero, {
+                        rotationY: xNorm * 4,
+                        rotationX: -yNorm * 4,
+                        transformPerspective: 1000,
+                        duration: 0.8,
+                        ease: "power2.out",
+                    });
+
+                    // Background grid inverse parallax
+                    if (parallaxGrid)
+                        gsap.to(parallaxGrid, {
+                            x: xNorm * -30,
+                            y: yNorm * -30,
+                            duration: 1,
+                            ease: "power2.out",
+                        });
+                    if (parallaxMarquee)
+                        gsap.to(parallaxMarquee, {
+                            x: xNorm * -50,
+                            y: yNorm * -20,
+                            duration: 1.2,
+                            ease: "power2.out",
+                        });
+
+                    // Dynamic Glare Effect (Moves opposite to rotation for realistic light)
+                    if (glare) {
+                        gsap.to(glare, {
+                            x: xNorm * -150,
+                            y: yNorm * -150,
+                            duration: 0.8,
+                            ease: "power2.out",
+                        });
+                    }
+
+                    // Mockup layered parallax
+                    if (webMockup) {
+                        gsap.to(webMockup, {
+                            x: xNorm * 20,
+                            y: yNorm * 20,
+                            rotationY: xNorm * -5,
+                            rotationX: -yNorm * -5,
+                            duration: 0.8,
+                            ease: "power2.out",
+                        });
+                    }
+
+                    if (mobileMockup) {
+                        gsap.to(mobileMockup, {
+                            x: xNorm * 45,
+                            y: yNorm * 45,
+                            rotationY: xNorm * -10,
+                            rotationX: -yNorm * -10,
+                            duration: 0.8,
+                            ease: "power2.out",
+                        });
+                    }
+                });
+
+                card.addEventListener("mouseleave", () => {
+                    // Retract Ring and Stop Spin
+                    gsap.killTweensOf(badge);
+                    gsap.to(badge, {
+                        opacity: 0,
+                        scale: 0,
+                        duration: 0.2, // Changed from 0.5 to 0.2 as per instruction
+                        ease: "power2.in",
+                    });
+
+                    // Reset all to default non-hover state
+                    gsap.to(
+                        [
+                            visualHero,
+                            webMockup,
+                            mobileMockup,
+                            glare,
+                            parallaxGrid,
+                            parallaxMarquee,
+                        ],
+                        {
+                            x: 0,
+                            y: 0,
+                            scale: 1,
+                            rotationY: 0,
+                            rotationX: 0,
+                            duration: 1.2,
+                            ease: "elastic.out(1, 0.5)",
+                        },
+                    );
+                });
+
+                // Add click "press" action
+                card.addEventListener("mousedown", () => {
+                    if (badge)
+                        gsap.to(badge, {
+                            scale: 0.7,
+                            duration: 0.2,
+                            ease: "power3.out",
+                        });
+                    gsap.to(visualHero, {
+                        scale: 0.94,
+                        duration: 0.3,
+                        ease: "power3.out",
+                    });
+                });
+
+                card.addEventListener("mouseup", () => {
+                    if (badge)
+                        gsap.to(badge, {
+                            scale: 1,
+                            duration: 0.4,
+                            ease: "back.out(2)",
+                        });
+                    gsap.to(visualHero, {
+                        scale: 0.98,
+                        duration: 0.5,
+                        ease: "back.out(1.5)",
+                    });
+                });
+            });
+        });
+    }
+
+    document.addEventListener("astro:page-load", initProjectCardInteractions);
+</script>

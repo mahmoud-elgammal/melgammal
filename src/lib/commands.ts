@@ -20,7 +20,7 @@ export const getCommands = (): Command[] => {
             title: `Go to ${s.label}`,
             section: "Navigation",
             shortcut: s.displayKeys,
-            icon: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6",
+            icon: "M5 12h14M12 5l7 7-7 7", // Minimal right arrow
             action: () => {
                 window.location.href = s.href;
             },
@@ -34,7 +34,7 @@ export const getCommands = (): Command[] => {
         description: "Switch between light and dark mode",
         section: "System",
         shortcut: ["T"],
-        icon: "M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M15 12a3 3 0 11-6 0 3 3 0 016 0z",
+        icon: "M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z", // Clean moon
         action: () => {
             const isDark = document.documentElement.classList.toggle("dark");
             localStorage.setItem("theme", isDark ? "dark" : "light");
@@ -45,7 +45,7 @@ export const getCommands = (): Command[] => {
         id: "system-scroll-top",
         title: "Scroll to Top",
         section: "System",
-        icon: "M5 11l7-7 7 7M5 19l7-7 7 7",
+        icon: "M12 19V5M5 12l7-7 7 7", // Minimal up arrow
         action: () => {
             window.scrollTo({ top: 0, behavior: "smooth" });
         },
@@ -56,7 +56,7 @@ export const getCommands = (): Command[] => {
         title: "Close menu",
         section: "System",
         shortcut: ["Esc"],
-        icon: "M6 18L18 6M6 6l12 12",
+        icon: "M18 6L6 18M6 6l12 12", // Clean X
         action: () => {
             document.dispatchEvent(new CustomEvent("cmdk-close"));
         },

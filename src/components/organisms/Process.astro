@@ -260,21 +260,30 @@ const steps = [
 </style>
 
 <script>
-    import { animate, inView } from "motion";
+    import { gsap } from "gsap";
+    import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+    gsap.registerPlugin(ScrollTrigger);
 
     function initProcess() {
         const blocks = document.querySelectorAll(".process-block");
 
         blocks.forEach((block) => {
-            inView(block, () => {
-                animate(block as any, { opacity: [0, 1], y: [40, 0] }, {
-                    duration: 1.2,
-                    easing: [0.16, 1, 0.3, 1],
-                } as any);
+            gsap.from(block, {
+                opacity: 0,
+                y: 40,
+                duration: 1.2,
+                ease: "power4.out",
+                scrollTrigger: {
+                    trigger: block,
+                    start: "top 90%",
+                    toggleActions: "play none none none",
+                },
             });
         });
     }
 
-    initProcess();
-    document.addEventListener("astro:page-load", initProcess);
+    document.addEventListener("astro:page-load", () => {
+        initProcess();
+    });
 </script>

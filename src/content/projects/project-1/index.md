@@ -39,12 +39,28 @@ timeline:
     title: "Deployment & Optimization"
     description: "Deployed to production, optimized performance to sub-1s loads, achieved Lighthouse 97, and stress-tested to 15K concurrent users."
 gallery:
-  - src: "/projects/syriazone_web.png"
+  - type: "cinematic-video"
+    src: "https://videos.pexels.com/video-files/3129595/3129595-uhd_2560_1440_30fps.mp4"
+    poster: "/projects/syriazone_web.png"
+    alt: "Syriazone Data Pipeline Demo"
+    caption: "Real-time content aggregation running"
+  - type: "image"
+    src: "/projects/syriazone_web.png"
     alt: "Syriazone homepage"
     caption: "News feed with real-time aggregation"
-  - src: "/projects/syriazone_mobile.png"
+  - type: "image"
+    src: "/projects/syriazone_mobile.png"
     alt: "Syriazone mobile experience"
     caption: "Responsive mobile reading experience"
+inlineMedia:
+  - type: "ambient-video"
+    src: "https://videos.pexels.com/video-files/3129595/3129595-uhd_2560_1440_30fps.mp4"
+    poster: "/projects/syriazone_web.png"
+    caption: "Inline Ambient Demonstration (Hover to VIEW)"
+  - type: "cinematic-video"
+    src: "https://videos.pexels.com/video-files/3129595/3129595-uhd_2560_1440_30fps.mp4"
+    poster: "/projects/syriazone_mobile.png"
+    caption: "Stand-alone Cinematic Player"
 ---
 
 Syriazone is a cutting-edge news aggregator that transforms how users consume news by delivering curated, region-specific content with a focus on speed, reliability, and user experience. As the sole full-stack developer and team lead, I architected and built the entire platform from the ground up.

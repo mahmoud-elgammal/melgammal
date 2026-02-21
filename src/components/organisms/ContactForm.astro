@@ -321,7 +321,7 @@
 </style>
 
 <script>
-    import { animate, stagger } from "motion";
+    import { gsap } from "gsap";
 
     const VALIDATORS: Record<string, (v: string) => string | null> = {
         name: (v) =>
@@ -383,11 +383,18 @@
         const statusEl = document.getElementById("cf-status")!;
 
         // Staggered field reveal
-        animate(fields as any, { opacity: [0, 1], y: [16, 0] }, {
-            duration: 0.6,
-            delay: stagger(0.1, { startDelay: 0.2 }),
-            easing: [0.16, 1, 0.3, 1],
-        } as any);
+        gsap.fromTo(
+            fields,
+            { opacity: 0, y: 16 },
+            {
+                opacity: 1,
+                y: 0,
+                duration: 0.6,
+                stagger: 0.1,
+                delay: 0.2,
+                ease: "power4.out",
+            },
+        );
 
         // Live validation on blur
         fields.forEach((field) => {
@@ -410,11 +417,16 @@
             if (!valid) {
                 // Shake invalid fields
                 const errorFields = form.querySelectorAll(".field.has-error");
-                animate(
-                    errorFields as any,
-                    { x: [0, -6, 6, -4, 4, 0] },
-                    { duration: 0.4, easing: "ease-in-out" },
-                );
+                gsap.to(errorFields, {
+                    x: (i) => (i % 2 === 0 ? -6 : 6),
+                    duration: 0.1,
+                    repeat: 5,
+                    yoyo: true,
+                    ease: "power2.inOut",
+                    onComplete: () => {
+                        gsap.to(errorFields, { x: 0, duration: 0.1 });
+                    },
+                });
                 return;
             }
 

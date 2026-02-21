@@ -1,0 +1,374 @@
+---
+
+---
+
+<div
+    id="global-media-lightbox"
+    class="media-lightbox-overlay"
+    aria-hidden="true"
+>
+    <!-- Split Cursor Areas -->
+    <div class="lightbox-cursor" id="lb-cursor">
+        <span class="cursor-label" id="lb-cursor-label">CLOSE</span>
+    </div>
+
+    <div class="lightbox-content-wrapper" id="lightbox-content-inject">
+        <!-- Media gets injected here by JS -->
+    </div>
+
+    <!-- Navigation Bar -->
+    <div class="lightbox-navigation" id="lb-nav-bar">
+        <div class="nav-counter">
+            [<span id="lb-current-index">01</span>/<span id="lb-total-index"
+                >00</span
+            >]
+        </div>
+        <div class="nav-dots" id="lb-nav-dots">
+            <!-- Dots injected by JS -->
+        </div>
+    </div>
+</div>
+
+<style lang="scss">
+    .media-lightbox-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        background: rgba(
+            0,
+            0,
+            0,
+            0.98
+        ); /* Almost pure black for Art Director feel */
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        pointer-events: none;
+        cursor: none; /* Hide default cursor */
+
+        &.is-active {
+            pointer-events: auto;
+        }
+    }
+
+    .lightbox-content-wrapper {
+        position: relative;
+        width: 100%;
+        height: calc(100% - 80px); /* Leave room for the nav bar */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 4rem; /* Safe padding for close cursor */
+
+        :global(img),
+        :global(video) {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            border-radius: 4px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+
+            /* Slide transitions */
+            opacity: 0;
+            transform: scale(0.98);
+            transition:
+                opacity 0.4s ease,
+                transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+
+            &.is-loaded {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+    }
+
+    /* ── High Contrast Dynamic Cursor ── */
+    .lightbox-cursor {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100px;
+        height: 100px;
+        background: #fff;
+        color: #000;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: ui-monospace, monospace;
+        font-size: 0.85rem;
+        font-weight: 900;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        pointer-events: none; /* Let clicks pass through */
+        z-index: 100;
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.8);
+        mix-blend-mode: exclusion;
+
+        transition:
+            opacity 0.2s ease,
+            transform 0.1s ease-out;
+
+        .media-lightbox-overlay.is-active:hover & {
+            opacity: 1;
+        }
+
+        .media-lightbox-overlay:active & {
+            transform: translate(-50%, -50%) scale(0.9);
+        }
+    }
+
+    /* ── Bottom Navigation Bar ── */
+    .lightbox-navigation {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 80px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 4rem;
+        z-index: 50;
+    }
+
+    .nav-counter {
+        font-family: ui-monospace, monospace;
+        font-size: 0.8rem;
+        font-weight: 700;
+        letter-spacing: 0.15em;
+        color: rgba(255, 255, 255, 0.5);
+
+        span {
+            color: #fff;
+        }
+    }
+
+    .nav-dots {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+
+        :global(.nav-dot) {
+            width: 32px;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            pointer-events: auto; /* Allow clicking dots */
+
+            /* Increase hit area */
+            &::after {
+                content: "";
+                position: absolute;
+                inset: -10px 0;
+            }
+
+            &:hover {
+                background: rgba(255, 255, 255, 0.6);
+                height: 4px;
+            }
+
+            &.is-active {
+                background: #fff;
+            }
+        }
+    }
+</style>
+
+<script>
+    import { gsap } from "gsap";
+
+    interface PreloadedItem {
+        src: string;
+        type: string;
+    }
+
+    function initLightbox() {
+        const overlay = document.getElementById("global-media-lightbox");
+        const injectTarget = document.getElementById("lightbox-content-inject");
+        const cursor = document.getElementById("lb-cursor");
+        const cursorLabel = document.getElementById("lb-cursor-label");
+        const dotContainer = document.getElementById("lb-nav-dots");
+        const currentIndexLabel = document.getElementById("lb-current-index");
+        const totalIndexLabel = document.getElementById("lb-total-index");
+
+        if (
+            !overlay ||
+            !injectTarget ||
+            !cursor ||
+            !cursorLabel ||
+            !dotContainer ||
+            !currentIndexLabel ||
+            !totalIndexLabel
+        )
+            return;
+
+        let isOpen = false;
+        let isTransitioning = false;
+        let items: PreloadedItem[] = [];
+        let currentIndex = 0;
+        let currentAction: "PREV" | "NEXT" | "CLOSE" = "CLOSE";
+
+        // Render current slide
+        const renderSlide = (index: number) => {
+            if (index < 0 || index >= items.length) return;
+            isTransitioning = true;
+
+            const item = items[index];
+
+            // Fade out old
+            gsap.to(injectTarget.children, {
+                opacity: 0,
+                scale: 0.98,
+                duration: 0.3,
+                onComplete: () => {
+                    // Update DOM
+                    if (item.type === "ambient-video") {
+                        injectTarget.innerHTML = `<video src="${item.src}" muted loop autoplay playsinline class="lightbox-media"></video>`;
+                    } else {
+                        injectTarget.innerHTML = `<img src="${item.src}" alt="Expanded Media View" loading="eager" class="lightbox-media" />`;
+                    }
+
+                    const newMedia =
+                        injectTarget.querySelector(".lightbox-media");
+                    if (newMedia) {
+                        // Wait a tick for the browser to parse it, then animate in
+                        setTimeout(() => {
+                            newMedia.classList.add("is-loaded");
+                            isTransitioning = false;
+                        }, 50);
+                    } else {
+                        isTransitioning = false;
+                    }
+                },
+            });
+
+            // Update UI
+            currentIndexLabel.innerText = String(index + 1).padStart(2, "0");
+            const dots = dotContainer.querySelectorAll(".nav-dot");
+            dots.forEach((dot, i) => {
+                if (i === index) dot.classList.add("is-active");
+                else dot.classList.remove("is-active");
+            });
+        };
+
+        const renderDots = () => {
+            dotContainer.innerHTML = "";
+            totalIndexLabel.innerText = String(items.length).padStart(2, "0");
+
+            items.forEach((_, i) => {
+                const dot = document.createElement("div");
+                dot.className = `nav-dot ${i === currentIndex ? "is-active" : ""}`;
+                dot.addEventListener("click", (e) => {
+                    e.stopPropagation(); // Don't trigger standard lb click
+                    if (i !== currentIndex && !isTransitioning) {
+                        currentIndex = i;
+                        renderSlide(currentIndex);
+                    }
+                });
+                dotContainer.appendChild(dot);
+            });
+        };
+
+        // Mouse Tracking & Intent Calculation
+        overlay.addEventListener("mousemove", (e: MouseEvent) => {
+            if (!isOpen) return;
+
+            const x = e.clientX;
+            const y = e.clientY;
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+
+            // Update cursor position directly
+            requestAnimationFrame(() => {
+                cursor.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
+            });
+
+            // Calculate intent (CLOSE top/bottom edges, PREV left 25%, NEXT right 25%)
+            if (y < 100 || y > height - 100) {
+                if (currentAction !== "CLOSE") {
+                    currentAction = "CLOSE";
+                    cursorLabel.innerText = "CLOSE";
+                }
+            } else if (x < width * 0.25) {
+                if (currentAction !== "PREV" && items.length > 1) {
+                    currentAction = "PREV";
+                    cursorLabel.innerText = "PREV";
+                }
+            } else if (x > width * 0.75) {
+                if (currentAction !== "NEXT" && items.length > 1) {
+                    currentAction = "NEXT";
+                    cursorLabel.innerText = "NEXT";
+                }
+            } else {
+                if (currentAction !== "CLOSE") {
+                    currentAction = "CLOSE";
+                    cursorLabel.innerText = "CLOSE";
+                }
+            }
+        });
+
+        // Open Lightbox Event Listener
+        document.addEventListener("open-lightbox", (e: Event) => {
+            const customEvent = e as CustomEvent;
+            const payload = customEvent.detail;
+
+            // Type safeguard logic
+            if (!payload.items || !Array.isArray(payload.items)) return;
+
+            items = payload.items;
+            currentIndex = payload.startIndex || 0;
+
+            renderDots();
+            renderSlide(currentIndex);
+
+            // Animate In
+            isOpen = true;
+            overlay.classList.add("is-active");
+            gsap.to(overlay, {
+                opacity: 1,
+                duration: 0.4,
+                ease: "power3.out",
+            });
+        });
+
+        // Click Action Handling
+        overlay.addEventListener("click", (e) => {
+            if (!isOpen || isTransitioning) return;
+
+            // Ignore clicks if they originated from the nav dots
+            const target = e.target as HTMLElement;
+            if (target.closest(".nav-dots")) return;
+
+            if (currentAction === "NEXT") {
+                currentIndex = (currentIndex + 1) % items.length;
+                renderSlide(currentIndex);
+            } else if (currentAction === "PREV") {
+                currentIndex = (currentIndex - 1 + items.length) % items.length;
+                renderSlide(currentIndex);
+            } else {
+                // CLOSE
+                isOpen = false;
+                gsap.to(overlay, {
+                    opacity: 0,
+                    duration: 0.3,
+                    ease: "power2.in",
+                    onComplete: () => {
+                        overlay.classList.remove("is-active");
+                        injectTarget.innerHTML = ""; // Kill video instances
+                    },
+                });
+            }
+        });
+    }
+
+    // Bind once properly
+    document.addEventListener("astro:page-load", initLightbox);
+</script>

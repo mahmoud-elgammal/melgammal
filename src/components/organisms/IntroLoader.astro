@@ -12,42 +12,41 @@
 </script>
 
 <script>
-    import { animate } from "motion";
+    import { gsap } from "gsap";
 
     const loader = document.getElementById("intro-loader");
     const counterElement = loader?.querySelector(".counter");
     const hasSeenIntro = sessionStorage.getItem("intro-seen-v4");
 
     if (loader && !hasSeenIntro) {
-        const sequence = async () => {
-            // 1. Animate Counter
-            if (counterElement) {
-                await animate(0, 100, {
-                    duration: 1.5,
-                    ease: [0.22, 1, 0.36, 1],
-                    onUpdate: (value) => {
-                        counterElement.textContent =
-                            Math.round(value).toString();
-                    },
-                }).finished;
-            }
+        const tl = gsap.timeline({
+            onComplete: () => {
+                loader.style.display = "none";
+                sessionStorage.setItem("intro-seen-v4", "true");
+            },
+        });
 
-            // 2. Slide curtain up
-            await animate(
-                loader as any,
-                { y: "-100%" },
-                {
-                    duration: 0.8,
-                    ease: [0.76, 0, 0.24, 1],
+        // 1. Animate Counter
+        if (counterElement) {
+            const counterObj = { value: 0 };
+            tl.to(counterObj, {
+                value: 100,
+                duration: 1.5,
+                ease: "power2.out",
+                onUpdate: () => {
+                    counterElement.textContent = Math.round(
+                        counterObj.value,
+                    ).toString();
                 },
-            ).finished;
+            });
+        }
 
-            // 3. Cleanup
-            loader.style.display = "none";
-            sessionStorage.setItem("intro-seen-v4", "true");
-        };
-
-        sequence();
+        // 2. Slide curtain up
+        tl.to(loader, {
+            y: "-100%",
+            duration: 0.8,
+            ease: "expo.inOut",
+        });
     }
 </script>
 

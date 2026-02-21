@@ -18,43 +18,48 @@ const Tag = href ? "a" : "button";
 </Tag>
 
 <script>
-    import { animate } from "motion";
+    import { gsap } from "gsap";
 
-    document.querySelectorAll(".button").forEach((btn) => {
-        const target = btn as HTMLElement;
+    function initButtons() {
+        document.querySelectorAll(".button").forEach((btn) => {
+            const target = btn as HTMLElement;
 
-        target.addEventListener("mouseenter", () => {
-            animate(target, { scale: 1.05 } as any, {
-                type: "spring",
-                stiffness: 400,
-                damping: 10,
+            target.addEventListener("mouseenter", () => {
+                gsap.to(target, {
+                    scale: 1.05,
+                    duration: 0.4,
+                    ease: "back.out(2)",
+                });
+            });
+
+            target.addEventListener("mouseleave", () => {
+                gsap.to(target, {
+                    scale: 1,
+                    duration: 0.4,
+                    ease: "back.out(1.5)",
+                });
+            });
+
+            target.addEventListener("mousedown", () => {
+                gsap.to(target, {
+                    scale: 0.96,
+                    duration: 0.2,
+                    ease: "power2.out",
+                });
+            });
+
+            target.addEventListener("mouseup", () => {
+                gsap.to(target, {
+                    scale: 1.05,
+                    duration: 0.4,
+                    ease: "back.out(2)",
+                });
             });
         });
+    }
 
-        target.addEventListener("mouseleave", () => {
-            animate(target, { scale: 1 } as any, {
-                type: "spring",
-                stiffness: 400,
-                damping: 15,
-            });
-        });
-
-        target.addEventListener("mousedown", () => {
-            animate(target, { scale: 0.96 } as any, {
-                type: "spring",
-                stiffness: 600,
-                damping: 20,
-            });
-        });
-
-        target.addEventListener("mouseup", () => {
-            animate(target, { scale: 1.05 } as any, {
-                type: "spring",
-                stiffness: 600,
-                damping: 10,
-            });
-        });
-    });
+    initButtons();
+    document.addEventListener("astro:page-load", initButtons);
 </script>
 
 <style lang="scss">
