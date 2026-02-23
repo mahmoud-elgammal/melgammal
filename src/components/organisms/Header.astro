@@ -643,7 +643,6 @@ import { NAV_SHORTCUTS } from "@lib/shortcuts";
         align-items: center;
         justify-content: center;
         background: rgba(0, 0, 0, 0.5);
-        backdrop-filter: blur(8px);
         opacity: 0;
         pointer-events: none;
         transition: opacity 0.3s ease;
@@ -751,21 +750,6 @@ import { NAV_SHORTCUTS } from "@lib/shortcuts";
         pointer-events: none;
         white-space: nowrap;
         vertical-align: middle;
-    }
-
-    .header-nav-link:hover {
-        :global(kbd) {
-            background: rgba(0, 0, 0, 0.05);
-            border-color: rgba(0, 0, 0, 0.08);
-            color: rgba(0, 0, 0, 0.6);
-            transform: translateY(-1px);
-        }
-
-        :global(.dark) & :global(kbd) {
-            background: rgba(255, 255, 255, 0.08);
-            border-color: rgba(255, 255, 255, 0.12);
-            color: rgba(255, 255, 255, 0.7);
-        }
     }
 
     :global(.shortcut-keys) {
