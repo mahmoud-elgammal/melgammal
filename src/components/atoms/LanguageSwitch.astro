@@ -1,75 +1,345 @@
----
+<div class="lang-kinetic-container" id="lang-kinetic">
+    <div class="mouse-anchor">
+        <button
+            class="kinetic-trigger"
+            id="kinetic-trigger"
+            aria-haspopup="true"
+            aria-expanded="false"
+        >
+            <span class="trigger-text">EN</span>
+            <div class="magnetic-aura"></div>
+            <svg
+                class="chevron"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+            >
+                <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+        </button>
+    </div>
 
----
-
-<div class="language-switch">
-    <select aria-label="Select Language">
-        <option value="en">EN</option>
-        <option value="ar">AR</option>
-    </select>
-    <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        class="chevron"
-    >
-        <polyline points="6 9 12 15 18 9"></polyline>
-    </svg>
+    <div class="kinetic-menu" id="kinetic-menu">
+        <div class="menu-inner">
+            <ul class="menu-list">
+                <li class="menu-item active" data-lang="en">
+                    <span class="item-text">EN</span>
+                    <div class="active-pulse"></div>
+                </li>
+                <li class="menu-item" data-lang="ar">
+                    <span class="item-text">AR</span>
+                    <div class="active-pulse"></div>
+                </li>
+            </ul>
+        </div>
+    </div>
 </div>
 
-<style lang="scss">
-    @use "../../styles/variables" as *;
+<script>
+    import { gsap } from "gsap";
 
-    .language-switch {
-        position: relative;
-        display: inline-flex;
-        align-items: center;
+    const chars =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=[]{}|;:,.<>?";
 
-        select {
-            appearance: none;
-            background-color: transparent;
-            border: 1px solid rgba(0, 0, 0, 0.15);
-            border-radius: 0.25rem;
-            padding: 0.25rem 1.5rem 0.25rem 0.5rem;
-            font-family: inherit;
-            font-size: 0.875rem;
-            color: inherit;
-            cursor: pointer;
-            transition: border-color 0.2s;
+    function initKineticDropdown() {
+        const container = document.getElementById("lang-kinetic");
+        if (!container || container.dataset.initialized) return;
 
-            &:hover {
-                border-color: rgba(0, 0, 0, 0.3);
-            }
+        container.dataset.initialized = "true";
 
-            &:focus {
-                outline: none;
-                border-color: $color-black;
-            }
+        const anchor = container.querySelector(".mouse-anchor") as HTMLElement;
+        const trigger = document.getElementById(
+            "kinetic-trigger",
+        ) as HTMLElement;
+        const menu = document.getElementById("kinetic-menu") as HTMLElement;
+        const items = document.querySelectorAll(".menu-item");
+        const triggerText = trigger?.querySelector(
+            ".trigger-text",
+        ) as HTMLElement;
 
-            :global(.dark) & {
-                border-color: rgba(255, 255, 255, 0.2);
+        if (!trigger || !menu || !triggerText || !anchor) return;
 
-                &:hover {
-                    border-color: rgba(255, 255, 255, 0.4);
-                }
+        let isOpen = false;
 
-                &:focus {
-                    border-color: $color-white;
-                }
+        // ── 1. Magnetic Tracking ──
+        const handleMouseMove = (e: MouseEvent) => {
+            const rect = anchor.getBoundingClientRect();
+            const x = (e.clientX - rect.left - rect.width / 2) * 0.4;
+            const y = (e.clientY - rect.top - rect.height / 2) * 0.4;
+
+            gsap.to(trigger, {
+                x: x,
+                y: y,
+                duration: 0.6,
+                ease: "power2.out",
+            });
+        };
+
+        const handleMouseLeave = () => {
+            gsap.to(trigger, {
+                x: 0,
+                y: 0,
+                duration: 0.8,
+                ease: "elastic.out(1, 0.5)",
+            });
+        };
+
+        container.addEventListener("mousemove", handleMouseMove);
+        container.addEventListener("mouseleave", handleMouseLeave);
+
+        // ── 2. Metamorphosis ──
+        function metamorphosis(element: HTMLElement, targetText: string) {
+            let iterations = 0;
+
+            gsap.to(element, {
+                filter: "blur(2px)",
+                opacity: 0.5,
+                duration: 0.1,
+                onComplete: () => {
+                    gsap.to(
+                        {},
+                        {
+                            duration: 0.4,
+                            onUpdate: function () {
+                                iterations += 1 / 6;
+                                element.textContent = targetText
+                                    .split("")
+                                    .map((char, index) => {
+                                        if (index < iterations)
+                                            return targetText[index];
+                                        return chars[
+                                            Math.floor(
+                                                Math.random() * chars.length,
+                                            )
+                                        ];
+                                    })
+                                    .join("");
+                            },
+                            onComplete: () => {
+                                element.textContent = targetText;
+                                gsap.to(element, {
+                                    filter: "blur(0px)",
+                                    opacity: 1,
+                                    duration: 0.2,
+                                });
+                            },
+                        },
+                    );
+                },
+            });
+        }
+
+        // ── 3. Liquid Open/Close ──
+        function toggleMenu(force?: boolean) {
+            isOpen = force !== undefined ? force : !isOpen;
+            trigger.setAttribute("aria-expanded", String(isOpen));
+
+            if (isOpen) {
+                menu.style.display = "block";
+                const tl = gsap.timeline();
+
+                tl.fromTo(
+                    menu,
+                    { opacity: 0, scaleY: 0, transformOrigin: "top" },
+                    {
+                        opacity: 1,
+                        scaleY: 1,
+                        duration: 0.6,
+                        ease: "elastic.out(1, 0.8)",
+                    },
+                );
+
+                tl.fromTo(
+                    items,
+                    { opacity: 0, y: -20, rotateX: -30 },
+                    {
+                        opacity: 1,
+                        y: 0,
+                        rotateX: 0,
+                        stagger: 0.1,
+                        duration: 0.5,
+                        ease: "back.out(2)",
+                    },
+                    "-=0.4",
+                );
+            } else {
+                gsap.to(menu, {
+                    opacity: 0,
+                    scaleY: 0.8,
+                    y: -10,
+                    duration: 0.3,
+                    ease: "power3.in",
+                    onComplete: () => {
+                        menu.style.display = "none";
+                    },
+                });
             }
         }
 
-        .chevron {
+        // ── 4. Click Outside Handling ──
+        const handleDocumentClick = (e: MouseEvent) => {
+            if (isOpen && !container.contains(e.target as Node)) {
+                toggleMenu(false);
+            }
+        };
+
+        // Use a more robust toggle that adds/removes the document listener
+        const originalToggle = toggleMenu;
+        toggleMenu = (force?: boolean) => {
+            originalToggle(force);
+            if (isOpen) {
+                // Add after a tick to prevent current click from closing it
+                setTimeout(
+                    () =>
+                        document.addEventListener("click", handleDocumentClick),
+                    0,
+                );
+            } else {
+                document.removeEventListener("click", handleDocumentClick);
+            }
+        };
+
+        trigger.addEventListener("click", (e) => {
+            e.stopPropagation();
+            toggleMenu();
+        });
+    }
+
+    // Ensure it runs once per page load
+    document.addEventListener("astro:page-load", () => {
+        initKineticDropdown();
+    });
+</script>
+
+<style lang="scss">
+    .lang-kinetic-container {
+        position: relative;
+        display: inline-block;
+        perspective: 1000px;
+    }
+
+    .mouse-anchor {
+        position: relative;
+        padding: 1.5rem;
+        margin: -1.5rem;
+    }
+
+    .kinetic-trigger {
+        position: relative;
+        background: none;
+        border: none;
+        color: #ffffff;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 0.875rem;
+        font-weight: 700;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        will-change: transform;
+        z-index: 10;
+
+        .magnetic-aura {
             position: absolute;
-            right: 0.375rem;
-            width: 1rem;
-            height: 1rem;
+            inset: -10px;
+            background: radial-gradient(
+                circle,
+                rgba(255, 255, 255, 0.1) 0%,
+                transparent 70%
+            );
+            opacity: 0;
+            transition: opacity 0.4s ease;
             pointer-events: none;
-            opacity: 0.5;
+        }
+
+        &:hover .magnetic-aura {
+            opacity: 1;
+        }
+
+        .chevron {
+            width: 14px;
+            height: 14px;
+            opacity: 0.3;
+            transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        &[aria-expanded="true"] .chevron {
+            transform: rotate(180deg);
+            opacity: 1;
+        }
+    }
+
+    .kinetic-menu {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        margin-top: 1rem;
+        min-width: 100px;
+        display: none;
+        z-index: 100;
+    }
+
+    .menu-inner {
+        background: rgba(255, 255, 255, 0.03);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 4px;
+        padding: 0.5rem;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    }
+
+    .menu-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .menu-item {
+        position: relative;
+        padding: 0.75rem 1.25rem;
+        color: #ffffff;
+        font-size: 0.875rem;
+        font-weight: 700;
+        letter-spacing: 0.2em;
+        cursor: pointer;
+        text-transform: uppercase;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        opacity: 0.4;
+        transition: opacity 0.4s ease;
+
+        &.active {
+            opacity: 1;
+
+            .active-pulse {
+                width: 4px;
+                height: 4px;
+                background: #ffffff;
+                border-radius: 50%;
+                box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+                animation: kinetic-glow 2s infinite ease-in-out;
+            }
+        }
+
+        &:hover:not(.active) {
+            opacity: 0.8;
+            background: rgba(255, 255, 255, 0.05);
+        }
+    }
+
+    @keyframes kinetic-glow {
+        0%,
+        100% {
+            opacity: 0.3;
+            transform: scale(1);
+        }
+        50% {
+            opacity: 1;
+            transform: scale(1.5);
+            filter: blur(1px);
         }
     }
 </style>

@@ -49,13 +49,13 @@ import { NAV_SHORTCUTS } from "@lib/shortcuts";
             </div>
 
             <div class="actions-group">
+                <div id="header-lang">
+                    <LanguageSwitch />
+                </div>
                 <div id="header-cta" class="desktop-cta">
                     <Button href="/book-intro" variant="outline"
                         >Book Intro</Button
                     >
-                </div>
-                <div id="header-lang">
-                    <LanguageSwitch />
                 </div>
                 <button
                     id="mobile-menu-toggle"
@@ -139,7 +139,7 @@ import { NAV_SHORTCUTS } from "@lib/shortcuts";
 
     /* ── Header entrance animation ── */
     async function animateHeader() {
-        await waitForLoader();
+        const hasAnimated = sessionStorage.getItem("header-animated");
 
         const brand = document.getElementById("header-brand");
         const navLinks = document.querySelectorAll(".header-nav-link");
@@ -147,11 +147,42 @@ import { NAV_SHORTCUTS } from "@lib/shortcuts";
         const cta = document.getElementById("header-cta");
         const lang = document.getElementById("header-lang");
 
+        const markReady = () => {
+            // @ts-ignore
+            window.headerReady = true;
+            document.dispatchEvent(new CustomEvent("header-ready"));
+        };
+
+        // 1. Skip animation if already seen in this session
+        if (hasAnimated && brand) {
+            const letters = splitBrandLetters(brand);
+            brand.style.opacity = "1";
+            gsap.set(letters, { opacity: 1, y: 0 });
+            gsap.set([navLinks, seps, cta, lang], {
+                opacity: 1,
+                x: 0,
+                y: 0,
+                scale: 1,
+            });
+            markReady();
+            return;
+        }
+
+        await waitForLoader();
+
+        // ── Synchronization for Landing Page ──
+        if (window.location.pathname === "/") {
+            await new Promise((resolve) => {
+                document.addEventListener("header-start", resolve, {
+                    once: true,
+                });
+            });
+        }
+
         const tl = gsap.timeline({
             onComplete: () => {
-                // @ts-ignore
-                window.headerReady = true;
-                document.dispatchEvent(new CustomEvent("header-ready"));
+                sessionStorage.setItem("header-animated", "true");
+                markReady();
             },
         });
 
@@ -168,6 +199,12 @@ import { NAV_SHORTCUTS } from "@lib/shortcuts";
                     duration: 0.5,
                     stagger: 0.03,
                     ease: "power4.out",
+                    onComplete: () => {
+                        // Clear transforms to remove stacking context without losing visibility
+                        gsap.set(letters, {
+                            clearProps: "transform,translate,rotate,scale",
+                        });
+                    },
                 },
             );
         }
@@ -183,6 +220,14 @@ import { NAV_SHORTCUTS } from "@lib/shortcuts";
                     duration: 0.4,
                     stagger: 0.06,
                     ease: "power4.out",
+                    onComplete: () => {
+                        gsap.set(navLinks, {
+                            clearProps: "transform,translate,rotate,scale",
+                        });
+                        gsap.set(seps, {
+                            clearProps: "transform,translate,rotate,scale",
+                        });
+                    },
                 },
                 "-=0.3",
             );
@@ -409,13 +454,22 @@ import { NAV_SHORTCUTS } from "@lib/shortcuts";
 
 <style lang="scss">
     @use "../../styles/variables" as *;
+    @use "../../styles/mixins" as *;
 
-    .header-content {
+    header#site-header {
+        background: transparent;
+        isolation: auto;
+        mix-blend-mode: difference;
+        color: $color-white;
+    }
+
+    header .header-content {
         display: flex;
         flex-wrap: nowrap;
         justify-content: space-between;
         align-items: center;
         width: 100%;
+        background: transparent;
     }
 
     .nav-group {
@@ -446,6 +500,18 @@ import { NAV_SHORTCUTS } from "@lib/shortcuts";
         display: none;
         @media (min-width: 640px) {
             display: block;
+        }
+
+        // Force pure white for compatible inversion
+        :global(.button.outline) {
+            color: #ffffff !important;
+            border-color: #ffffff !important;
+            background-color: transparent !important;
+
+            &:hover {
+                background-color: #ffffff !important;
+                color: #000000 !important;
+            }
         }
     }
 
@@ -566,19 +632,17 @@ import { NAV_SHORTCUTS } from "@lib/shortcuts";
 
         :global(.brand-letter) {
             display: inline-block;
-            will-change: transform;
         }
     }
 
-    #header-brand {
-        opacity: 0; // Hidden until entrance animation
+    header #header-brand {
+        // opacity removed - handled by GSAP
     }
 
-    :global(.header-nav-link) {
-        opacity: 0; // Hidden until entrance animation
+    header .header-content :global(a.header-nav-link) {
         position: relative;
-        will-change: transform;
         padding: 0.25rem 0.5rem;
+        text-decoration: none;
 
         // Underline reveal on hover
         &::after {

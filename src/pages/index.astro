@@ -309,8 +309,13 @@ const projects = (await getCollection("projects"))
                         filter: "blur(0px)",
                         duration: 0.8, // Luxurious, slow fade
                         ease: "power2.out",
+                        onStart: () => {
+                            document.dispatchEvent(
+                                new CustomEvent("header-start"),
+                            );
+                        },
                     },
-                    "<2", // Start exactly 1.5s after the title begins scrambling, eliminating the wait
+                    "<2", // Start exactly 2s after the title begins
                 );
             }
 

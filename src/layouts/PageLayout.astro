@@ -111,7 +111,7 @@ const { title, description } = Astro.props;
               duration: 0.6,
               ease: "power4.out",
               onComplete: () => {
-                gsap.set(main, { clearProps: "transform" }); // Release fixed elements
+                gsap.set(main, { clearProps: "all" }); // Remove stacking context
                 initScrollPersonalities();
                 ScrollTrigger.refresh();
               },
@@ -121,8 +121,9 @@ const { title, description } = Astro.props;
       }
 
       function handlePageReveal() {
+        const isLandingPage = window.location.pathname === "/";
         // @ts-ignore
-        if (window.headerReady) {
+        if (window.headerReady || isLandingPage) {
           revealPage();
         } else {
           document.addEventListener("header-ready", revealPage, { once: true });
