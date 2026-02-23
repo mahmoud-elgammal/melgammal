@@ -151,7 +151,7 @@ import { NAV_SHORTCUTS } from "@lib/shortcuts";
     async function animateHeader() {
         const hasAnimated = sessionStorage.getItem("header-animated");
         // @ts-ignore
-        if (window._headerAnimating || hasAnimated) return;
+        if (window._headerAnimating) return;
 
         const header = document.getElementById("site-header");
         const brand = document.getElementById("header-brand");
