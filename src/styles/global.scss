@@ -47,15 +47,7 @@ header {
     z-index: 50;
     padding-top: 1.25rem;
     padding-bottom: 1.25rem;
-    background-color: rgba($color-light-bg, 0.8);
     backdrop-filter: blur(8px);
-    border-bottom: 1px solid rgba($color-black, 0.05);
-    transition: background-color 0.4s ease, border-color 0.4s ease;
-
-    :global(.dark) & {
-        background-color: rgba($color-dark-bg, 0.8);
-        border-bottom-color: rgba($color-white, 0.05);
-    }
 }
 
 main {
