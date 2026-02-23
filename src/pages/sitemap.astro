@@ -1,0 +1,324 @@
+---
+import PageLayout from "@layouts/PageLayout.astro";
+import Container from "@components/atoms/Container.astro";
+import { SITE } from "@consts";
+import { getCollection } from "astro:content";
+
+const blog = (await getCollection("blog")).filter((post) => !post.data.draft);
+const projects = (await getCollection("projects")).filter(
+    (project) => !project.data.draft,
+);
+
+// Define the site structure manually for better control, or use glob
+// Since glob might include layouts/components if not careful, and it doesn't resolve dynamic routes well,
+// a hybrid approach is best.
+
+const tree = [
+    { name: "Home", href: "/" },
+    { name: "About", href: "/about" },
+    {
+        name: "Blog",
+        href: "/blog",
+        children: blog.map((post) => ({
+            name: post.data.title,
+            href: `/blog/${post.slug}`,
+        })),
+    },
+    {
+        name: "Projects",
+        href: "/projects",
+        children: projects.map((project) => ({
+            name: project.data.title,
+            href: `/projects/${project.slug}`,
+        })),
+    },
+    { name: "Work", href: "/work" },
+    { name: "Process", href: "/process" },
+    { name: "Playground", href: "/playground" },
+    { name: "Contact", href: "/contact" },
+    { name: "RSS Feed", href: "/rss.xml" },
+    { name: "Robots.txt", href: "/robots.txt" },
+];
+---
+
+<PageLayout
+    title="Site Map"
+    description="Visual hierarchy of the website structure."
+>
+    <Container>
+        <div class="site-tree-container" data-scroll-personality="technical">
+            <h1 class="animate display-title">Site Map</h1>
+            <p class="animate subtitle">
+                A visual map of all available paths and content.
+            </p>
+
+            <div class="tree-wrapper animate">
+                <div class="terminal-header">
+                    <div class="dots">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                    <span class="path">~/melgammal/sitemap</span>
+                </div>
+                <div class="terminal-body">
+                    <ul class="tree-root">
+                        {
+                            tree.map((item) => (
+                                <li class="tree-item">
+                                    <div class="item-content">
+                                        <span class="connector">├──</span>
+                                        <a href={item.href} class="item-link">
+                                            <span class="item-name">
+                                                {item.name}
+                                            </span>
+                                            <span class="item-path">
+                                                {item.href}
+                                            </span>
+                                        </a>
+                                    </div>
+                                    {item.children && (
+                                        <ul class="tree-children">
+                                            {item.children.map(
+                                                (child, index) => (
+                                                    <li class="tree-item">
+                                                        <div class="item-content">
+                                                            <span class="connector">
+                                                                {index ===
+                                                                item.children
+                                                                    .length -
+                                                                    1
+                                                                    ? "└──"
+                                                                    : "├──"}
+                                                            </span>
+                                                            <a
+                                                                href={
+                                                                    child.href
+                                                                }
+                                                                class="item-link"
+                                                            >
+                                                                <span class="item-name">
+                                                                    {child.name}
+                                                                </span>
+                                                                <span class="item-path">
+                                                                    {child.href}
+                                                                </span>
+                                                            </a>
+                                                        </div>
+                                                    </li>
+                                                ),
+                                            )}
+                                        </ul>
+                                    )}
+                                </li>
+                            ))
+                        }
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </Container>
+</PageLayout>
+
+<style lang="scss">
+    @use "../styles/variables" as *;
+    @use "../styles/mixins" as *;
+
+    .site-tree-container {
+        margin-top: 6rem;
+        margin-bottom: 8rem;
+    }
+
+    .display-title {
+        font-size: 3rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        color: $color-black;
+
+        :global(.dark) & {
+            color: $color-white;
+        }
+
+        @include screen(md) {
+            font-size: 5rem;
+        }
+    }
+
+    .subtitle {
+        font-size: 1.1rem;
+        color: #666;
+        margin-bottom: 3rem;
+
+        :global(.dark) & {
+            color: #a1a1aa;
+        }
+    }
+
+    .tree-wrapper {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.75rem;
+        overflow: hidden;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+
+        :global(.dark) & {
+            background: #09090b;
+            border-color: #27272a;
+        }
+    }
+
+    .terminal-header {
+        background: #f9fafb;
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+
+        :global(.dark) & {
+            background: #18181b;
+            border-color: #27272a;
+        }
+
+        .dots {
+            display: flex;
+            gap: 0.5rem;
+            span {
+                width: 10px;
+                height: 10px;
+                border-radius: 50%;
+                background: #d1d5db;
+                &:nth-child(1) {
+                    background: #ff5f56;
+                }
+                &:nth-child(2) {
+                    background: #ffbd2e;
+                }
+                &:nth-child(3) {
+                    background: #27c93f;
+                }
+            }
+        }
+
+        .path {
+            font-family:
+                ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 0.875rem;
+            color: #666;
+            :global(.dark) & {
+                color: #71717a;
+            }
+        }
+    }
+
+    .terminal-body {
+        padding: 1.5rem;
+        font-family:
+            ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 0.9rem;
+        line-height: 1.6;
+    }
+
+    .tree-root {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .tree-children {
+        list-style: none;
+        padding-left: 1.5rem;
+        margin: 0;
+        border-left: 1px solid #e5e7eb;
+        margin-left: 0.5rem;
+
+        :global(.dark) & {
+            border-color: #27272a;
+        }
+    }
+
+    .tree-item {
+        margin: 0.25rem 0;
+    }
+
+    .item-content {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .connector {
+        color: #d1d5db;
+        :global(.dark) & {
+            color: #3f3f46;
+        }
+    }
+
+    .item-link {
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        transition: all 0.2s ease;
+        color: $color-black;
+
+        &:hover {
+            background: #f4f4f5;
+            transform: translateX(4px);
+
+            .item-name {
+                color: #2563eb;
+            }
+
+            .item-path {
+                opacity: 1;
+            }
+        }
+
+        :global(.dark) & {
+            color: $color-white;
+            &:hover {
+                background: #18181b;
+                .item-name {
+                    color: #60a5fa;
+                }
+            }
+        }
+    }
+
+    .item-name {
+        font-weight: 500;
+    }
+
+    .item-path {
+        font-size: 0.75rem;
+        color: #999;
+        opacity: 0.6;
+        transition: opacity 0.2s ease;
+
+        :global(.dark) & {
+            color: #52525b;
+        }
+    }
+
+    .animate {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+</style>
+
+<script>
+    import { gsap } from "gsap";
+
+    document.addEventListener("astro:page-load", () => {
+        gsap.to(".animate", {
+            opacity: 1,
+            y: 0,
+            duration: 0.8,
+            stagger: 0.1,
+            ease: "power2.out",
+        });
+    });
+</script>
