@@ -38,9 +38,6 @@ import { NAV_SHORTCUTS } from "@lib/shortcuts";
                                     aria-keyshortcuts={shortcut.keys}
                                 >
                                     {shortcut.label}
-                                    <span class="nav-shortcut">
-                                        <kbd>{shortcut.hint}</kbd>
-                                    </span>
                                 </Link>
                                 {index < NAV_SHORTCUTS.length - 1 && (
                                     <span class="header-sep">/</span>
