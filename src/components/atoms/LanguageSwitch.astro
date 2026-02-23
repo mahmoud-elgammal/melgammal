@@ -88,48 +88,6 @@
         container.addEventListener("mousemove", handleMouseMove);
         container.addEventListener("mouseleave", handleMouseLeave);
 
-        // ── 2. Metamorphosis ──
-        function metamorphosis(element: HTMLElement, targetText: string) {
-            let iterations = 0;
-
-            gsap.to(element, {
-                filter: "blur(2px)",
-                opacity: 0.5,
-                duration: 0.1,
-                onComplete: () => {
-                    gsap.to(
-                        {},
-                        {
-                            duration: 0.4,
-                            onUpdate: function () {
-                                iterations += 1 / 6;
-                                element.textContent = targetText
-                                    .split("")
-                                    .map((char, index) => {
-                                        if (index < iterations)
-                                            return targetText[index];
-                                        return chars[
-                                            Math.floor(
-                                                Math.random() * chars.length,
-                                            )
-                                        ];
-                                    })
-                                    .join("");
-                            },
-                            onComplete: () => {
-                                element.textContent = targetText;
-                                gsap.to(element, {
-                                    filter: "blur(0px)",
-                                    opacity: 1,
-                                    duration: 0.2,
-                                });
-                            },
-                        },
-                    );
-                },
-            });
-        }
-
         // ── 3. Liquid Open/Close ──
         let toggleMenu = (force?: boolean) => {
             isOpen = force !== undefined ? force : !isOpen;

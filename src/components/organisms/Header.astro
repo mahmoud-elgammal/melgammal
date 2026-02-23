@@ -209,7 +209,11 @@ import { NAV_SHORTCUTS } from "@lib/shortcuts";
         if (brand) {
             const letters = splitBrandLetters(brand);
             brand.style.opacity = "1";
+
+            // GSAP Reveal Sequence
+            tl.to(header, { opacity: 1, duration: 0.2 }); // Instant reveal of shell
             header!.classList.remove("header-anim");
+
             tl.fromTo(
                 letters,
                 { opacity: 0, y: 12 },
@@ -486,14 +490,14 @@ import { NAV_SHORTCUTS } from "@lib/shortcuts";
         isolation: auto;
         mix-blend-mode: difference;
         color: $color-white;
+        opacity: 1; // Default visible
+        transition: opacity 0.4s ease;
 
-        // FOUC Shroud Logic
+        // FOUC Shroud Logic: Hide entire header until animation starts
+        // Except for returning users (handled by .header-skip-anim)
         &.header-anim:not(:global(.header-skip-anim)) {
-            .brand,
-            .desktop-nav,
-            .actions-group {
-                opacity: 0;
-            }
+            opacity: 0;
+            pointer-events: none;
         }
     }
 
