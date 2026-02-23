@@ -131,7 +131,7 @@
         }
 
         // ── 3. Liquid Open/Close ──
-        function toggleMenu(force?: boolean) {
+        let toggleMenu = (force?: boolean) => {
             isOpen = force !== undefined ? force : !isOpen;
             trigger.setAttribute("aria-expanded", String(isOpen));
 
@@ -175,7 +175,7 @@
                     },
                 });
             }
-        }
+        };
 
         // ── 4. Click Outside Handling ──
         const handleDocumentClick = (e: MouseEvent) => {
