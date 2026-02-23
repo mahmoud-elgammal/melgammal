@@ -21,7 +21,17 @@ import { NAV_SHORTCUTS } from "@lib/shortcuts";
     </div>
 </div>
 
-<header id="site-header">
+<script is:inline>
+    // FOUC Fix: Immediately reveal header if already animated in this session
+    // This runs before the rest of the page renders to prevent flicker
+    (function () {
+        if (sessionStorage.getItem("header-animated") === "true") {
+            document.documentElement.classList.add("header-skip-anim");
+        }
+    })();
+</script>
+
+<header id="site-header" class="header-anim">
     <Container>
         <div class="header-content">
             <div class="nav-group">
@@ -143,6 +153,7 @@ import { NAV_SHORTCUTS } from "@lib/shortcuts";
         // @ts-ignore
         if (window._headerAnimating || hasAnimated) return;
 
+        const header = document.getElementById("site-header");
         const brand = document.getElementById("header-brand");
         const navLinks = document.querySelectorAll(".header-nav-link");
         const seps = document.querySelectorAll(".header-sep");
@@ -159,6 +170,7 @@ import { NAV_SHORTCUTS } from "@lib/shortcuts";
         if (hasAnimated && brand) {
             const letters = splitBrandLetters(brand);
             brand.style.opacity = "1";
+            header!.classList.remove("header-anim");
             gsap.set(letters, { opacity: 1, y: 0 });
             gsap.set([navLinks, seps, cta, lang], {
                 opacity: 1,
@@ -197,6 +209,7 @@ import { NAV_SHORTCUTS } from "@lib/shortcuts";
         if (brand) {
             const letters = splitBrandLetters(brand);
             brand.style.opacity = "1";
+            header!.classList.remove("header-anim");
             tl.fromTo(
                 letters,
                 { opacity: 0, y: 12 },
@@ -473,6 +486,23 @@ import { NAV_SHORTCUTS } from "@lib/shortcuts";
         isolation: auto;
         mix-blend-mode: difference;
         color: $color-white;
+
+        // FOUC Shroud Logic
+        &.header-anim:not(:global(.header-skip-anim)) {
+            .brand,
+            .desktop-nav,
+            .actions-group {
+                opacity: 0;
+            }
+        }
+    }
+
+    :global(.header-skip-anim) header#site-header {
+        .brand,
+        .desktop-nav,
+        .actions-group {
+            opacity: 1 !important;
+        }
     }
 
     header .header-content {
