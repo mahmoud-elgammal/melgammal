@@ -140,6 +140,8 @@ import { NAV_SHORTCUTS } from "@lib/shortcuts";
     /* ── Header entrance animation ── */
     async function animateHeader() {
         const hasAnimated = sessionStorage.getItem("header-animated");
+        // @ts-ignore
+        if (window._headerAnimating || hasAnimated) return;
 
         const brand = document.getElementById("header-brand");
         const navLinks = document.querySelectorAll(".header-nav-link");
@@ -168,6 +170,9 @@ import { NAV_SHORTCUTS } from "@lib/shortcuts";
             return;
         }
 
+        // @ts-ignore
+        window._headerAnimating = true;
+
         await waitForLoader();
 
         // ── Synchronization for Landing Page ──
@@ -182,6 +187,8 @@ import { NAV_SHORTCUTS } from "@lib/shortcuts";
         const tl = gsap.timeline({
             onComplete: () => {
                 sessionStorage.setItem("header-animated", "true");
+                // @ts-ignore
+                window._headerAnimating = false;
                 markReady();
             },
         });
@@ -381,15 +388,20 @@ import { NAV_SHORTCUTS } from "@lib/shortcuts";
 
     /* ── Init ── */
     function initHeader() {
+        const header = document.getElementById("site-header");
+        if (!header || header.dataset.initialized) return;
+
+        header.dataset.initialized = "true";
         // @ts-ignore
         window.headerReady = false;
+
         animateHeader();
         setupMagneticHover();
         setupBrandScatter();
         setupMobileMenu();
     }
 
-    initHeader();
+    // Rely solely on astro:page-load to prevent double-initialization
     document.addEventListener("astro:page-load", initHeader);
 
     /* ── Keyboard shortcuts ── */
