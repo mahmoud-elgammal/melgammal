@@ -11,6 +11,9 @@
         <!-- Blueprint Grid System -->
         <div class="technical-grid"></div>
 
+        <!-- Canvas Rendering Layer -->
+        <canvas id="expertise-canvas" class="expertise-canvas"></canvas>
+
         <!-- Interactive Technical HUD -->
         <div class="discovery-lens" id="discovery-lens">
             <div class="lens-labels">
@@ -19,86 +22,6 @@
                 <span class="label-status">SYSTEM: OPTIC_ACTIVE</span>
             </div>
             <div class="lens-crosshair"></div>
-        </div>
-
-        <!-- Semantic Skill Elements with Depth & Rhythm -->
-        <div
-            class="kinetic-tag depth-front weight-bold size-lg"
-            data-skill="Node.js"
-        >
-            Node.js
-        </div>
-        <div
-            class="kinetic-tag depth-mid weight-medium size-md"
-            data-skill="TypeScript"
-        >
-            TypeScript
-        </div>
-        <div
-            class="kinetic-tag depth-back weight-light size-sm"
-            data-skill="React"
-        >
-            React
-        </div>
-        <div
-            class="kinetic-tag depth-front weight-bold size-lg"
-            data-skill="Prometheus"
-        >
-            Prometheus
-        </div>
-        <div
-            class="kinetic-tag depth-mid weight-medium size-md"
-            data-skill="Grafana"
-        >
-            Grafana
-        </div>
-        <div
-            class="kinetic-tag depth-back weight-light size-sm"
-            data-skill="Docker"
-        >
-            Docker
-        </div>
-        <div
-            class="kinetic-tag depth-front weight-bold size-md"
-            data-skill="Kubernetes"
-        >
-            K8s
-        </div>
-        <div
-            class="kinetic-tag depth-mid weight-medium size-sm"
-            data-skill="k6"
-        >
-            k6
-        </div>
-        <div
-            class="kinetic-tag depth-back weight-light size-lg"
-            data-skill="Three.js"
-        >
-            Three.js
-        </div>
-        <div
-            class="kinetic-tag depth-front weight-bold size-sm"
-            data-skill="React Native"
-        >
-            React Native
-        </div>
-        <div
-            class="kinetic-tag depth-mid weight-medium size-md"
-            data-skill="Rust"
-        >
-            Rust
-        </div>
-        <div
-            class="kinetic-tag depth-back weight-light size-md"
-            data-skill="AWS"
-        >
-            AWS
-        </div>
-        <div
-            class="kinetic-tag depth-front weight-bold size-lg"
-            data-skill="Astro.js"
-        >
-            Astro.js
         </div>
     </div>
 </section>
@@ -114,201 +37,418 @@
         Bodies,
         Composite,
         Body: MatterBody,
-        Vector,
     } = Matter;
 
-    let engine: any;
-    let runner: any;
-    let board: HTMLElement | null;
-    let lens: HTMLElement | null;
-    let coordX: HTMLElement | null;
-    let coordY: HTMLElement | null;
-    let tagBodies: {
-        element: HTMLElement;
-        body: any;
-        rect: DOMRect;
-        renderedOnce: boolean;
-        depth: number;
-    }[] = [];
-    let mouse = { x: 0, y: 0, active: false };
+    const SKILLS = [
+        { name: "Node.js", depth: 1.25, weight: "800", size: "lg" },
+        { name: "TypeScript", depth: 1, weight: "600", size: "md" },
+        { name: "React", depth: 0.75, weight: "300", size: "sm" },
+        { name: "Prometheus", depth: 1.25, weight: "800", size: "lg" },
+        { name: "Grafana", depth: 1, weight: "600", size: "md" },
+        { name: "Docker", depth: 0.75, weight: "300", size: "sm" },
+        { name: "K8s", depth: 1.25, weight: "800", size: "md" },
+        { name: "k6", depth: 1, weight: "600", size: "sm" },
+        { name: "Three.js", depth: 0.75, weight: "300", size: "lg" },
+        { name: "React Native", depth: 1.25, weight: "800", size: "sm" },
+        { name: "Rust", depth: 1, weight: "600", size: "md" },
+        { name: "AWS", depth: 0.75, weight: "300", size: "md" },
+        { name: "Astro.js", depth: 1.25, weight: "800", size: "lg" },
+    ];
 
-    function initArchitecturalVoid() {
-        board = document.getElementById("prism-board");
-        lens = document.getElementById("discovery-lens");
-        coordX = document.getElementById("lens-x");
-        coordY = document.getElementById("lens-y");
+    class ExpertiseCanvas {
+        private board: HTMLElement;
+        private canvas: HTMLCanvasElement;
+        private ctx: CanvasRenderingContext2D;
+        private engine: any;
+        private runner: any;
+        private bodies: any[] = [];
+        private dpr: number = 1;
+        private mouse = { x: 0, y: 0, active: false };
+        private theme: "light" | "dark" = "light";
 
-        if (!board) return;
+        constructor() {
+            this.board = document.getElementById("prism-board")!;
+            this.canvas = document.getElementById(
+                "expertise-canvas",
+            ) as HTMLCanvasElement;
+            this.ctx = this.canvas.getContext("2d")!;
+            this.theme = document.documentElement.classList.contains("dark")
+                ? "dark"
+                : "light";
 
-        const tags = board.querySelectorAll(
-            ".kinetic-tag",
-        ) as NodeListOf<HTMLElement>;
-        const width = board.offsetWidth;
-        const height = board.offsetHeight || 600;
+            this.init();
+        }
 
-        // 1. Engine Setup
-        engine = Engine.create();
-        engine.gravity.y = 0;
-        engine.enableSleeping = false;
+        private init() {
+            this.resize();
+            window.addEventListener("resize", () => this.resize());
 
-        // 2. Create Kinetic Bodies with Depth Logic
-        tagBodies = Array.from(tags).map((tag) => {
-            const rect = tag.getBoundingClientRect();
-            const x = (Math.random() * 0.6 + 0.2) * width;
-            const y = (Math.random() * 0.6 + 0.2) * height;
+            // Physics Setup
+            this.engine = Engine.create();
+            this.engine.gravity.y = 0;
 
-            // Determine depth factor from class
-            let depth = 1;
-            if (tag.classList.contains("depth-front")) depth = 1.25;
-            if (tag.classList.contains("depth-back")) depth = 0.75;
+            const width = this.canvas.width / this.dpr;
+            const height = this.canvas.height / this.dpr;
 
-            const body = Bodies.rectangle(x, y, rect.width, rect.height, {
-                chamfer: { radius: rect.height / 2 },
-                restitution: 0.8,
-                frictionAir: 0.04 / depth, // Further things move "slower"
-                friction: 0.1,
-                label: "kinetic-tag",
-            });
+            // Create Physics Bodies
+            this.bodies = SKILLS.map((skill) => {
+                const fontSize = this.getFontSize(skill.size);
+                this.ctx.font = `${skill.weight} ${fontSize}px "Bebas Neue"`;
+                const textMetrics = this.ctx.measureText(skill.name);
 
-            return { element: tag, body, rect, renderedOnce: false, depth };
-        });
+                const paddingH = fontSize * 1.5;
+                const paddingV = fontSize * 0.8;
+                const rectW = textMetrics.width + paddingH;
+                const rectH = fontSize + paddingV;
 
-        // 3. Boundaries (Blueprint Edge)
-        const wallOptions = { isStatic: true, restitution: 1 };
-        Composite.add(engine.world, [
-            ...tagBodies.map((tb) => tb.body),
-            Bodies.rectangle(width / 2, height + 100, width, 200, wallOptions),
-            Bodies.rectangle(width / 2, -100, width, 200, wallOptions),
-            Bodies.rectangle(-100, height / 2, 200, height, wallOptions),
-            Bodies.rectangle(width + 100, height / 2, 200, height, wallOptions),
-        ]);
+                const x = (Math.random() * 0.6 + 0.2) * width;
+                const y = (Math.random() * 0.6 + 0.2) * height;
 
-        // 4. Interaction HUD
-        board.addEventListener("mousemove", (e) => {
-            const rect = board!.getBoundingClientRect();
-            mouse.x = e.clientX - rect.left;
-            mouse.y = e.clientY - rect.top;
-            mouse.active = true;
-
-            if (lens) {
-                lens.style.transform = `translate3d(${mouse.x - 125}px, ${mouse.y - 125}px, 0)`;
-                lens.style.opacity = "1";
-                if (coordX)
-                    coordX.innerText = `X: ${Math.round(mouse.x).toString().padStart(3, "0")}`;
-                if (coordY)
-                    coordY.innerText = `Y: ${Math.round(mouse.y).toString().padStart(3, "0")}`;
-            }
-        });
-
-        board.addEventListener("mouseleave", () => {
-            mouse.active = false;
-            if (lens) lens.style.opacity = "0";
-        });
-
-        // 5. Kinetic Simulation
-        runner = Runner.create();
-        Runner.run(runner, engine);
-
-        Events.on(engine, "afterUpdate", () => {
-            const tagsToReveal: HTMLElement[] = [];
-
-            tagBodies.forEach((tb) => {
-                const { body, element, rect, depth } = tb;
-
-                // Discovery Attraction (Parallax sensitive)
-                if (mouse.active) {
-                    const dx = mouse.x - body.position.x;
-                    const dy = mouse.y - body.position.y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-
-                    if (dist < 400 * depth) {
-                        const pull = 0.001 * depth * (1 - dist / (400 * depth));
-                        MatterBody.applyForce(body, body.position, {
-                            x: dx * pull,
-                            y: dy * pull,
-                        });
-                    }
-                }
-
-                // Architectural Spacing
-                tagBodies.forEach((other) => {
-                    if (other === tb) return;
-                    const dx = other.body.position.x - body.position.x;
-                    const dy = other.body.position.y - body.position.y;
-                    const distSq = dx * dx + dy * dy;
-                    if (distSq < 12000) {
-                        const push = 0.0003 / (distSq + 1);
-                        MatterBody.applyForce(body, body.position, {
-                            x: -dx * push,
-                            y: -dy * push,
-                        });
-                    }
+                const body = Bodies.rectangle(x, y, rectW, rectH, {
+                    chamfer: { radius: 2 },
+                    restitution: 0.8,
+                    frictionAir: 0.04 / skill.depth,
+                    label: "skill-tag",
                 });
 
-                // Velocity-Based Optics
-                const vel = body.velocity;
-                const speed = body.speed;
-                const skewX = vel.x * 0.6;
-                const scale = depth * (1 + speed * 0.015);
+                return {
+                    body,
+                    skill,
+                    width: rectW,
+                    height: rectH,
+                    revealOpacity: 0,
+                };
+            });
 
-                element.style.transform = `
-                    translate3d(${body.position.x - rect.width / 2}px, ${body.position.y - rect.height / 2}px, 0)
-                    rotate(${body.angle}rad)
-                    skewX(${skewX}deg)
-                    scale(${scale})
-                `;
+            // Boundaries
+            const wallOptions = { isStatic: true, restitution: 1 };
+            Composite.add(this.engine.world, [
+                ...this.bodies.map((b) => b.body),
+                Bodies.rectangle(
+                    width / 2,
+                    height + 100,
+                    width,
+                    200,
+                    wallOptions,
+                ),
+                Bodies.rectangle(width / 2, -100, width, 200, wallOptions),
+                Bodies.rectangle(-100, height / 2, 200, height, wallOptions),
+                Bodies.rectangle(
+                    width + 100,
+                    height / 2,
+                    200,
+                    height,
+                    wallOptions,
+                ),
+            ]);
 
-                // Depth Blur
-                const focusDist = mouse.active
-                    ? Math.sqrt(
-                          Math.pow(mouse.x - body.position.x, 2) +
-                              Math.pow(mouse.y - body.position.y, 2),
-                      )
-                    : 500;
-                const blurAmount = Math.max(
-                    0,
-                    focusDist / 150 - 1 + (1 - depth) * 2,
-                );
-                element.style.filter = `blur(${blurAmount}px)`;
-                element.style.opacity = (0.2 + depth * 0.8).toString();
+            // Reveal Animation
+            this.bodies.forEach((b, i) => {
+                gsap.to(b, {
+                    revealOpacity: 1,
+                    duration: 1.5,
+                    delay: i * 0.05,
+                    ease: "power4.out",
+                });
+            });
 
-                if (!tb.renderedOnce) {
-                    tagsToReveal.push(element);
-                    tb.renderedOnce = true;
+            this.setupInteraction();
+
+            this.runner = Runner.create();
+            Runner.run(this.runner, this.engine);
+
+            Events.on(this.engine, "afterUpdate", () => this.draw());
+        }
+
+        private getFontSize(size: string) {
+            const isMobile = window.innerWidth < 768;
+            if (size === "lg") return isMobile ? 24 : 32;
+            if (size === "md") return isMobile ? 18 : 22;
+            return isMobile ? 14 : 16;
+        }
+
+        private resize() {
+            this.dpr = window.devicePixelRatio || 1;
+            const rect = this.board.getBoundingClientRect();
+            this.canvas.width = rect.width * this.dpr;
+            this.canvas.height = rect.height * this.dpr;
+            this.canvas.style.width = `${rect.width}px`;
+            this.canvas.style.height = `${rect.height}px`;
+            this.ctx.scale(this.dpr, this.dpr);
+        }
+
+        private setupInteraction() {
+            const lens = document.getElementById("discovery-lens");
+            const coordX = document.getElementById("lens-x");
+            const coordY = document.getElementById("lens-y");
+
+            this.board.addEventListener("mousemove", (e) => {
+                const rect = this.board.getBoundingClientRect();
+                this.mouse.x = e.clientX - rect.left;
+                this.mouse.y = e.clientY - rect.top;
+                this.mouse.active = true;
+
+                if (lens) {
+                    lens.style.transform = `translate3d(${this.mouse.x - 125}px, ${this.mouse.y - 125}px, 0)`;
+                    lens.style.opacity = "1";
+                    if (coordX)
+                        coordX.innerText = `X: ${Math.round(this.mouse.x).toString().padStart(3, "0")}`;
+                    if (coordY)
+                        coordY.innerText = `Y: ${Math.round(this.mouse.y).toString().padStart(3, "0")}`;
                 }
             });
 
-            if (tagsToReveal.length > 0) {
-                gsap.fromTo(
-                    tagsToReveal,
-                    {
-                        opacity: 0,
-                        scale: 0.8,
-                        filter: "blur(10px)",
-                    },
-                    {
-                        opacity: 1,
-                        scale: 1,
-                        filter: "blur(0px)",
-                        duration: 1.5,
-                        stagger: 0.06,
-                        ease: "power4.out",
-                    },
-                );
-            }
-        });
+            this.board.addEventListener("mouseleave", () => {
+                this.mouse.active = false;
+                if (lens) lens.style.opacity = "0";
+            });
+        }
+
+        private draw() {
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            this.theme = document.documentElement.classList.contains("dark")
+                ? "dark"
+                : "light";
+
+            // Sort by depth for correct layering (back to front)
+            const sortedBodies = [...this.bodies].sort(
+                (a, b) => a.skill.depth - b.skill.depth,
+            );
+
+            sortedBodies.forEach(
+                ({ body, skill, width, height, revealOpacity }) => {
+                    const { depth } = skill;
+
+                    // Attraction Physics
+                    if (this.mouse.active) {
+                        const dx = this.mouse.x - body.position.x;
+                        const dy = this.mouse.y - body.position.y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        const range = 400 * depth;
+
+                        if (dist < range) {
+                            const pull = 0.001 * depth * (1 - dist / range);
+                            MatterBody.applyForce(body, body.position, {
+                                x: dx * pull,
+                                y: dy * pull,
+                            });
+                        }
+                    }
+
+                    // Spacing
+                    this.bodies.forEach((other) => {
+                        if (other.body === body) return;
+                        const dx = other.body.position.x - body.position.x;
+                        const dy = other.body.position.y - body.position.y;
+                        const distSq = dx * dx + dy * dy;
+                        if (distSq < 12000) {
+                            const push = 0.0003 / (distSq + 1);
+                            MatterBody.applyForce(body, body.position, {
+                                x: -dx * push,
+                                y: -dy * push,
+                            });
+                        }
+                    });
+
+                    // Rendering Calculations
+                    const focusDist = this.mouse.active
+                        ? Math.sqrt(
+                              Math.pow(this.mouse.x - body.position.x, 2) +
+                                  Math.pow(this.mouse.y - body.position.y, 2),
+                          )
+                        : 500;
+                    const blur = Math.max(
+                        0,
+                        focusDist / 150 - 1 + (1 - depth) * 2,
+                    );
+                    const opacity = (0.2 + depth * 0.8) * revealOpacity;
+                    const scale = depth * (1 + body.speed * 0.015);
+                    const skewX = body.velocity.x * 0.6;
+
+                    this.ctx.save();
+                    this.ctx.translate(body.position.x, body.position.y);
+                    this.ctx.rotate(body.angle);
+                    this.ctx.scale(scale, scale);
+                    this.ctx.transform(
+                        1,
+                        0,
+                        Math.tan((skewX * Math.PI) / 180),
+                        1,
+                        0,
+                        0,
+                    );
+
+                    // Apply Blur (Experimental but supported in modern browsers)
+                    if (blur > 0.5) {
+                        this.ctx.filter = `blur(${blur}px)`;
+                    }
+
+                    this.ctx.globalAlpha = opacity;
+
+                    // Box
+                    this.ctx.fillStyle =
+                        this.theme === "dark" ? "#ffffff" : "#000000";
+                    this.ctx.fillRect(-width / 2, -height / 2, width, height);
+
+                    // Text
+                    this.ctx.fillStyle =
+                        this.theme === "dark" ? "#000000" : "#ffffff";
+                    this.ctx.font = `${skill.weight} ${this.getFontSize(skill.size)}px "Bebas Neue"`;
+                    this.ctx.textAlign = "center";
+                    this.ctx.textBaseline = "middle";
+                    this.ctx.fillText(skill.name, 0, 1); // Tiny vertical offset for optical centering
+
+                    this.ctx.restore();
+                    this.ctx.filter = "none";
+                },
+            );
+        }
+
+        public stop() {
+            if (this.runner) Runner.stop(this.runner);
+            if (this.engine) Engine.clear(this.engine);
+        }
     }
 
+    let instance: ExpertiseCanvas | null = null;
+
     document.addEventListener("astro:page-load", () => {
-        if (runner) Runner.stop(runner);
-        if (engine) Engine.clear(engine);
-        initArchitecturalVoid();
+        if (instance) instance.stop();
+        instance = new ExpertiseCanvas();
     });
 </script>
 
 <style lang="scss">
     @use "../../styles/variables" as *;
     @use "../../styles/mixins" as *;
+
+    .expertise-section {
+        display: flex;
+        flex-direction: column;
+        gap: 2.5rem;
+        user-select: none;
+    }
+
+    .architectural-void {
+        position: relative;
+        width: 100%;
+        height: 400px;
+        border: 1px dashed rgba($color-black, 0.15);
+        border-radius: 0.5rem;
+        overflow: hidden;
+        background: transparent;
+
+        @include screen(md) {
+            height: 650px;
+        }
+
+        :global(.dark) & {
+            background: #000;
+            border-color: rgba($color-white, 0.15);
+        }
+    }
+
+    .technical-grid {
+        position: absolute;
+        inset: 0;
+        background-image:
+            linear-gradient(rgba($color-black, 0.03) 1px, transparent 1px),
+            linear-gradient(
+                90deg,
+                rgba($color-black, 0.03) 1px,
+                transparent 1px
+            );
+        background-size: 40px 40px;
+        pointer-events: none;
+        z-index: 1;
+
+        :global(.dark) & {
+            background-image:
+                linear-gradient(rgba($color-white, 0.03) 1px, transparent 1px),
+                linear-gradient(
+                    90deg,
+                    rgba($color-white, 0.03) 1px,
+                    transparent 1px
+                );
+        }
+    }
+
+    .expertise-canvas {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        cursor: none;
+    }
+
+    .discovery-lens {
+        position: absolute;
+        width: 250px;
+        height: 250px;
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 100;
+        opacity: 0;
+        will-change: transform;
+
+        // Refractive Optics
+        backdrop-filter: blur(2px) contrast(1.2) saturate(1.2);
+        mix-blend-mode: difference;
+        border: 1px solid rgba($color-white, 0.5);
+        box-shadow: 0 0 100px rgba($color-white, 0.1);
+
+        .lens-crosshair {
+            position: absolute;
+            inset: 0;
+            &::before,
+            &::after {
+                content: "";
+                position: absolute;
+                background: rgba($color-white, 0.3);
+            }
+            &::before {
+                top: 50%;
+                left: 10%;
+                right: 10%;
+                height: 1px;
+            }
+            &::after {
+                left: 50%;
+                top: 10%;
+                bottom: 10%;
+                width: 1px;
+            }
+        }
+
+        .lens-labels {
+            position: absolute;
+            top: -50px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            align-items: center;
+            font-family: $font-mono;
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: $color-black;
+            background: $color-white;
+            padding: 4px 8px;
+            border-radius: 2px;
+            white-space: nowrap;
+
+            :global(.dark) & {
+                color: $color-white;
+                background: $color-black;
+                border: 1px solid rgba($color-white, 0.2);
+            }
+
+            .label-status {
+                opacity: 0.6;
+                font-size: 0.55rem;
+            }
+        }
+    }
 
     .expertise-section {
         display: flex;

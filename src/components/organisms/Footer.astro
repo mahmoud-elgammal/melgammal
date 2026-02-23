@@ -11,11 +11,6 @@ import Link from "../atoms/Link.astro";
     <div class="technical-grid" id="footer-grid"></div>
   </div>
 
-  <!-- Custom Cursor for Impact Area -->
-  <div class="impact-cursor" id="footer-cursor">
-    <span>TALK</span>
-  </div>
-
   <Container>
     <div class="monolith-content">
       <!-- BAND A: MASSIVE IMPACT -->
@@ -265,100 +260,72 @@ import Link from "../atoms/Link.astro";
           },
         );
         // 3. Magnetic Impact Cursor
-        const cursor = document.getElementById("footer-cursor");
-        if (cursor) {
-          const cursorX = gsap.quickTo(cursor, "x", {
-            duration: 0.4,
-            ease: "power3",
+
+        let impactBounds: DOMRect;
+
+        displayImpact.addEventListener("mouseenter", () => {
+          impactBounds = displayImpact.getBoundingClientRect();
+          window.dispatchEvent(
+            new CustomEvent("cursor:enter", {
+              detail: { text: "TALK", size: 120 },
+            }),
+          );
+          gsap.to(displayImpact, {
+            scale: 0.98,
+            duration: 0.6,
+            ease: "power3.out",
           });
-          const cursorY = gsap.quickTo(cursor, "y", {
-            duration: 0.4,
-            ease: "power3",
+        });
+
+        displayImpact.addEventListener("mousemove", (e: Event) => {
+          const mouseEvent = e as MouseEvent;
+          if (!impactBounds)
+            impactBounds = displayImpact.getBoundingClientRect();
+
+          // Parallax text
+          const xNorm =
+            ((mouseEvent.clientX - impactBounds.left) / impactBounds.width -
+              0.5) *
+            2;
+          const yNorm =
+            ((mouseEvent.clientY - impactBounds.top) / impactBounds.height -
+              0.5) *
+            2;
+
+          gsap.to(displayImpact, {
+            x: xNorm * 20,
+            y: yNorm * 20,
+            duration: 0.6,
+            ease: "power2.out",
           });
-          const cursorScale = gsap.quickTo(cursor, "scale", {
-            duration: 0.3,
+        });
+
+        displayImpact.addEventListener("mouseleave", () => {
+          window.dispatchEvent(new CustomEvent("cursor:leave"));
+          gsap.to(displayImpact, {
+            scale: 1,
+            x: 0,
+            y: 0,
+            duration: 1,
+            ease: "elastic.out(1, 0.4)",
+          });
+        });
+
+        // Clicking effect
+        displayImpact.addEventListener("mousedown", () => {
+          gsap.to(displayImpact, {
+            scale: 0.95,
+            duration: 0.2,
+            ease: "power2.out",
+          });
+        });
+        displayImpact.addEventListener("mouseup", () => {
+          gsap.to(displayImpact, {
+            scale: 0.98,
+            duration: 0.4,
             ease: "back.out(1.5)",
           });
-          const cursorOpacity = gsap.quickTo(cursor, "opacity", {
-            duration: 0.2,
-            ease: "power1",
-          });
-
-          let impactBounds: DOMRect;
-
-          displayImpact.addEventListener("mouseenter", () => {
-            impactBounds = displayImpact.getBoundingClientRect();
-            cursorScale(1);
-            cursorOpacity(1);
-            gsap.to(displayImpact, {
-              scale: 0.98,
-              duration: 0.6,
-              ease: "power3.out",
-            });
-          });
-
-          displayImpact.addEventListener("mousemove", (e: Event) => {
-            const mouseEvent = e as MouseEvent;
-            if (!impactBounds)
-              impactBounds = displayImpact.getBoundingClientRect();
-
-            // Track cursor exactly
-            cursorX(mouseEvent.clientX - 60); // Offset by half width
-            cursorY(mouseEvent.clientY - 60);
-
-            // Parallax text
-            const xNorm =
-              ((mouseEvent.clientX - impactBounds.left) / impactBounds.width -
-                0.5) *
-              2;
-            const yNorm =
-              ((mouseEvent.clientY - impactBounds.top) / impactBounds.height -
-                0.5) *
-              2;
-
-            gsap.to(displayImpact, {
-              x: xNorm * 20,
-              y: yNorm * 20,
-              duration: 0.6,
-              ease: "power2.out",
-            });
-          });
-
-          displayImpact.addEventListener("mouseleave", () => {
-            cursorScale(0);
-            cursorOpacity(0);
-            gsap.to(displayImpact, {
-              scale: 1,
-              x: 0,
-              y: 0,
-              duration: 1,
-              ease: "elastic.out(1, 0.4)",
-            });
-          });
-
-          // Clicking effect
-          displayImpact.addEventListener("mousedown", () => {
-            cursorScale(0.8);
-            gsap.to(displayImpact, {
-              scale: 0.95,
-              duration: 0.2,
-              ease: "power2.out",
-            });
-          });
-          displayImpact.addEventListener("mouseup", () => {
-            cursorScale(1);
-            gsap.to(displayImpact, {
-              scale: 0.98,
-              duration: 0.4,
-              ease: "back.out(1.5)",
-            });
-          });
-
-          // Click to email
-          displayImpact.addEventListener("click", () => {
-            window.location.href = `mailto:${document.querySelector(".art-director-pill")?.textContent?.trim() || ""}`;
-          });
-        }
+        });
       }
     });
 
@@ -438,9 +405,10 @@ import Link from "../atoms/Link.astro";
   }
 
   .display-impact {
+    font-family: $font-display;
     font-size: clamp(3.5rem, 15vw, 6rem); // Significantly smaller for mobile
-    font-weight: 900;
-    letter-spacing: -0.06em;
+    font-weight: 400;
+    letter-spacing: 0.02em;
     line-height: 0.8;
     margin: 0;
     color: rgba($color-black, 0.9);
@@ -456,35 +424,6 @@ import Link from "../atoms/Link.astro";
 
     :global(.dark) & {
       color: rgba($color-white, 0.9);
-    }
-  }
-
-  /* --- CUSTOM IMPACT CURSOR --- */
-  .impact-cursor {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 120px;
-    height: 120px;
-    background: $color-black;
-    color: $color-white;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.1rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    pointer-events: none; // Prevent blocking clicks to the text
-    z-index: 9999;
-    opacity: 0;
-    transform: scale(0);
-    will-change: transform, opacity;
-    mix-blend-mode: exclusion;
-
-    :global(.dark) & {
-      background: $color-white;
-      color: $color-black;
     }
   }
 
@@ -505,7 +444,8 @@ import Link from "../atoms/Link.astro";
     color: $color-white;
     border-radius: 999px;
     font-size: 1.25rem;
-    font-weight: 700;
+    font-weight: 600;
+    font-family: $font-sans;
     text-decoration: none;
     transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
     box-shadow: 0 0 0 rgba(0, 0, 0, 0);
@@ -555,7 +495,7 @@ import Link from "../atoms/Link.astro";
   }
 
   .bracket-label {
-    font-family: ui-monospace, monospace;
+    font-family: $font-mono;
     font-size: 0.7rem;
     font-weight: 700;
     opacity: 0.4;
@@ -605,7 +545,7 @@ import Link from "../atoms/Link.astro";
     .stat-row {
       display: flex;
       justify-content: space-between;
-      font-family: ui-monospace, monospace;
+      font-family: $font-mono;
       font-size: 0.8rem;
 
       .k {
@@ -667,7 +607,7 @@ import Link from "../atoms/Link.astro";
     animation: marquee 30s linear infinite;
 
     span {
-      font-family: ui-monospace, monospace;
+      font-family: $font-mono;
       font-size: 0.65rem;
       font-weight: 600;
       opacity: 0.3;
@@ -699,7 +639,7 @@ import Link from "../atoms/Link.astro";
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-family: ui-monospace, monospace;
+      font-family: $font-mono;
       font-size: 0.7rem;
       opacity: 0.3;
       font-weight: 600;

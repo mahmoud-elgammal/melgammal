@@ -9,8 +9,10 @@ $color-black: #000000;
 $color-white: #ffffff;
 
 // Fonts
-$font-sans: "Meyer", "Inter", "sans-serif", "ui-sans-serif", "system-ui", "sans-serif", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-$font-serif: "Lora", "ui-serif", "Georgia", "Cambria", "Times New Roman", "Times", "serif";
+$font-display: "Bebas Neue", "sans-serif";
+$font-sans: "Inter", "sans-serif", "ui-sans-serif", "system-ui";
+$font-mono: "JetBrains Mono", "monospace", "ui-monospace";
+$font-serif: "Inter", "serif"; // Fallback body to sans for monolith feel
 
 // Breakpoints
 $screen-sm: 640px;

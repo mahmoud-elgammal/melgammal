@@ -12,6 +12,7 @@ type Props = {
 import IntroLoader from "@components/organisms/IntroLoader.astro";
 import CommandMenu from "@components/organisms/CommandMenu.astro";
 import MediaLightbox from "@components/organisms/MediaLightbox.astro";
+import Cursor from "@components/atoms/Cursor.astro";
 
 const { title, description } = Astro.props;
 ---
@@ -29,6 +30,7 @@ const { title, description } = Astro.props;
     </main>
     <Footer />
     <MediaLightbox />
+    <Cursor />
     <script>
       import Lenis from "lenis";
       import { gsap } from "gsap";

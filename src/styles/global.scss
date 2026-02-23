@@ -1,13 +1,7 @@
 @use "variables" as *;
 @use "mixins" as *;
 
-@font-face {
-    font-family: "Meyer";
-    src: url("/fonts/meyer-regular.otf") format("opentype");
-    font-weight: normal;
-    font-style: normal;
-    font-display: swap;
-}
+
 
 html {
     color-scheme: light;
@@ -25,6 +19,9 @@ body {
 
 body {
     font-family: $font-sans;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-style: normal;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     display: flex;
@@ -36,6 +33,29 @@ body {
         background-color: $color-dark-bg;
         color: $color-dark-text;
     }
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: $font-display;
+    font-weight: 400; // Bebas Neue is a single weight display font
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: $color-black;
+
+    :global(.dark) & {
+        color: $color-white;
+    }
+}
+
+code,
+pre,
+.mono {
+    font-family: $font-mono;
 }
 
 header {

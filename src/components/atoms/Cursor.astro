@@ -1,0 +1,155 @@
+---
+// Cursor.astro - A singleton global cursor atom
+---
+
+<div id="global-cursor" class="global-cursor">
+    <div class="cursor-ring"></div>
+    <div class="cursor-content"></div>
+</div>
+
+<style lang="scss">
+    @use "../../styles/variables" as *;
+
+    .global-cursor {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 20px;
+        height: 20px;
+        pointer-events: none;
+        z-index: 10000;
+        mix-blend-mode: exclusion;
+        opacity: 0;
+        display: none;
+        will-change: transform, opacity;
+
+        @media (hover: none) and (pointer: coarse) {
+            display: none !important;
+        }
+    }
+
+    .cursor-ring {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 100%;
+        height: 100%;
+        border: 1.5px solid #fff;
+        border-radius: 50%;
+        transition:
+            width 0.4s cubic-bezier(0.23, 1, 0.32, 1),
+            height 0.4s cubic-bezier(0.23, 1, 0.32, 1),
+            background 0.4s ease;
+    }
+
+    .cursor-content {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: #fff;
+        font-size: 0.65rem;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        white-space: nowrap;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    // Large Interactive States
+    .global-cursor.is-expanded {
+        width: 110px;
+        height: 110px;
+        .cursor-ring {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(2px);
+        }
+        .cursor-content {
+            opacity: 1;
+        }
+    }
+</style>
+
+<script>
+    import { gsap } from "gsap";
+
+    class GlobalCursor {
+        private el: HTMLElement;
+        private ring: HTMLElement;
+        private content: HTMLElement;
+        private xTo: any;
+        private yTo: any;
+        private isVisible = false;
+
+        constructor() {
+            this.el = document.getElementById("global-cursor")!;
+            this.ring = this.el.querySelector(".cursor-ring")!;
+            this.content = this.el.querySelector(".cursor-content")!;
+
+            if (!this.el) return;
+
+            this.xTo = gsap.quickTo(this.el, "x", {
+                duration: 0.2,
+                ease: "power3",
+            });
+            this.yTo = gsap.quickTo(this.el, "y", {
+                duration: 0.2,
+                ease: "power3",
+            });
+
+            this.init();
+        }
+
+        private init() {
+            window.addEventListener("mousemove", (e) => {
+                if (!this.isVisible) {
+                    this.isVisible = true;
+                    this.el.style.display = "block";
+                    gsap.to(this.el, { opacity: 1, duration: 0.5 });
+                }
+                this.xTo(e.clientX - this.el.offsetWidth / 2);
+                this.yTo(e.clientY - this.el.offsetHeight / 2);
+            });
+
+            // Global Event Listeners
+            window.addEventListener("cursor:enter", (e: any) => {
+                const { text, size = 110 } = e.detail || {};
+                this.el.classList.add("is-expanded");
+                if (text) {
+                    this.content.innerText = text;
+                }
+                gsap.to(this.el, {
+                    width: size,
+                    height: size,
+                    duration: 0.6,
+                    ease: "back.out(1.7)",
+                });
+            });
+
+            window.addEventListener("cursor:leave", () => {
+                this.el.classList.remove("is-expanded");
+                this.content.innerText = "";
+                gsap.to(this.el, {
+                    width: 20,
+                    height: 20,
+                    duration: 0.4,
+                    ease: "power3.out",
+                });
+            });
+
+            window.addEventListener("mousedown", () => {
+                gsap.to(this.el, { scale: 0.85, duration: 0.2 });
+            });
+            window.addEventListener("mouseup", () => {
+                gsap.to(this.el, { scale: 1, duration: 0.3 });
+            });
+        }
+    }
+
+    // Initialize on page load
+    document.addEventListener("astro:page-load", () => {
+        new GlobalCursor();
+    });
+</script>

@@ -231,9 +231,11 @@ const st = statusConfig[status] || statusConfig.shipped;
             </div>
 
             <div class="gantt-body">
+              <div class="gantt-line-v"></div>
               {timeline.map((t, i) => (
                 <div class="gantt-row" style={`--row-index: ${i}`}>
                   <div class="gantt-meta">
+                    <div class="gantt-node" />
                     <span class="gantt-phase-tag">{t.phase}</span>
                     <span class="gantt-phase-date">{t.date}</span>
                   </div>
@@ -406,9 +408,9 @@ const st = statusConfig[status] || statusConfig.shipped;
 
   .editorial-title {
     font-size: clamp(4rem, 12vw, 10rem);
-    font-family: $font-serif;
+    font-family: $font-display;
     font-weight: 400;
-    letter-spacing: -0.02em;
+    letter-spacing: 0.02em;
     line-height: 1.1;
     margin: 0 0 6rem 0;
     color: $color-black;
@@ -446,9 +448,9 @@ const st = statusConfig[status] || statusConfig.shipped;
   }
 
   .meta-label {
-    font-family: ui-sans-serif, system-ui, sans-serif;
+    font-family: $font-sans;
     font-size: 0.85rem;
-    font-weight: 700;
+    font-weight: 600;
     color: $color-black;
     line-height: 1;
     :global(.dark) & {
@@ -457,7 +459,7 @@ const st = statusConfig[status] || statusConfig.shipped;
   }
 
   .meta-val {
-    font-family: ui-sans-serif, system-ui, sans-serif;
+    font-family: $font-sans;
     font-size: 0.9rem;
     color: rgba($color-black, 0.6);
     line-height: 1.4;
@@ -501,7 +503,7 @@ const st = statusConfig[status] || statusConfig.shipped;
     gap: 0.4rem;
   }
   .meta-key {
-    font-family: ui-monospace, monospace;
+    font-family: $font-mono;
     font-size: 0.55rem;
     font-weight: 700;
     letter-spacing: 0.2em;
@@ -523,7 +525,7 @@ const st = statusConfig[status] || statusConfig.shipped;
     gap: 0.4rem;
   }
   .tech-pill {
-    font-family: ui-monospace, monospace;
+    font-family: $font-mono;
     font-size: 0.55rem;
     font-weight: 700;
     letter-spacing: 0.05em;
@@ -542,9 +544,9 @@ const st = statusConfig[status] || statusConfig.shipped;
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
-    font-family: ui-monospace, monospace;
+    font-family: $font-mono;
     font-size: 0.6rem;
-    font-weight: 900;
+    font-weight: 700;
     letter-spacing: 0.1em;
     text-transform: uppercase;
     color: var(--dot-color, #10b981);
@@ -604,18 +606,20 @@ const st = statusConfig[status] || statusConfig.shipped;
       margin-bottom: 2.5rem;
     }
     :global(h2) {
-      font-size: 1.75rem;
-      font-weight: 900;
+      font-family: $font-display;
+      font-size: 2rem;
+      font-weight: 400;
       margin: 5rem 0 1.5rem;
-      letter-spacing: -0.02em;
+      letter-spacing: 0.02em;
       color: $color-black;
       :global(.dark) & {
         color: $color-white;
       }
     }
     :global(h3) {
-      font-size: 1.25rem;
-      font-weight: 800;
+      font-family: $font-display;
+      font-size: 1.5rem;
+      font-weight: 400;
       margin: 4rem 0 1.25rem;
       color: $color-black;
       :global(.dark) & {
@@ -724,7 +728,7 @@ const st = statusConfig[status] || statusConfig.shipped;
     margin-bottom: 4rem;
   }
   .section-tag {
-    font-family: ui-monospace, monospace;
+    font-family: $font-mono;
     font-size: 0.55rem;
     font-weight: 700;
     letter-spacing: 0.2em;
@@ -733,9 +737,10 @@ const st = statusConfig[status] || statusConfig.shipped;
     margin-bottom: 0.75rem;
   }
   .section-title {
+    font-family: $font-display;
     font-size: clamp(1.75rem, 4vw, 2.75rem);
-    font-weight: 900;
-    letter-spacing: -0.03em;
+    font-weight: 400;
+    letter-spacing: 0.02em;
     line-height: 1.1;
     margin: 0;
     color: $color-black;
@@ -772,7 +777,7 @@ const st = statusConfig[status] || statusConfig.shipped;
     }
 
     .slide-caption {
-      font-family: ui-monospace, monospace;
+      font-family: $font-mono;
       font-size: 0.65rem;
       letter-spacing: 0.05em;
       font-weight: 500;
@@ -909,6 +914,10 @@ const st = statusConfig[status] || statusConfig.shipped;
       background: #000;
       border-color: #fff;
     }
+    @media (max-width: $screen-md) {
+      padding: 3rem 1.5rem;
+      border-radius: 1.5rem;
+    }
   }
 
   .gantt-grid-bg {
@@ -918,6 +927,9 @@ const st = statusConfig[status] || statusConfig.shipped;
     justify-content: space-between;
     padding: 0 4rem;
     pointer-events: none;
+    @media (max-width: $screen-md) {
+      display: none;
+    }
     .gantt-grid-line {
       width: 1px;
       height: 100%;
@@ -934,6 +946,26 @@ const st = statusConfig[status] || statusConfig.shipped;
     display: flex;
     flex-direction: column;
     gap: 4rem;
+
+    @media (max-width: $screen-md) {
+      gap: 3rem;
+    }
+  }
+
+  .gantt-line-v {
+    display: none;
+    @media (max-width: $screen-md) {
+      display: block;
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 7px; // Centered with 14px nodes
+      width: 1px;
+      background: rgba($color-black, 0.1);
+      :global(.dark) & {
+        background: rgba($color-white, 0.1);
+      }
+    }
   }
 
   .gantt-row {
@@ -941,12 +973,42 @@ const st = statusConfig[status] || statusConfig.shipped;
     grid-template-columns: 180px 1fr;
     align-items: center;
     gap: 3rem;
+    @media (max-width: $screen-md) {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
   }
 
   .gantt-meta {
     display: flex;
     flex-direction: column;
     gap: 0.4rem;
+
+    @media (max-width: $screen-md) {
+      padding-left: 2rem;
+      position: relative;
+    }
+  }
+
+  .gantt-node {
+    display: none;
+    @media (max-width: $screen-md) {
+      display: block;
+      position: absolute;
+      left: 0;
+      top: 0.35rem; // Center with first line of tag
+      width: 14px;
+      height: 14px;
+      background: var(--brand);
+      border-radius: 50%;
+      border: 3px solid #fff;
+      box-shadow: 0 0 0 1px rgba($color-black, 0.1);
+      z-index: 2;
+      :global(.dark) & {
+        border-color: #000;
+        box-shadow: 0 0 0 1px rgba($color-white, 0.1);
+      }
+    }
   }
 
   .gantt-phase-tag {
@@ -979,6 +1041,12 @@ const st = statusConfig[status] || statusConfig.shipped;
       background: rgba($color-white, 0.02);
       border-color: rgba($color-white, 0.1);
     }
+    @media (max-width: $screen-md) {
+      height: auto;
+      background: transparent;
+      border: none;
+      padding-left: 2rem;
+    }
   }
 
   .gantt-bar-wrap {
@@ -1000,6 +1068,18 @@ const st = statusConfig[status] || statusConfig.shipped;
     padding: 1.5rem 2.5rem;
     cursor: pointer;
     transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+
+    @media (max-width: $screen-md) {
+      position: relative;
+      top: 0;
+      left: 0 !important;
+      width: 100% !important;
+      transform: translateY(0);
+      margin: 1rem 0;
+      padding: 1.25rem; // Reduced from 1.5rem
+      opacity: 1 !important; // Ensure visible if GSAP doesn't trigger correctly on stack
+      box-sizing: border-box;
+    }
 
     :global(.dark) & {
       background: #0a0a0a;
@@ -1064,6 +1144,10 @@ const st = statusConfig[status] || statusConfig.shipped;
     letter-spacing: 0.1em;
     opacity: 0.6;
     color: $color-black;
+
+    @media (max-width: $screen-md) {
+      display: none;
+    }
     @media (max-width: 768px) {
       font-size: 0.55rem;
     }
@@ -1094,6 +1178,9 @@ const st = statusConfig[status] || statusConfig.shipped;
     :global(.dark) & {
         border-color: rgba($color-white, 0.05);
     }
+    @media (max-width: $screen-md) {
+      min-height: 50vh;
+    }
   }
 
   .next-project-wrapper {
@@ -1121,6 +1208,10 @@ const st = statusConfig[status] || statusConfig.shipped;
 
     :global(.dark) & {
         color: rgba($color-white, 0.02);
+    }
+    @media (max-width: $screen-md) {
+      font-size: 4rem; // Cap massive text on mobile
+      opacity: 0.1; // Make it more visible since it's smaller
     }
   }
 
@@ -1888,14 +1979,48 @@ const st = statusConfig[status] || statusConfig.shipped;
       });
 
     // ── Gantt Timeline Reveals ──
-    document.querySelectorAll(".gantt-bar").forEach((bar) => {
-      gsap.to(bar, {
+    const ganttLineV = document.querySelector(".gantt-line-v");
+    if (ganttLineV) {
+      gsap.fromTo(ganttLineV, 
+        { scaleY: 0 },
+        {
+          scaleY: 1,
+          transformOrigin: "top",
+          scrollTrigger: {
+            trigger: ".gantt-body",
+            start: "top 80%",
+            end: "bottom 80%",
+            scrub: 1
+          }
+        }
+      );
+    }
+
+    document.querySelectorAll(".gantt-row").forEach((row) => {
+      const node = row.querySelector(".gantt-node");
+      const bar = row.querySelector(".gantt-bar");
+      
+      const tl = gsap.timeline({
         scrollTrigger: {
-          trigger: bar,
-          start: "top 90%",
-          onEnter: () => bar.classList.add("in-view"),
-        },
+          trigger: row,
+          start: "top 85%",
+          toggleActions: "play none none none"
+        }
       });
+
+      if (node) {
+        tl.fromTo(node, 
+          { scale: 0, opacity: 0 },
+          { scale: 1, opacity: 1, duration: 0.5, ease: "back.out(2)" }
+        );
+      }
+
+      if (bar) {
+        tl.to(bar, {
+          onStart: () => bar.classList.add("in-view"),
+          duration: 0.1 // Just a trigger for the CSS transition
+        }, "-=0.2");
+      }
     });
 
     // ── Floating Dock (GSAP Refined) ──

@@ -97,9 +97,6 @@ const subtitle = tags && tags.length > 0 ? tags[0] : "Project";
     </a>
 
     <!-- Precision Target Cursor (Moved outside hero to avoid clipping) -->
-    <div class="action-ring">
-        <span>EXPLORE</span>
-    </div>
 </div>
 
 <style lang="scss">
@@ -212,9 +209,10 @@ const subtitle = tags && tags.length > 0 ? tags[0] : "Project";
         width: 200%;
         transform: translateY(-50%) rotate(-10deg);
         z-index: 3;
-        color: #000;
+        font-family: $font-display;
         font-size: clamp(2.5rem, 10vw, 4rem); // Scaled down for mobile
-        font-weight: 900;
+        font-weight: 400;
+        letter-spacing: 0.05em;
         white-space: nowrap;
         opacity: 0.04;
         pointer-events: none;
@@ -345,11 +343,12 @@ const subtitle = tags && tags.length > 0 ? tags[0] : "Project";
     }
 
     .project-name {
-        font-size: 1.5rem;
-        font-weight: 800;
+        font-family: $font-display;
+        font-size: 1.75rem;
+        font-weight: 400;
         margin: 0;
         color: rgba(0, 0, 0, 0.9);
-        letter-spacing: -0.02em;
+        letter-spacing: 0.02em;
         transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
         display: flex;
         align-items: center;
@@ -400,37 +399,6 @@ const subtitle = tags && tags.length > 0 ? tags[0] : "Project";
     .visual-card:hover .mobile-mockup {
         filter: grayscale(0) contrast(1);
     }
-
-    /* ── Action Ring (Minimalist Target) ── */
-    .action-ring {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 120px;
-        height: 120px;
-        border: 1px solid rgba(255, 255, 255, 0.8);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        pointer-events: none;
-        z-index: 100;
-        opacity: 0;
-        transform: translate3d(0, 0, 0) scale(0);
-        will-change: transform, opacity;
-        mix-blend-mode: exclusion;
-        color: #fff;
-        font-size: 0.85rem;
-        font-weight: 700;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-        background: rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(2px);
-
-        span {
-            will-change: transform;
-        }
-    }
 </style>
 
 <script>
@@ -461,7 +429,7 @@ const subtitle = tags && tags.length > 0 ? tags[0] : "Project";
                 const mobileMockup = card.querySelector(
                     ".mobile-mockup",
                 ) as HTMLElement;
-                const badge = card.querySelector(".action-ring") as HTMLElement;
+
                 const brandReveal = card.querySelector(
                     ".brand-reveal-layer",
                 ) as HTMLElement;
@@ -498,14 +466,6 @@ const subtitle = tags && tags.length > 0 ? tags[0] : "Project";
                 );
 
                 // 2. High-Performance QuickTo Setups
-                const setX = gsap.quickTo(badge, "x", {
-                    duration: 0.15, // Reduced for snappier 1:1 feel
-                    ease: "none", // No ease for surgical tracking
-                });
-                const setY = gsap.quickTo(badge, "y", {
-                    duration: 0.15, // Reduced for snappier 1:1 feel
-                    ease: "none", // No ease for surgical tracking
-                });
 
                 const setHeroRX = gsap.quickTo(visualHero, "rotationX", {
                     duration: 0.6,
@@ -557,12 +517,12 @@ const subtitle = tags && tags.length > 0 ? tags[0] : "Project";
 
                 card.addEventListener("mouseenter", () => {
                     bounds = card.getBoundingClientRect();
-                    gsap.to(badge, {
-                        opacity: 1,
-                        scale: 1,
-                        duration: 0.6,
-                        ease: "back.out(1.7)",
-                    });
+                    window.dispatchEvent(
+                        new CustomEvent("cursor:enter", {
+                            detail: { text: "View" },
+                        }),
+                    );
+
                     gsap.to(visualHero, {
                         scale: 0.98,
                         duration: 0.6,
@@ -583,10 +543,6 @@ const subtitle = tags && tags.length > 0 ? tags[0] : "Project";
 
                     const xNorm = (x / bounds.width - 0.5) * 2;
                     const yNorm = (y / bounds.height - 0.5) * 2;
-
-                    // Update Badge (offset by half size 60px)
-                    setX(x - 60);
-                    setY(y - 60);
 
                     // Update Parallax
                     setHeroRX(-yNorm * 4);
@@ -609,7 +565,7 @@ const subtitle = tags && tags.length > 0 ? tags[0] : "Project";
                 });
 
                 card.addEventListener("mouseleave", () => {
-                    gsap.to(badge, { opacity: 0, scale: 0, duration: 0.3 });
+                    window.dispatchEvent(new CustomEvent("cursor:leave"));
                     gsap.to(
                         [
                             visualHero,
