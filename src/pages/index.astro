@@ -362,8 +362,8 @@ const projects = (await getCollection("projects"))
     .title-container {
         position: relative;
         width: 100%;
-        margin-top: 4rem;
-        margin-bottom: 3rem;
+        margin-top: 6rem; // Increased for extra mobile spacing
+        margin-bottom: 2rem;
         z-index: 10;
 
         @include screen(md) {
@@ -374,14 +374,21 @@ const projects = (await getCollection("projects"))
 
     .status-card-wrapper {
         position: absolute;
-        top: -5rem;
-        left: 2rem;
+        top: -4rem;
+        left: 50%;
+        transform: translateX(-50%);
         z-index: 20;
-        pointer-events: auto; /* Required to catch hover while absolutely positioned over text */
+        pointer-events: auto;
+
+        @include screen(md) {
+            top: -5rem;
+            left: 2rem;
+            transform: none;
+        }
     }
 
     .display-title {
-        font-size: 2.5rem;
+        font-size: clamp(2.2rem, 10vw, 3.5rem); // Fluid small
         line-height: 1.1;
         font-weight: 700;
         color: $color-black;
@@ -392,7 +399,7 @@ const projects = (await getCollection("projects"))
         }
 
         @include screen(md) {
-            font-size: 8.2rem;
+            font-size: clamp(4rem, 8vw, 8.2rem); // Fluid large
         }
     }
 

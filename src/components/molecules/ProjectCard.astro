@@ -148,7 +148,7 @@ const subtitle = tags && tags.length > 0 ? tags[0] : "Project";
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 2.5rem;
+        padding: 1.5rem; // Reduced for mobile
         box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.1);
         will-change: transform;
 
@@ -211,13 +211,17 @@ const subtitle = tags && tags.length > 0 ? tags[0] : "Project";
         transform: translateY(-50%) rotate(-10deg);
         z-index: 3;
         color: #000;
-        font-size: clamp(4rem, 10vw, 8rem);
+        font-size: clamp(2.5rem, 10vw, 4rem); // Scaled down for mobile
         font-weight: 900;
         white-space: nowrap;
         opacity: 0.04;
         pointer-events: none;
         user-select: none;
         mix-blend-mode: overlay;
+
+        @include screen(md) {
+            font-size: clamp(4rem, 10vw, 8rem);
+        }
 
         :global(.dark) & {
             color: #fff;

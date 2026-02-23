@@ -71,14 +71,15 @@ const {
         perspective: 400px;
         transform-style: preserve-3d;
         cursor: default;
-        background-color: #fff;
+        background-color: $color-light-bg;
         transition: box-shadow 0.4s cubic-bezier(0.23, 1, 0.32, 1);
 
         box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.05);
         transform: rotate(-3deg) translate(0, 20px);
 
         :global(.dark) & {
-            border-color: rgba(255, 255, 255, 0.1);
+            background-color: $color-dark-bg;
+            box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1);
         }
     }
 

@@ -55,10 +55,15 @@ import Link from "../atoms/Link.astro";
     @use "../../styles/mixins" as *;
 
     .about-section {
-        margin-top: 6rem;
-        padding-top: 4rem;
+        margin-top: 4rem;
+        padding-top: 3rem;
         border-top: 1px dashed rgba($color-black, 0.15);
         perspective: 1000px;
+
+        @include screen(md) {
+            margin-top: 6rem;
+            padding-top: 4rem;
+        }
 
         :global(.dark) & {
             border-top-color: rgba($color-white, 0.15);
@@ -133,11 +138,11 @@ import Link from "../atoms/Link.astro";
     .about-right {
         display: flex;
         flex-direction: column;
-        gap: 3rem;
+        gap: 2rem; // Reduced from 3rem
         will-change: transform;
 
         .role-title {
-            font-size: 3.5rem;
+            font-size: clamp(2.5rem, 8vw, 3.5rem); // Fluid small
             font-weight: 700;
             letter-spacing: -0.04em;
             line-height: 0.95;
@@ -145,7 +150,7 @@ import Link from "../atoms/Link.astro";
             color: $color-black;
 
             @include screen(md) {
-                font-size: 5rem;
+                font-size: clamp(3.5rem, 6vw, 5rem); // Fluid large
             }
 
             :global(.dark) & {
@@ -156,14 +161,18 @@ import Link from "../atoms/Link.astro";
         .bio-content {
             display: flex;
             flex-direction: column;
-            gap: 1.75rem;
+            gap: 1.5rem; // Reduced
             max-width: 620px;
 
             p {
-                font-size: 1.5rem; // Increased font size
+                font-size: 1.125rem; // More readable on mobile
                 line-height: 1.6;
                 font-weight: 500;
-                color: rgba($color-black, 0.25); // Starts more gray/transparent
+                color: rgba($color-black, 0.25);
+
+                @include screen(md) {
+                    font-size: 1.5rem;
+                }
 
                 :global(.dark) & {
                     color: rgba($color-white, 0.25);

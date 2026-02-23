@@ -120,11 +120,6 @@ import Link from "../atoms/Link.astro";
     </div>
 
     <div class="hud-controls">
-      <div class="theme-switcher-ledger">
-        <button id="light-theme-button" class="t-btn">LT</button>
-        <button id="dark-theme-button" class="t-btn">DK</button>
-        <button id="system-theme-button" class="t-btn">SYS</button>
-      </div>
       <div class="btt-anchor">
         <BackToTop />
       </div>
@@ -443,17 +438,21 @@ import Link from "../atoms/Link.astro";
   }
 
   .display-impact {
-    font-size: clamp(6rem, 18vw, 18rem);
+    font-size: clamp(3.5rem, 15vw, 6rem); // Significantly smaller for mobile
     font-weight: 900;
     letter-spacing: -0.06em;
     line-height: 0.8;
     margin: 0;
-    color: rgba($color-black, 0.9); /* High contrast */
+    color: rgba($color-black, 0.9);
     text-transform: uppercase;
     user-select: none;
-    cursor: none; // Handled by custom cursor
+    cursor: none;
     will-change: transform, opacity;
-    opacity: 0; /* JS immediately overrides this */
+    opacity: 0;
+
+    @include screen(md) {
+      font-size: clamp(6rem, 18vw, 18rem);
+    }
 
     :global(.dark) & {
       color: rgba($color-white, 0.9);
@@ -691,42 +690,6 @@ import Link from "../atoms/Link.astro";
 
     :global(.dark) & {
       border-left-color: rgba($color-white, 0.08);
-    }
-  }
-
-  .theme-switcher-ledger {
-    display: flex;
-    gap: 0.5rem;
-    background: rgba($color-black, 0.02);
-    padding: 2px;
-    border-radius: 4px;
-
-    :global(.dark) & {
-      background: rgba($color-white, 0.03);
-    }
-
-    .t-btn {
-      font-family: ui-monospace, monospace;
-      font-size: 0.6rem;
-      padding: 4px 10px;
-      background: transparent;
-      color: $color-black;
-      opacity: 0.3;
-      border: none;
-      cursor: pointer;
-      transition: all 0.2s ease;
-
-      :global(.dark) & {
-        color: $color-white;
-      }
-
-      &:hover {
-        opacity: 1;
-        background: rgba($color-black, 0.05);
-        :global(.dark) & {
-          background: rgba($color-white, 0.08);
-        }
-      }
     }
   }
 

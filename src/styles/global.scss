@@ -21,6 +21,7 @@ html,
 body {
     width: 100%;
     height: 100%;
+    overflow-x: hidden; // Prevent horizontal scroll from animations
 }
 
 body {
@@ -46,20 +47,26 @@ header {
     z-index: 50;
     padding-top: 1.25rem;
     padding-bottom: 1.25rem;
-    // backdrop-filter: blur(4px); // Removed for clean blend mode
-    color: #fff;
-    mix-blend-mode: difference;
+    background-color: rgba($color-light-bg, 0.8);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid rgba($color-black, 0.05);
+    transition: background-color 0.4s ease, border-color 0.4s ease;
 
-    // :global(.dark) & {
-    //     // background-color: rgba(28, 25, 23, 0.25); // Removed
-    // }
+    :global(.dark) & {
+        background-color: rgba($color-dark-bg, 0.8);
+        border-bottom-color: rgba($color-white, 0.05);
+    }
 }
 
 main {
     flex: 1 1 0%;
-    padding-top: 8rem;
-    /* py-32 -> 128px */
-    padding-bottom: 8rem;
+    padding-top: 4rem; // Reduced for mobile
+    padding-bottom: 4rem; // Reduced for mobile
+
+    @include screen(md) {
+        padding-top: 8rem;
+        padding-bottom: 8rem;
+    }
 }
 
 footer {

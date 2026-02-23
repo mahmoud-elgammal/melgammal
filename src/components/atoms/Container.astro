@@ -19,8 +19,8 @@ const { size = "xl", className = "" } = Astro.props;
     width: 100%;
     margin-right: auto;
     margin-left: auto;
-    padding-right: 1.5rem;
-    padding-left: 1.5rem;
+    padding-right: 1.25rem; // Slightly more compact for mobile
+    padding-left: 1.25rem;
 
     &.sm {
       max-width: $screen-md;
@@ -36,8 +36,13 @@ const { size = "xl", className = "" } = Astro.props;
     } // Cinematic (1536px)
 
     @include screen(sm) {
-      padding-right: 2.5rem;
-      padding-left: 2.5rem;
+      padding-right: 2rem;
+      padding-left: 2rem;
+    }
+
+    @include screen(md) {
+      padding-right: 3rem;
+      padding-left: 3rem;
     }
   }
 </style>

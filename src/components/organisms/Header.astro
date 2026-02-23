@@ -21,14 +21,14 @@ import { NAV_SHORTCUTS } from "@lib/shortcuts";
     </div>
 </div>
 
-<header>
+<header id="site-header">
     <Container>
         <div class="header-content">
             <div class="nav-group">
                 <Link href="/" underline={false}>
                     <div class="brand" id="header-brand">M. El-Gammal</div>
                 </Link>
-                <nav id="header-nav">
+                <nav id="header-nav" class="desktop-nav">
                     {
                         NAV_SHORTCUTS.map((shortcut, index) => (
                             <>
@@ -50,8 +50,9 @@ import { NAV_SHORTCUTS } from "@lib/shortcuts";
                     }
                 </nav>
             </div>
+
             <div class="actions-group">
-                <div id="header-cta">
+                <div id="header-cta" class="desktop-cta">
                     <Button href="/book-intro" variant="outline"
                         >Book Intro</Button
                     >
@@ -59,9 +60,38 @@ import { NAV_SHORTCUTS } from "@lib/shortcuts";
                 <div id="header-lang">
                     <LanguageSwitch />
                 </div>
+                <button
+                    id="mobile-menu-toggle"
+                    class="mobile-menu-toggle"
+                    aria-label="Toggle Menu"
+                >
+                    <span class="line line-1"></span>
+                    <span class="line line-2"></span>
+                </button>
             </div>
         </div>
     </Container>
+
+    <!-- Mobile Menu Overlay -->
+    <div id="mobile-menu-overlay" class="mobile-menu-overlay">
+        <div class="overlay-content">
+            <nav class="mobile-nav">
+                {
+                    NAV_SHORTCUTS.map((shortcut) => (
+                        <Link href={shortcut.href} class="mobile-nav-link">
+                            <span class="link-label">{shortcut.label}</span>
+                            <span class="link-hint">{shortcut.hint}</span>
+                        </Link>
+                    ))
+                }
+            </nav>
+            <div class="overlay-footer">
+                <Button href="/book-intro" variant="outline" class="w-full"
+                    >Book Intro</Button
+                >
+            </div>
+        </div>
+    </div>
 </header>
 
 <script>
@@ -262,6 +292,51 @@ import { NAV_SHORTCUTS } from "@lib/shortcuts";
         });
     }
 
+    /* ── Mobile Menu Logic ── */
+    function setupMobileMenu() {
+        const toggle = document.getElementById("mobile-menu-toggle");
+        const overlay = document.getElementById("mobile-menu-overlay");
+        const header = document.getElementById("site-header");
+        const links = document.querySelectorAll(".mobile-nav-link");
+
+        if (!toggle || !overlay || !header) return;
+
+        let isOpen = false;
+
+        const toggleMenu = () => {
+            isOpen = !isOpen;
+            toggle.classList.toggle("active", isOpen);
+            overlay.classList.toggle("active", isOpen);
+            header.classList.toggle("menu-open", isOpen);
+            document.body.style.overflow = isOpen ? "hidden" : "";
+
+            if (isOpen) {
+                gsap.fromTo(
+                    ".mobile-nav-link",
+                    { opacity: 0, y: 20, x: -10 },
+                    {
+                        opacity: 1,
+                        y: 0,
+                        x: 0,
+                        duration: 0.5,
+                        stagger: 0.08,
+                        ease: "power4.out",
+                        delay: 0.2,
+                    },
+                );
+            }
+        };
+
+        toggle.addEventListener("click", toggleMenu);
+
+        // Close on link click
+        links.forEach((link) => {
+            link.addEventListener("click", () => {
+                if (isOpen) toggleMenu();
+            });
+        });
+    }
+
     /* ── Init ── */
     function initHeader() {
         // @ts-ignore
@@ -269,6 +344,7 @@ import { NAV_SHORTCUTS } from "@lib/shortcuts";
         animateHeader();
         setupMagneticHover();
         setupBrandScatter();
+        setupMobileMenu();
     }
 
     initHeader();
@@ -339,23 +415,144 @@ import { NAV_SHORTCUTS } from "@lib/shortcuts";
 
     .header-content {
         display: flex;
-        flex-wrap: wrap;
-        row-gap: 0.5rem;
+        flex-wrap: nowrap;
         justify-content: space-between;
         align-items: center;
+        width: 100%;
     }
 
     .nav-group {
         display: flex;
-        flex-wrap: wrap;
         align-items: center;
-        gap: 1rem;
+        gap: 1.5rem;
     }
 
     .actions-group {
         display: flex;
         align-items: center;
-        gap: 0.75rem;
+        gap: 1rem;
+    }
+
+    /* ── Desktop Nav ── */
+    .desktop-nav {
+        display: none;
+        gap: 0;
+        flex-wrap: wrap;
+        font-size: 0.875rem;
+
+        @media (min-width: 1024px) {
+            display: flex;
+        }
+    }
+
+    .desktop-cta {
+        display: none;
+        @media (min-width: 640px) {
+            display: block;
+        }
+    }
+
+    /* ── Mobile Menu Toggle ── */
+    .mobile-menu-toggle {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 5px;
+        width: 40px;
+        height: 40px;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        z-index: 10001;
+        padding: 0;
+
+        @media (min-width: 1024px) {
+            display: none;
+        }
+
+        .line {
+            display: block;
+            width: 20px;
+            height: 2px;
+            background: currentColor;
+            transition: transform 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+            border-radius: 2px;
+        }
+
+        &.active {
+            .line-1 {
+                transform: translateY(3.5px) rotate(45deg);
+            }
+            .line-2 {
+                transform: translateY(-3.5px) rotate(-45deg);
+            }
+        }
+    }
+
+    /* ── Mobile Overlay ── */
+    .mobile-menu-overlay {
+        position: fixed;
+        inset: 0;
+        background: $color-light-bg;
+        z-index: 10000;
+        display: flex;
+        flex-direction: column;
+        padding: 8rem 2rem 2rem;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+
+        :global(.dark) & {
+            background: $color-dark-bg;
+        }
+
+        &.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .overlay-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+    }
+
+    .mobile-nav {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .mobile-nav-link {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: $color-black;
+        text-decoration: none;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+
+        :global(.dark) & {
+            color: $color-white;
+            border-bottom-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .link-hint {
+            font-family: ui-monospace, monospace;
+            font-size: 0.75rem;
+            font-weight: 400;
+            opacity: 0.35;
+        }
+    }
+
+    .overlay-footer {
+        margin-top: auto;
+        padding-top: 2rem;
     }
 
     /* ── Brand ── */
@@ -363,6 +560,12 @@ import { NAV_SHORTCUTS } from "@lib/shortcuts";
         font-weight: 600;
         color: inherit;
         cursor: pointer;
+        font-size: 1rem;
+        white-space: nowrap;
+
+        @media (min-width: 640px) {
+            font-size: 1.125rem;
+        }
 
         :global(.brand-letter) {
             display: inline-block;
@@ -374,18 +577,11 @@ import { NAV_SHORTCUTS } from "@lib/shortcuts";
         opacity: 0; // Hidden until entrance animation
     }
 
-    /* ── Nav links ── */
-    nav {
-        display: flex;
-        gap: 0;
-        flex-wrap: wrap;
-        font-size: 0.875rem;
-    }
-
     :global(.header-nav-link) {
         opacity: 0; // Hidden until entrance animation
         position: relative;
         will-change: transform;
+        padding: 0.25rem 0.5rem;
 
         // Underline reveal on hover
         &::after {
@@ -424,7 +620,7 @@ import { NAV_SHORTCUTS } from "@lib/shortcuts";
         transition:
             opacity 0.3s ease,
             transform 0.3s cubic-bezier(0.23, 1, 0.32, 1);
-        z-index: 9000;
+        z-index: 11000;
         white-space: nowrap;
         box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
 
@@ -535,7 +731,6 @@ import { NAV_SHORTCUTS } from "@lib/shortcuts";
         font-weight: 500;
         text-transform: uppercase;
         letter-spacing: 0.12em;
-        background: rgba(0, 0, 0, 0.02);
         border: 1px solid rgba(0, 0, 0, 0.04);
         color: rgba(0, 0, 0, 0.35);
         line-height: 1;
@@ -545,7 +740,7 @@ import { NAV_SHORTCUTS } from "@lib/shortcuts";
         :global(.dark) & {
             background: rgba(255, 255, 255, 0.04);
             border-color: rgba(255, 255, 255, 0.06);
-            color: rgba(255, 255, 255, 0.35);
+            color: rgba(255, 255, 255, 0.6);
         }
     }
 
