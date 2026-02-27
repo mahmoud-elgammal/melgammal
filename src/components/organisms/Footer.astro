@@ -85,6 +85,10 @@ import Link from "../atoms/Link.astro";
                 <span class="v mono-pulse" id="footer-ticker">00:00:00</span>
               </div>
               <div class="stat-row">
+                <span class="k">DOCS</span>
+                <Link href="/resume" class="v">Resume</Link>
+              </div>
+              <div class="stat-row">
                 <span class="k">MAP</span>
                 <Link href="/sitemap" class="v">Site Map</Link>
               </div>
@@ -259,73 +263,74 @@ import Link from "../atoms/Link.astro";
             },
           },
         );
-        // 3. Magnetic Impact Cursor
+        // 3. Magnetic Impact Cursor (Desktop Only)
+        if (window.innerWidth >= 1024) {
+          let impactBounds: DOMRect;
 
-        let impactBounds: DOMRect;
-
-        displayImpact.addEventListener("mouseenter", () => {
-          impactBounds = displayImpact.getBoundingClientRect();
-          window.dispatchEvent(
-            new CustomEvent("cursor:enter", {
-              detail: { text: "TALK", size: 120 },
-            }),
-          );
-          gsap.to(displayImpact, {
-            scale: 0.98,
-            duration: 0.6,
-            ease: "power3.out",
-          });
-        });
-
-        displayImpact.addEventListener("mousemove", (e: Event) => {
-          const mouseEvent = e as MouseEvent;
-          if (!impactBounds)
+          displayImpact.addEventListener("mouseenter", () => {
             impactBounds = displayImpact.getBoundingClientRect();
-
-          // Parallax text
-          const xNorm =
-            ((mouseEvent.clientX - impactBounds.left) / impactBounds.width -
-              0.5) *
-            2;
-          const yNorm =
-            ((mouseEvent.clientY - impactBounds.top) / impactBounds.height -
-              0.5) *
-            2;
-
-          gsap.to(displayImpact, {
-            x: xNorm * 20,
-            y: yNorm * 20,
-            duration: 0.6,
-            ease: "power2.out",
+            window.dispatchEvent(
+              new CustomEvent("cursor:enter", {
+                detail: { text: "TALK", size: 120 },
+              }),
+            );
+            gsap.to(displayImpact, {
+              scale: 0.98,
+              duration: 0.6,
+              ease: "power3.out",
+            });
           });
-        });
 
-        displayImpact.addEventListener("mouseleave", () => {
-          window.dispatchEvent(new CustomEvent("cursor:leave"));
-          gsap.to(displayImpact, {
-            scale: 1,
-            x: 0,
-            y: 0,
-            duration: 1,
-            ease: "elastic.out(1, 0.4)",
-          });
-        });
+          displayImpact.addEventListener("mousemove", (e: Event) => {
+            const mouseEvent = e as MouseEvent;
+            if (!impactBounds)
+              impactBounds = displayImpact.getBoundingClientRect();
 
-        // Clicking effect
-        displayImpact.addEventListener("mousedown", () => {
-          gsap.to(displayImpact, {
-            scale: 0.95,
-            duration: 0.2,
-            ease: "power2.out",
+            // Parallax text
+            const xNorm =
+              ((mouseEvent.clientX - impactBounds.left) / impactBounds.width -
+                0.5) *
+              2;
+            const yNorm =
+              ((mouseEvent.clientY - impactBounds.top) / impactBounds.height -
+                0.5) *
+              2;
+
+            gsap.to(displayImpact, {
+              x: xNorm * 20,
+              y: yNorm * 20,
+              duration: 0.6,
+              ease: "power2.out",
+            });
           });
-        });
-        displayImpact.addEventListener("mouseup", () => {
-          gsap.to(displayImpact, {
-            scale: 0.98,
-            duration: 0.4,
-            ease: "back.out(1.5)",
+
+          displayImpact.addEventListener("mouseleave", () => {
+            window.dispatchEvent(new CustomEvent("cursor:leave"));
+            gsap.to(displayImpact, {
+              scale: 1,
+              x: 0,
+              y: 0,
+              duration: 1,
+              ease: "elastic.out(1, 0.4)",
+            });
           });
-        });
+
+          // Clicking effect
+          displayImpact.addEventListener("mousedown", () => {
+            gsap.to(displayImpact, {
+              scale: 0.95,
+              duration: 0.2,
+              ease: "power2.out",
+            });
+          });
+          displayImpact.addEventListener("mouseup", () => {
+            gsap.to(displayImpact, {
+              scale: 0.98,
+              duration: 0.4,
+              ease: "back.out(1.5)",
+            });
+          });
+        }
       }
     });
 

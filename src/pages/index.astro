@@ -25,11 +25,7 @@ const projects = (await getCollection("projects"))
 <PageLayout title={HOME.TITLE} description={HOME.DESCRIPTION}>
     <Container>
         <div class="title-container" data-scroll-personality="cinematic">
-            <div
-                class="status-card-wrapper"
-                id="hero-status-card"
-                style="opacity: 0;"
-            >
+            <div class="status-card-wrapper" id="hero-status-card">
                 <StatusCard
                     name="Mahmoud Elgammal"
                     role="Brand Lead"
@@ -37,7 +33,7 @@ const projects = (await getCollection("projects"))
                     description="Crafting digital experiences."
                 />
             </div>
-            <h1 class="display-title" id="hero-title" style="opacity: 0;">
+            <h1 class="display-title" id="hero-title">
                 Transform Your Ideas<br />
                 Into Interactive<br />
                 Masterpieces.
@@ -50,13 +46,19 @@ const projects = (await getCollection("projects"))
             >
                 <div class="section-header">
                     <h5 class="section-title">Recent projects</h5>
-                    <Link href="/projects"> See all projects </Link>
+                    <Link href="/work"> See all projects </Link>
                 </div>
                 <ul class="project-grid">
                     {
-                        projects.map((project) => (
+                        projects.map((project, index) => (
                             <li>
-                                <ProjectCard project={project} />
+                                <ProjectCard
+                                    project={project}
+                                    loading={index === 0 ? "eager" : "lazy"}
+                                    fetchpriority={
+                                        index === 0 ? "high" : "auto"
+                                    }
+                                />
                             </li>
                         ))
                     }
@@ -72,9 +74,15 @@ const projects = (await getCollection("projects"))
                 </div>
                 <ul class="post-grid">
                     {
-                        blog.map((post) => (
+                        blog.map((post, index) => (
                             <li>
-                                <PostCard post={post} />
+                                <PostCard
+                                    post={post}
+                                    loading={index === 0 ? "eager" : "lazy"}
+                                    fetchpriority={
+                                        index === 0 ? "high" : "auto"
+                                    }
+                                />
                             </li>
                         ))
                     }
@@ -95,33 +103,11 @@ const projects = (await getCollection("projects"))
     gsap.registerPlugin(ScrollTrigger);
 
     /* ── Wait for IntroLoader curtain ── */
-    function waitForLoader(): Promise<void> {
-        return new Promise((resolve) => {
-            const loader = document.getElementById("intro-loader");
-            if (!loader || window.getComputedStyle(loader).display === "none") {
-                resolve();
-                return;
-            }
-            const observer = new MutationObserver(() => {
-                if (window.getComputedStyle(loader).display === "none") {
-                    observer.disconnect();
-                    resolve();
-                }
-            });
-            observer.observe(loader, {
-                attributes: true,
-                attributeFilter: ["style", "class"],
-            });
-            setTimeout(() => {
-                observer.disconnect();
-                resolve();
-            }, 3000);
-        });
-    }
 
     /* ── Custom GSAP ASCII Scrambler ── */
     /* ── Custom GSAP ASCII Scrambler ── */
     function setupAsciiHoverEffect(wordDivs: HTMLElement[]) {
+        if (window.innerWidth < 1024) return; // Skip on mobile/tablet (no hover)
         const chars = "_+-*/=<>!@#$%^&()[]{}\\/|?".split("");
         const brandMessage = "MELGAMMAL"; // Core brand identifier
 
@@ -135,15 +121,28 @@ const projects = (await getCollection("projects"))
             // Lock width AFTER the entrance animation finishes to prevent layout jump during scramble
             // while preserving strictly natural font spacing.
             // Using a short timeout to ensure the DOM has fully painted the injected spans
-            setTimeout(() => {
-                spans.forEach((span) => {
-                    const width = span.getBoundingClientRect().width;
-                    if (width > 0) {
-                        span.style.width = `${width}px`;
+            // PERFORMANCE: Use requestIdleCallback to batch layout reads during idle periods
+            // to avoid thrashing during the entrance animation.
+            const runWidthBatch = () => {
+                // READ Phase: Batch all width queries first to avoid forced synchronous layouts
+                const widths = spans.map(
+                    (span) => span.getBoundingClientRect().width,
+                );
+
+                // WRITE Phase: Apply all width mutations together
+                spans.forEach((span, i) => {
+                    if (widths[i] > 0) {
+                        span.style.width = `${widths[i]}px`;
                         span.style.textAlign = "center";
                     }
                 });
-            }, 50);
+            };
+
+            if ("requestIdleCallback" in window) {
+                window.requestIdleCallback(runWidthBatch, { timeout: 1000 });
+            } else {
+                setTimeout(runWidthBatch, 200);
+            }
 
             wordDiv.addEventListener("mouseenter", () => {
                 isHovered = true;
@@ -195,8 +194,6 @@ const projects = (await getCollection("projects"))
     }
 
     async function animateHero() {
-        await waitForLoader();
-
         // Create a root GSAP context for better memory management and ScrollTrigger reliability
         const ctx = gsap.context(() => {
             const statusCard = document.getElementById("hero-status-card");
@@ -258,11 +255,8 @@ const projects = (await getCollection("projects"))
                 });
 
                 // 1. Reveal the overall container first (avoids layout jumping)
-                tl.fromTo(
-                    heroTitle,
-                    { opacity: 0 },
-                    { opacity: 1, duration: 0.1 },
-                );
+                // Using set instead of timeline beat for LCP efficiency
+                gsap.set(heroTitle, { opacity: 1 });
 
                 // 2. Cinematic character stagger entrance
                 tl.fromTo(
@@ -281,8 +275,8 @@ const projects = (await getCollection("projects"))
                         rotationZ: 0,
                         rotationX: 0,
                         scale: 1,
-                        duration: 3,
-                        stagger: 0.03, // Slight speedup compared to footer for the main title
+                        duration: 0.8, // Faster for UX
+                        stagger: 0.01, // Faster for UX
                         ease: "power4.out",
                         onComplete: () => {
                             const wordDivs = Array.from(
@@ -291,31 +285,26 @@ const projects = (await getCollection("projects"))
                             setupAsciiHoverEffect(wordDivs);
                         },
                     },
-                    "-=0.1",
+                    "0", // Start immediately with the timeline
                 );
             }
 
             if (statusCard) {
+                // LCP CRITICAL: Do not animate opacity from 0 for the LCP candidate.
+                // We only animate a subtle entrance transform/blur to keep the feel.
                 tl.fromTo(
                     statusCard,
                     {
-                        opacity: 0,
-                        y: 15,
-                        filter: "blur(6px)",
+                        y: 10,
+                        filter: "blur(4px)",
                     },
                     {
-                        opacity: 1,
                         y: 0,
                         filter: "blur(0px)",
-                        duration: 0.8, // Luxurious, slow fade
+                        duration: 0.6,
                         ease: "power2.out",
-                        onStart: () => {
-                            document.dispatchEvent(
-                                new CustomEvent("header-start"),
-                            );
-                        },
                     },
-                    "<2", // Start exactly 2s after the title begins
+                    "0", // Start literally frame 0
                 );
             }
 

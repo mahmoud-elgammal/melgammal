@@ -26,6 +26,38 @@
     </div>
 </section>
 
+<div class="expertise-mobile-fallback">
+    <div class="section-header">
+        <h5 class="section-title">Core Competencies</h5>
+    </div>
+    <ul class="mobile-skills-list">
+        <!-- Render from server to eliminate all JS dependency on mobile -->
+        {
+            [
+                { name: "Node.js", weight: "800", size: "lg" },
+                { name: "TypeScript", weight: "600", size: "md" },
+                { name: "React", weight: "300", size: "sm" },
+                { name: "Prometheus", weight: "800", size: "lg" },
+                { name: "Grafana", weight: "600", size: "md" },
+                { name: "Docker", weight: "300", size: "sm" },
+                { name: "K8s", weight: "800", size: "md" },
+                { name: "k6", weight: "600", size: "sm" },
+                { name: "Three.js", weight: "300", size: "lg" },
+                { name: "React Native", weight: "800", size: "sm" },
+                { name: "Rust", weight: "600", size: "md" },
+                { name: "AWS", weight: "300", size: "md" },
+                { name: "Astro.js", weight: "800", size: "lg" },
+            ].map((skill) => (
+                <li
+                    class={`skill-pill weight-${skill.weight} size-${skill.size}`}
+                >
+                    {skill.name}
+                </li>
+            ))
+        }
+    </ul>
+</div>
+
 <script>
     import Matter from "matter-js";
     import { gsap } from "gsap";
@@ -57,6 +89,7 @@
 
     class ExpertiseCanvas {
         private board: HTMLElement;
+        private boardRect!: DOMRect;
         private canvas: HTMLCanvasElement;
         private ctx: CanvasRenderingContext2D;
         private engine: any;
@@ -91,12 +124,29 @@
             });
 
             this.resizeHandler = () => this.resize();
-            this.init();
+
+            // PERFORMANCE: Defer expensive layout-heavy initialization until the section is in view
+            const intersectionObserver = new IntersectionObserver(
+                (entries) => {
+                    entries.forEach((entry) => {
+                        if (entry.isIntersecting) {
+                            this.init();
+                            intersectionObserver.disconnect();
+                        }
+                    });
+                },
+                { rootMargin: "200px" },
+            );
+
+            intersectionObserver.observe(this.board);
         }
 
         private init() {
             this.resize();
             window.addEventListener("resize", this.resizeHandler);
+
+            // CPU SAVER: Bypass all heavy Physics simulation if mobile viewport
+            if (this.isMobile) return;
 
             // Physics Setup
             this.engine = Engine.create();
@@ -184,7 +234,8 @@
         private resize() {
             this.isMobile = window.innerWidth < 768;
             this.dpr = window.devicePixelRatio || 1;
-            const rect = this.board.getBoundingClientRect();
+            this.boardRect = this.board.getBoundingClientRect();
+            const rect = this.boardRect;
             this.canvas.width = rect.width * this.dpr;
             this.canvas.height = rect.height * this.dpr;
             this.canvas.style.width = `${rect.width}px`;
@@ -203,7 +254,7 @@
                     this.mouse.x = e.offsetX;
                     this.mouse.y = e.offsetY;
                 } else {
-                    const rect = this.board.getBoundingClientRect();
+                    const rect = this.boardRect;
                     this.mouse.x = e.clientX - rect.left;
                     this.mouse.y = e.clientY - rect.top;
                 }
@@ -484,6 +535,11 @@
         overflow: hidden;
         cursor: none;
 
+        // Hide desktop physics simulation on mobile
+        @include screen(max-md) {
+            display: none;
+        }
+
         @include screen(md) {
             height: 650px;
         }
@@ -491,6 +547,66 @@
         :global(.dark) & {
             background: $color-black;
             border-color: rgba($color-white, 0.15);
+        }
+    }
+
+    // Server-rendered static list for mobile
+    .expertise-mobile-fallback {
+        display: none;
+
+        @include screen(max-md) {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .section-header {
+            margin-bottom: 0.5rem;
+        }
+
+        .mobile-skills-list {
+            list-style: none;
+            padding: 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+
+            .skill-pill {
+                padding: 0.6rem 1rem;
+                border: 1px solid rgba($color-black, 0.1);
+                border-radius: 4px;
+                font-family: $font-display;
+                background: $color-white;
+                color: $color-black;
+                text-transform: uppercase;
+
+                :global(.dark) & {
+                    background: transparent;
+                    border-color: rgba($color-white, 0.2);
+                    color: $color-white;
+                }
+
+                &.size-sm {
+                    font-size: 1.1rem;
+                }
+                &.size-md {
+                    font-size: 1.5rem;
+                }
+                &.size-lg {
+                    font-size: 2.2rem;
+                }
+
+                &.weight-300 {
+                    font-weight: 300;
+                }
+                &.weight-600 {
+                    font-weight: 600;
+                }
+                &.weight-800 {
+                    font-weight: 800;
+                }
+            }
         }
     }
 

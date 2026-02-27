@@ -4,9 +4,11 @@ import { Picture } from "astro:assets";
 
 type Props = {
     post: CollectionEntry<"blog">;
+    loading?: "eager" | "lazy";
+    fetchpriority?: "high" | "low" | "auto";
 };
 
-const { post } = Astro.props;
+const { post, loading = "lazy", fetchpriority = "auto" } = Astro.props;
 const { title, date, image, color } = post.data;
 
 // Default color if none provided
@@ -34,9 +36,11 @@ const formattedDate = date.toLocaleDateString("en-US", {
                             alt={title}
                             formats={["avif", "webp"]}
                             fallbackFormat="jpg"
-                            widths={[400, 800]}
-                            sizes="(max-width: 800px) 100vw, 800px"
-                            loading="lazy"
+                            widths={[300, 600]}
+                            sizes="(max-width: 768px) 90vw, 400px"
+                            quality={60}
+                            loading={loading}
+                            fetchpriority={fetchpriority}
                             class="post-image"
                         />
                     )

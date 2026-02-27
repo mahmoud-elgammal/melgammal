@@ -136,12 +136,16 @@ const mediaId = `media-${Math.random().toString(36).substring(2, 9)}`;
             const cursor = container.querySelector(
                 ".hover-view-cursor",
             ) as HTMLElement;
+            let rect: DOMRect | null = null;
 
             // Mouse Tracking
             container.addEventListener("mousemove", (e: Event) => {
                 const mouseEvent = e as MouseEvent;
                 if (!cursor) return;
-                const rect = container.getBoundingClientRect();
+
+                // PERFORMANCE: Use cached rect from mouseenter
+                if (!rect) rect = container.getBoundingClientRect();
+
                 const x = mouseEvent.clientX - rect.left;
                 const y = mouseEvent.clientY - rect.top;
 
@@ -151,9 +155,11 @@ const mediaId = `media-${Math.random().toString(36).substring(2, 9)}`;
             });
 
             container.addEventListener("mouseleave", () => {
+                rect = null; // Clear cache
                 if (cursor) cursor.style.opacity = "0";
             });
             container.addEventListener("mouseenter", () => {
+                rect = container.getBoundingClientRect(); // Buffer the layout read
                 if (cursor) cursor.style.opacity = "1";
             });
 

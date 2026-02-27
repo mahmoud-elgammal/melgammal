@@ -63,8 +63,11 @@ import { NAV_SHORTCUTS } from "@lib/shortcuts";
                     <LanguageSwitch />
                 </div>
                 <div id="header-cta" class="desktop-cta">
-                    <Button href="/book-intro" variant="outline"
-                        >Book Intro</Button
+                    <Button
+                        href="https://cal.com/mahmoud-elgammal/intro"
+                        variant="outline"
+                        target="_blank"
+                        rel="noopener noreferrer">Book Intro</Button
                     >
                 </div>
                 <button
@@ -93,8 +96,12 @@ import { NAV_SHORTCUTS } from "@lib/shortcuts";
                 }
             </nav>
             <div class="overlay-footer">
-                <Button href="/book-intro" variant="outline" class="w-full"
-                    >Book Intro</Button
+                <Button
+                    href="https://cal.com/mahmoud-elgammal/intro"
+                    variant="outline"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="w-full">Book Intro</Button
                 >
             </div>
         </div>
@@ -106,27 +113,6 @@ import { NAV_SHORTCUTS } from "@lib/shortcuts";
     // @ts-ignore
     import { tinykeys } from "tinykeys";
     import { NAV_SHORTCUTS } from "@lib/shortcuts";
-
-    /* ── Utility: wait for IntroLoader to finish ── */
-    function waitForLoader(): Promise<void> {
-        return new Promise((resolve) => {
-            const loader = document.getElementById("intro-loader");
-            if (!loader || loader.style.display === "none") {
-                resolve();
-                return;
-            }
-            const observer = new MutationObserver(() => {
-                if (loader.style.display === "none") {
-                    observer.disconnect();
-                    resolve();
-                }
-            });
-            observer.observe(loader, {
-                attributes: true,
-                attributeFilter: ["style"],
-            });
-        });
-    }
 
     /* ── Brand letter splitting ── */
     function splitBrandLetters(brand: HTMLElement): HTMLElement[] {
@@ -185,15 +171,9 @@ import { NAV_SHORTCUTS } from "@lib/shortcuts";
         // @ts-ignore
         window._headerAnimating = true;
 
-        await waitForLoader();
-
-        // ── Synchronization for Landing Page ──
+        // ── Short delay for Landing Page instead of sync ──
         if (window.location.pathname === "/") {
-            await new Promise((resolve) => {
-                document.addEventListener("header-start", resolve, {
-                    once: true,
-                });
-            });
+            await new Promise((resolve) => setTimeout(resolve, 300));
         }
 
         const tl = gsap.timeline({
@@ -296,6 +276,7 @@ import { NAV_SHORTCUTS } from "@lib/shortcuts";
 
     /* ── Micro-interaction: Magnetic hover on nav links ── */
     function setupMagneticHover() {
+        if (window.innerWidth < 1024) return; // Skip on mobile/tablet
         const links = document.querySelectorAll(
             ".header-nav-link",
         ) as NodeListOf<HTMLElement>;
@@ -329,6 +310,7 @@ import { NAV_SHORTCUTS } from "@lib/shortcuts";
 
     /* ── Micro-interaction: Brand letter scatter on hover ── */
     function setupBrandScatter() {
+        if (window.innerWidth < 1024) return; // Skip on mobile/tablet
         const brand = document.getElementById("header-brand");
         if (!brand) return;
 

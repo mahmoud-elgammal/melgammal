@@ -4,6 +4,8 @@ interface Props {
     variant?: "primary" | "outline";
     class?: string;
     id?: string;
+    target?: string;
+    rel?: string;
 }
 
 const { href, variant = "primary", class: className, id } = Astro.props;
