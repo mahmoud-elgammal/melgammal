@@ -2,14 +2,15 @@ import { defineCollection, z } from "astro:content";
 
 const blog = defineCollection({
   type: "content",
-  schema: z.object({
-    title: z.string(),
-    description: z.string(),
-    date: z.coerce.date(),
-    draft: z.boolean().optional(),
-    image: z.string().optional(),
-    color: z.string().optional(),
-  }),
+  schema: ({ image }) =>
+    z.object({
+      title: z.string(),
+      description: z.string(),
+      date: z.coerce.date(),
+      draft: z.boolean().optional(),
+      image: image().optional(),
+      color: z.string().optional(),
+    }),
 });
 
 const work = defineCollection({
@@ -24,7 +25,7 @@ const work = defineCollection({
 
 const projects = defineCollection({
   type: "content",
-  schema: z.object({
+  schema: ({ image }) => z.object({
     title: z.string(),
     description: z.string(),
     date: z.coerce.date(),
@@ -32,8 +33,8 @@ const projects = defineCollection({
     demoURL: z.string().optional(),
     repoURL: z.string().optional(),
     tags: z.array(z.string()).optional(),
-    imageWeb: z.string().optional(),
-    imageMobile: z.string().optional(),
+    imageWeb: image().optional(),
+    imageMobile: image().optional(),
     color: z.string().optional(),
     status: z.enum(["shipped", "in-progress", "concept"]).default("shipped"),
     role: z.string().optional(),
@@ -61,7 +62,7 @@ const projects = defineCollection({
       .array(
         z.object({
           type: z.enum(["image", "ambient-video", "cinematic-video"]).default("image").optional(),
-          src: z.string(),
+          src: z.union([image(), z.string()]),
           alt: z.string().optional(),
           poster: z.string().optional(), // Used for video poster frames
           caption: z.string().optional(),
@@ -72,7 +73,7 @@ const projects = defineCollection({
       .array(
         z.object({
           type: z.enum(["image", "ambient-video", "cinematic-video"]).default("image").optional(),
-          src: z.string(),
+          src: z.union([image(), z.string()]),
           alt: z.string().optional(),
           poster: z.string().optional(),
           caption: z.string().optional(),

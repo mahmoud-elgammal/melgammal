@@ -1,4 +1,6 @@
 ---
+import { Picture } from "astro:assets";
+
 interface Props {
     name?: string;
     status?: string;
@@ -22,7 +24,16 @@ const {
     <div class="avatar-wrapper">
         {
             avatarSrc ? (
-                <img src={avatarSrc} alt={name} class="avatar" />
+                <Picture
+                    src={avatarSrc}
+                    alt={name}
+                    class="avatar"
+                    inferSize={true}
+                    formats={["avif", "webp"]}
+                    fallbackFormat="jpg"
+                    widths={[100, 200]}
+                    sizes="44px"
+                />
             ) : (
                 <div class="avatar avatar-placeholder">
                     <svg

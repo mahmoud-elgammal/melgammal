@@ -2,8 +2,8 @@
 title: "Crtly"
 description: "A luxury car rental marketplace redefining the booking experience through high-end visuals and a frictionless mobile-first interface."
 date: "Feb 18 2024"
-imageWeb: "/projects/crtly_web.png"
-imageMobile: "/projects/crtly_mobile.png"
+imageWeb: "../../../assets/projects/crtly_web.png"
+imageMobile: "../../../assets/projects/crtly_mobile.png"
 color: "#8B5CF6"
 status: "shipped"
 tags: ["Mobile App", "React Native", "Node.js"]
@@ -37,10 +37,10 @@ timeline:
     title: "App Store Deployment"
     description: "Published to App Store and Google Play, achieved 4.8★ ratings, and onboarded 50+ premium vehicle partners."
 gallery:
-  - src: "/projects/crtly_web.png"
+  - src: "../../../assets/projects/crtly_web.png"
     alt: "Crtly web platform"
     caption: "Luxury vehicle listing interface"
-  - src: "/projects/crtly_mobile.png"
+  - src: "../../../assets/projects/crtly_mobile.png"
     alt: "Crtly mobile app"
     caption: "Mobile-first booking experience"
 ---

@@ -1,5 +1,6 @@
 ---
 import { type CollectionEntry } from "astro:content";
+import { Picture } from "astro:assets";
 
 type Props = {
     post: CollectionEntry<"blog">;
@@ -28,9 +29,13 @@ const formattedDate = date.toLocaleDateString("en-US", {
             <div class="image-container">
                 {
                     image && (
-                        <img
+                        <Picture
                             src={image}
                             alt={title}
+                            formats={["avif", "webp"]}
+                            fallbackFormat="jpg"
+                            widths={[400, 800]}
+                            sizes="(max-width: 800px) 100vw, 800px"
                             loading="lazy"
                             class="post-image"
                         />

@@ -2,8 +2,8 @@
 title: "Tansto"
 description: "An editorial-driven wellbeing platform for modern professionals, combining curative content with a sophisticated health tracking dashboard."
 date: "Feb 18 2024"
-imageWeb: "/projects/tansto_web.png"
-imageMobile: "/projects/tansto_mobile.png"
+imageWeb: "../../../assets/projects/tansto_web.png"
+imageMobile: "../../../assets/projects/tansto_mobile.png"
 color: "#BEF35D"
 status: "shipped"
 tags: ["Web Design", "Framer", "HealthTech"]
@@ -37,10 +37,10 @@ timeline:
     title: "Beta Launch & Iteration"
     description: "Launched beta to 200 professionals, measured 40% engagement increase vs benchmarks, and iterated on tracking features."
 gallery:
-  - src: "/projects/tansto_web.png"
+  - src: "../../../assets/projects/tansto_web.png"
     alt: "Tansto dashboard"
     caption: "Wellness tracking dashboard"
-  - src: "/projects/tansto_mobile.png"
+  - src: "../../../assets/projects/tansto_mobile.png"
     alt: "Tansto mobile"
     caption: "Mobile content experience"
 ---

@@ -54,7 +54,7 @@ const brandColor = color || "#8B5CF6";
 const inlineLightboxGallery = (inlineMedia || [])
   .filter((i) => i.type !== "cinematic-video")
   .map((i) => ({
-    src: i.src,
+    src: typeof i.src === "string" ? i.src : i.src.src,
     type: i.type || "image",
   }));
 const inlineGalleryJsonString = JSON.stringify(inlineLightboxGallery);
@@ -101,13 +101,13 @@ const st = statusConfig[status] || statusConfig.shipped;
   </section>
 
   <!-- ═══════════════ IMAGE MONOLITH ═══════════════ -->
-  {
+  <!-- {
     imageWeb && (
       <div class="editorial-image-monolith animate">
         <img src={imageWeb} alt={`${title} cover`} loading="eager" />
       </div>
     )
-  }
+  } -->
 
 
 
@@ -140,14 +140,14 @@ const st = statusConfig[status] || statusConfig.shipped;
                       <div class="media-wrapper">
                         {isCinematic ? (
                           <CustomVideoPlayer
-                            src={item.src}
+                            src={typeof item.src === "string" ? item.src : item.src.src}
                             poster={item.poster}
                             autoPlay={false}
                           />
                         ) : (
                           <InteractiveMedia
                             type={item.type as "image" | "ambient-video"}
-                            src={item.src}
+                            src={typeof item.src === "string" ? item.src : item.src.src}
                             poster={item.poster}
                             alt={item.alt || `Inline Media ${index + 1}`}
                             galleryJson={inlineGalleryJsonString}

@@ -31,7 +31,19 @@
                 <div class="corner-accents">
                     <span></span><span></span><span></span><span></span>
                 </div>
-                <img id="focal-image" src="" alt="" />
+                <picture id="focal-picture">
+                    <source
+                        id="focal-source-avif"
+                        srcset=""
+                        type="image/avif"
+                    />
+                    <source
+                        id="focal-source-webp"
+                        srcset=""
+                        type="image/webp"
+                    />
+                    <img id="focal-image" src="" alt="" />
+                </picture>
                 <div class="image-caption" id="gallery-caption"></div>
             </div>
 
@@ -315,6 +327,9 @@
 
     class ImageGallery {
         private overlay: HTMLElement | null = null;
+        private focalPicture: HTMLPictureElement | null = null;
+        private focalSourceAvif: HTMLSourceElement | null = null;
+        private focalSourceWebp: HTMLSourceElement | null = null;
         private focalImg: HTMLImageElement | null = null;
         private caption: HTMLElement | null = null;
         private indexLabel: HTMLElement | null = null;
@@ -324,6 +339,15 @@
 
         constructor() {
             this.overlay = document.getElementById("blog-image-gallery");
+            this.focalPicture = document.getElementById(
+                "focal-picture",
+            ) as HTMLPictureElement;
+            this.focalSourceAvif = document.getElementById(
+                "focal-source-avif",
+            ) as HTMLSourceElement;
+            this.focalSourceWebp = document.getElementById(
+                "focal-source-webp",
+            ) as HTMLSourceElement;
             this.focalImg = document.getElementById(
                 "focal-image",
             ) as HTMLImageElement;
@@ -399,7 +423,13 @@
                     const thumb = document.createElement("div");
                     thumb.className = "thumb-item";
                     thumb.setAttribute("data-idx", idx.toString());
-                    thumb.innerHTML = `<img src="${img.src}" alt="${img.alt}" />`;
+                    thumb.innerHTML = `
+                        <picture>
+                            <source srcset="${img.src.replace(/\.[^/.]+$/, ".avif")}" type="image/avif" />
+                            <source srcset="${img.src.replace(/\.[^/.]+$/, ".webp")}" type="image/webp" />
+                            <img src="${img.src}" alt="${img.alt}" />
+                        </picture>
+                    `;
                     thumb.addEventListener("click", () => this.goTo(idx));
                     this.thumbBar?.appendChild(thumb);
                 });
@@ -470,6 +500,16 @@
             const current = this.images[this.currentIndex];
             if (!current || !this.focalImg) return;
 
+            if (this.focalSourceAvif)
+                this.focalSourceAvif.srcset = current.src.replace(
+                    /\.[^/.]+$/,
+                    ".avif",
+                );
+            if (this.focalSourceWebp)
+                this.focalSourceWebp.srcset = current.src.replace(
+                    /\.[^/.]+$/,
+                    ".webp",
+                );
             this.focalImg.src = current.src;
             this.focalImg.alt = current.alt;
             if (this.caption) this.caption.textContent = current.caption || "";

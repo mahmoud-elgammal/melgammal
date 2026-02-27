@@ -2,6 +2,10 @@
 import PageLayout from "@layouts/PageLayout.astro";
 import ProcessHero from "@components/organisms/ProcessHero.astro";
 import ProcessSection from "@components/organisms/ProcessSection.astro";
+import discoveryImg from "../assets/process/discovery.png";
+import designImg from "../assets/process/design.png";
+import engineeringImg from "../assets/process/engineering.png";
+import evolutionImg from "../assets/process/evolution.png";
 
 const PROCESS_DATA = [
     {
@@ -9,8 +13,7 @@ const PROCESS_DATA = [
         title: "DIGITAL EXCAVATION & DISCOVERY",
         description:
             "WE BEGIN BY STRIPPING AWAY THE SUPERFICIAL. UNDERSTANDING THE CORE INTENT, USER MAPPING, AND ALIGNING TECHNICAL GOALS WITH ARCHITECTURAL VISION.",
-        imagePath:
-            "/Users/elgammal/.gemini/antigravity/brain/0ea1eaf8-5cb2-4f1a-83a9-7142ba8935d5/process_discovery_technical_v2_1771442286504.png",
+        imagePath: discoveryImg,
         specs: [
             { k: "PHASE", v: "DISCOVERY_01" },
             { k: "METHOD", v: "GOAL_ALIGNMENT" },
@@ -23,8 +26,7 @@ const PROCESS_DATA = [
         title: "STRUCTURAL ARCHITECTURE & GRID SYSTEMS",
         description:
             "DESIGNING THE MONOLITH. WE CONSTRUCT THE UNDERLYING GRID, TYPE SCALES, AND VISUAL LANGUAGE THAT WILL COMMAND ATTENTION AND ENSURE STRUCTURAL INTEGRITY.",
-        imagePath:
-            "/Users/elgammal/.gemini/antigravity/brain/0ea1eaf8-5cb2-4f1a-83a9-7142ba8935d5/process_design_technical_1771442227565.png",
+        imagePath: designImg,
         isReversed: true,
         specs: [
             { k: "PHASE", v: "DESIGN_ARCH_02" },
@@ -38,8 +40,7 @@ const PROCESS_DATA = [
         title: "HIGH-PERFORMANCE TECHNICAL ENGINEERING",
         description:
             "EXECUTING THE VISION WITH GRIT. IMPLEMENTING PHYSICS ENGINES, RESPONSIVE SYSTEMS, AND GPU-ACCELERATED ANIMATIONS FOR A SEAMLESS USER JOURNEY.",
-        imagePath:
-            "/Users/elgammal/.gemini/antigravity/brain/0ea1eaf8-5cb2-4f1a-83a9-7142ba8935d5/process_engineering_technical_1771442245017.png",
+        imagePath: engineeringImg,
         specs: [
             { k: "PHASE", v: "ENGINEERING_03" },
             { k: "STACK", v: "ASTRO_TYPESCRIPT" },
@@ -52,8 +53,7 @@ const PROCESS_DATA = [
         title: "KINETIC DISCOVERY & CONTINUOUS POLISH",
         description:
             "THE MONOLITH EVOLVES. CONTINUOUS PERFORMANCE AUDITS, INTERACTIVE DISCOVERY REFINEMENTS, AND POLISHING THE VOID TO PERFECTION.",
-        imagePath:
-            "/Users/elgammal/.gemini/antigravity/brain/0ea1eaf8-5cb2-4f1a-83a9-7142ba8935d5/process_evolution_technical_metric_1771442258274.png",
+        imagePath: evolutionImg,
         isReversed: true,
         specs: [
             { k: "PHASE", v: "EVOLUTION_04" },

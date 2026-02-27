@@ -233,7 +233,14 @@
                     if (item.type === "ambient-video") {
                         injectTarget.innerHTML = `<video src="${item.src}" muted loop autoplay playsinline class="lightbox-media"></video>`;
                     } else {
-                        injectTarget.innerHTML = `<img src="${item.src}" alt="Expanded Media View" loading="eager" class="lightbox-media" />`;
+                        // Generate dynamic <picture> for lightbox to harness standard AVIF/WebP fallback patterns where applicable, default to standard <img/> if browser format is unknown or string literal mapping.
+                        injectTarget.innerHTML = `
+                            <picture>
+                                <source srcset="${item.src.replace(/\.[^/.]+$/, ".avif")}" type="image/avif" />
+                                <source srcset="${item.src.replace(/\.[^/.]+$/, ".webp")}" type="image/webp" />
+                                <img src="${item.src}" alt="Expanded Media View" loading="eager" class="lightbox-media" />
+                            </picture>
+                        `;
                     }
 
                     const newMedia =

@@ -1,5 +1,6 @@
 ---
 import type { CollectionEntry } from "astro:content";
+import { Picture } from "astro:assets";
 
 type Props = {
     project: CollectionEntry<"projects">;
@@ -49,9 +50,13 @@ const subtitle = tags && tags.length > 0 ? tags[0] : "Project";
                 {
                     imageWeb && (
                         <div class="web-mockup">
-                            <img
+                            <Picture
                                 src={imageWeb}
                                 alt={`${title} Web`}
+                                formats={["avif", "webp"]}
+                                fallbackFormat="jpg"
+                                widths={[400, 800]}
+                                sizes="(max-width: 800px) 100vw, 800px"
                                 loading="lazy"
                             />
                         </div>
@@ -61,9 +66,13 @@ const subtitle = tags && tags.length > 0 ? tags[0] : "Project";
                     imageMobile && (
                         <div class="mobile-mockup">
                             <div class="iphone-frame">
-                                <img
+                                <Picture
                                     src={imageMobile}
                                     alt={`${title} Mobile`}
+                                    formats={["avif", "webp"]}
+                                    fallbackFormat="jpg"
+                                    widths={[200, 400]}
+                                    sizes="(max-width: 400px) 100vw, 400px"
                                     loading="lazy"
                                 />
                             </div>

@@ -1,4 +1,6 @@
 ---
+import { Picture } from "astro:assets";
+
 interface Props {
     src: string;
     type?: "image" | "ambient-video" | "gif";
@@ -30,7 +32,17 @@ const mediaId = `media-${Math.random().toString(36).substring(2, 9)}`;
     <!-- The actual media -->
     {
         type === "image" || type === "gif" ? (
-            <img src={src} alt={alt} loading="lazy" class="base-media" />
+            <Picture
+                src={src}
+                alt={alt}
+                inferSize={true}
+                formats={["avif", "webp"]}
+                fallbackFormat="jpg"
+                widths={[400, 800]}
+                sizes="(max-width: 800px) 100vw, 800px"
+                loading="lazy"
+                class="base-media"
+            />
         ) : (
             <video
                 src={src}

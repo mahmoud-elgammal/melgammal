@@ -65,6 +65,10 @@
         private dpr: number = 1;
         private mouse = { x: 0, y: 0, active: false };
         private theme: "light" | "dark" = "light";
+        private observer: MutationObserver | null = null;
+        private rafId: number | null = null;
+        private isMobile: boolean = false;
+        private resizeHandler: () => void;
 
         constructor() {
             this.board = document.getElementById("prism-board")!;
@@ -76,12 +80,23 @@
                 ? "dark"
                 : "light";
 
+            this.observer = new MutationObserver(() => {
+                this.theme = document.documentElement.classList.contains("dark")
+                    ? "dark"
+                    : "light";
+            });
+            this.observer.observe(document.documentElement, {
+                attributes: true,
+                attributeFilter: ["class"],
+            });
+
+            this.resizeHandler = () => this.resize();
             this.init();
         }
 
         private init() {
             this.resize();
-            window.addEventListener("resize", () => this.resize());
+            window.addEventListener("resize", this.resizeHandler);
 
             // Physics Setup
             this.engine = Engine.create();
@@ -93,7 +108,7 @@
             // Create Physics Bodies
             this.bodies = SKILLS.map((skill) => {
                 const fontSize = this.getFontSize(skill.size);
-                this.ctx.font = `${skill.weight} ${fontSize}px "Bebas Neue"`;
+                this.ctx.font = `${skill.weight} ${fontSize}px "Anton"`;
                 const textMetrics = this.ctx.measureText(skill.name);
 
                 const paddingH = fontSize * 1.5;
@@ -161,13 +176,13 @@
         }
 
         private getFontSize(size: string) {
-            const isMobile = window.innerWidth < 768;
-            if (size === "lg") return isMobile ? 24 : 32;
-            if (size === "md") return isMobile ? 18 : 22;
-            return isMobile ? 14 : 16;
+            if (size === "lg") return this.isMobile ? 24 : 32;
+            if (size === "md") return this.isMobile ? 18 : 22;
+            return this.isMobile ? 14 : 16;
         }
 
         private resize() {
+            this.isMobile = window.innerWidth < 768;
             this.dpr = window.devicePixelRatio || 1;
             const rect = this.board.getBoundingClientRect();
             this.canvas.width = rect.width * this.dpr;
@@ -183,18 +198,27 @@
             const coordY = document.getElementById("lens-y");
 
             this.board.addEventListener("mousemove", (e) => {
-                const rect = this.board.getBoundingClientRect();
-                this.mouse.x = e.clientX - rect.left;
-                this.mouse.y = e.clientY - rect.top;
+                const target = e.target as HTMLElement;
+                if (target === this.canvas) {
+                    this.mouse.x = e.offsetX;
+                    this.mouse.y = e.offsetY;
+                } else {
+                    const rect = this.board.getBoundingClientRect();
+                    this.mouse.x = e.clientX - rect.left;
+                    this.mouse.y = e.clientY - rect.top;
+                }
                 this.mouse.active = true;
 
-                if (lens) {
-                    lens.style.transform = `translate3d(${this.mouse.x - 125}px, ${this.mouse.y - 125}px, 0)`;
-                    lens.style.opacity = "1";
-                    if (coordX)
-                        coordX.innerText = `X: ${Math.round(this.mouse.x).toString().padStart(3, "0")}`;
-                    if (coordY)
-                        coordY.innerText = `Y: ${Math.round(this.mouse.y).toString().padStart(3, "0")}`;
+                if (lens && !this.rafId) {
+                    this.rafId = requestAnimationFrame(() => {
+                        lens.style.transform = `translate3d(${this.mouse.x - 125}px, ${this.mouse.y - 125}px, 0)`;
+                        lens.style.opacity = "1";
+                        if (coordX)
+                            coordX.innerText = `X: ${Math.round(this.mouse.x).toString().padStart(3, "0")}`;
+                        if (coordY)
+                            coordY.innerText = `Y: ${Math.round(this.mouse.y).toString().padStart(3, "0")}`;
+                        this.rafId = null;
+                    });
                 }
             });
 
@@ -206,9 +230,6 @@
 
         private draw() {
             this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-            this.theme = document.documentElement.classList.contains("dark")
-                ? "dark"
-                : "light";
 
             // Sort by depth for correct layering (back to front)
             const sortedBodies = [...this.bodies].sort(
@@ -278,11 +299,6 @@
                         0,
                     );
 
-                    // Apply Blur (Experimental but supported in modern browsers)
-                    if (blur > 0.5) {
-                        this.ctx.filter = `blur(${blur}px)`;
-                    }
-
                     this.ctx.globalAlpha = opacity;
 
                     // Box
@@ -293,13 +309,12 @@
                     // Text
                     this.ctx.fillStyle =
                         this.theme === "dark" ? "#000000" : "#ffffff";
-                    this.ctx.font = `${skill.weight} ${this.getFontSize(skill.size)}px "Bebas Neue"`;
+                    this.ctx.font = `${skill.weight} ${this.getFontSize(skill.size)}px "Anton"`;
                     this.ctx.textAlign = "center";
                     this.ctx.textBaseline = "middle";
                     this.ctx.fillText(skill.name, 0, 1); // Tiny vertical offset for optical centering
 
                     this.ctx.restore();
-                    this.ctx.filter = "none";
                 },
             );
         }
@@ -307,6 +322,9 @@
         public stop() {
             if (this.runner) Runner.stop(this.runner);
             if (this.engine) Engine.clear(this.engine);
+            if (this.observer) this.observer.disconnect();
+            if (this.rafId) cancelAnimationFrame(this.rafId);
+            window.removeEventListener("resize", this.resizeHandler);
         }
     }
 

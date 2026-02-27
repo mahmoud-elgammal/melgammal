@@ -2,8 +2,8 @@
 title: "Kleaner"
 description: "An artisanal cleaning service platform connecting luxury homeowners with elite cleaning professionals through a minimalist booking experience."
 date: "Feb 18 2024"
-imageWeb: "/projects/kleaner_web.png"
-imageMobile: "/projects/kleaner_mobile.png"
+imageWeb: "../../../assets/projects/kleaner_web.png"
+imageMobile: "../../../assets/projects/kleaner_mobile.png"
 color: "#A29BFE"
 status: "in-progress"
 tags: ["Service App", "Astro", "Tailwind"]
@@ -37,10 +37,10 @@ timeline:
     title: "Feature Expansion"
     description: "Continuously adding professional dashboard features, analytics, and expanding the service area coverage."
 gallery:
-  - src: "/projects/kleaner_web.png"
+  - src: "../../../assets/projects/kleaner_web.png"
     alt: "Kleaner booking interface"
     caption: "Minimalist booking flow"
-  - src: "/projects/kleaner_mobile.png"
+  - src: "../../../assets/projects/kleaner_mobile.png"
     alt: "Kleaner mobile"
     caption: "Service management on mobile"
 ---
