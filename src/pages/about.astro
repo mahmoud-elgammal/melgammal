@@ -92,33 +92,8 @@ const work = await Promise.all(
     }
 
     /* ── Wait for IntroLoader curtain ── */
-    function waitForLoader(): Promise<void> {
-        return new Promise((resolve) => {
-            const loader = document.getElementById("intro-loader");
-            if (!loader || window.getComputedStyle(loader).display === "none") {
-                resolve();
-                return;
-            }
-            const observer = new MutationObserver(() => {
-                if (window.getComputedStyle(loader).display === "none") {
-                    observer.disconnect();
-                    resolve();
-                }
-            });
-            observer.observe(loader, {
-                attributes: true,
-                attributeFilter: ["style", "class"],
-            });
-            setTimeout(() => {
-                observer.disconnect();
-                resolve();
-            }, 3000);
-        });
-    }
 
     async function initAboutAnimations() {
-        await waitForLoader();
-
         /* ── Branded Brute Scroll Reveals & Progress ── */
         const bruteItemsElements =
             document.querySelectorAll(".work-item-brute");

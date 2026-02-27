@@ -241,11 +241,22 @@ const galleryJsonString = JSON.stringify(lightboxGallery);
             if (!track || slides.length === 0) return;
 
             const total = slides.length;
+            let maxScroll = track.scrollWidth - track.clientWidth;
+            let slideWidth = (slides[0] as HTMLElement).offsetWidth || 1;
+
+            // Cache dimensions on resize
+            window.addEventListener(
+                "resize",
+                () => {
+                    maxScroll = track.scrollWidth - track.clientWidth;
+                    slideWidth = (slides[0] as HTMLElement).offsetWidth || 1;
+                },
+                { passive: true },
+            );
 
             // Update Native Scroll Progress
             const updateScroll = () => {
                 // Calculate raw scroll progress (0 to 1)
-                const maxScroll = track.scrollWidth - track.clientWidth;
                 let progress = 0;
 
                 if (maxScroll > 0) {
@@ -258,8 +269,6 @@ const galleryJsonString = JSON.stringify(lightboxGallery);
                 }
 
                 // Determine active slide index based on scroll position
-                const slideWidth = (slides[0] as HTMLElement).offsetWidth;
-                // The snap point is usually near the center or start.
                 // A simple heuristic: how many slide widths have we passed?
                 let activeIdx = Math.round(track.scrollLeft / slideWidth);
 
@@ -275,9 +284,13 @@ const galleryJsonString = JSON.stringify(lightboxGallery);
                 }
             };
 
-            track.addEventListener("scroll", () => {
-                requestAnimationFrame(updateScroll);
-            });
+            track.addEventListener(
+                "scroll",
+                () => {
+                    requestAnimationFrame(updateScroll);
+                },
+                { passive: true },
+            );
 
             // ── Desktop Drag-to-Scroll Logic ──
             let isDown = false;

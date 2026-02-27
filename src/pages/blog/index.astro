@@ -36,9 +36,13 @@ const years = Object.keys(posts).sort((a, b) => parseInt(b) - parseInt(a));
               <div class="year-heading">{year}</div>
               <div>
                 <ul class="posts-grid">
-                  {posts[year].map((post) => (
+                  {posts[year].map((post, index) => (
                     <li>
-                      <PostCard post={post} />
+                      <PostCard
+                        post={post}
+                        loading={index < 2 ? "eager" : "lazy"}
+                        fetchpriority={index < 2 ? "high" : "auto"}
+                      />
                     </li>
                   ))}
                 </ul>

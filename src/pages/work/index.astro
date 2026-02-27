@@ -32,9 +32,13 @@ const projects = (await getCollection("projects"))
             <!-- Grid -->
             <ul class="projects-grid" id="wk-grid">
                 {
-                    projects.map((project) => (
+                    projects.map((project, index) => (
                         <li>
-                            <ProjectCard project={project} />
+                            <ProjectCard
+                                project={project}
+                                loading={index < 2 ? "eager" : "lazy"}
+                                fetchpriority={index < 2 ? "high" : "auto"}
+                            />
                         </li>
                     ))
                 }

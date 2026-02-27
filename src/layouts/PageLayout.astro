@@ -9,7 +9,6 @@ type Props = {
   description: string;
 };
 
-import IntroLoader from "@components/organisms/IntroLoader.astro";
 import CommandMenu from "@components/organisms/CommandMenu.astro";
 import MediaLightbox from "@components/organisms/MediaLightbox.astro";
 import Cursor from "@components/atoms/Cursor.astro";
@@ -22,10 +21,9 @@ const { title, description } = Astro.props;
     <Head title={`${title} | ${SITE.NAME}`} description={description} />
   </head>
   <body>
-    <IntroLoader />
     <Header />
     <CommandMenu />
-    <main id="page-main" class="page-content" style="opacity: 0;">
+    <main id="page-main" class="page-content">
       <slot />
     </main>
     <Footer />
@@ -100,54 +98,8 @@ const { title, description } = Astro.props;
         });
       }
 
-      /* ── Reveal page content after header entrance ── */
-      function revealPage() {
-        const main = document.getElementById("page-main");
-        if (main && main.style.opacity !== "1") {
-          gsap.fromTo(
-            main,
-            { opacity: 0, y: 12 },
-            {
-              opacity: 1,
-              y: 0,
-              duration: 0.6,
-              ease: "power4.out",
-              onComplete: () => {
-                gsap.set(main, { clearProps: "all" }); // Remove stacking context
-                initScrollPersonalities();
-                ScrollTrigger.refresh();
-              },
-            },
-          );
-        }
-      }
-
-      function handlePageReveal() {
-        const isLandingPage = window.location.pathname === "/";
-        // @ts-ignore
-        if (window.headerReady || isLandingPage) {
-          revealPage();
-        } else {
-          document.addEventListener("header-ready", revealPage, { once: true });
-        }
-      }
-
-      // ── View Transitions Handlers ──
-
-      // Reset scroll proxy on navigation
-      document.addEventListener("astro:before-swap", () => {
-        lenis.destroy();
-        ScrollTrigger.getAll().forEach((t) => t.kill());
-      });
-
-      document.addEventListener("astro:page-load", () => {
-        // Re-calculate all triggers for the new DOM
-        ScrollTrigger.refresh();
-        handlePageReveal();
-      });
-
       // Initial reveal call
-      handlePageReveal();
+      initScrollPersonalities();
     </script>
   </body>
 </html>
