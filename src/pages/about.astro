@@ -6,6 +6,8 @@ import Link from "@components/atoms/Link.astro";
 import { dateRange } from "@lib/utils";
 import { ABOUT } from "@consts";
 
+import ExpertiseLedger from "@components/molecules/ExpertiseLedger.astro";
+
 const allwork = (await getCollection("work")).sort(
     (a, b) =>
         new Date(b.data.dateStart).valueOf() -
@@ -22,6 +24,124 @@ const work = await Promise.all(
 
 <PageLayout title={ABOUT.TITLE} description={ABOUT.DESCRIPTION}>
     <Container>
+        <section class="about-hero animate">
+            <div class="hero-labels">
+                <span class="label">BIOGRAPHIC_INIT</span>
+                <span class="label">VERSION_2.0</span>
+            </div>
+            <h1 class="hero-title">
+                MIND<span class="separator">/</span>SET
+            </h1>
+            <p class="hero-tagline">
+                Bridging the gap between human intuition and technical
+                precision. Psychology-driven architecture. Art-focused
+                engineering.
+            </p>
+        </section>
+
+        <section class="section philosophy animate" id="philosophy">
+            <div class="phil-grid">
+                <div class="phil-left">
+                    <h2 class="phil-title">Philosophy</h2>
+                    <div class="phil-technical-label">LOGIC_CORE</div>
+                </div>
+                <div class="phil-right">
+                    <div class="phil-text reveal-text">
+                        <p>
+                            My approach priorities human understanding over just
+                            lines of code. With a background in <span
+                                class="highlight">Psychology</span
+                            >, I perceive digital interfaces as extensions of
+                            human cognition.
+                        </p>
+                        <p>
+                            I believe that the most impactful digital
+                            masterpieces are born at the intersection of <span
+                                class="highlight">rigorous logic</span
+                            > and <span class="highlight">raw creativity</span>.
+                            My work is an exploration of how mathematics,
+                            philosophy, and fine art can be synthesized into
+                            performant, scalable code.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section education animate" id="education">
+            <div class="edu-grid">
+                <div class="edu-left">
+                    <h2 class="edu-title">ACADEMIA</h2>
+                    <div class="edu-technical-label">DATA_SYNC</div>
+                </div>
+                <div class="edu-right">
+                    <div class="edu-item">
+                        <div class="edu-meta">
+                            <span class="edu-year">GRAD_2020</span>
+                            <span class="edu-status">CERTIFIED</span>
+                        </div>
+                        <h3 class="edu-degree">Bachelor of Arts, Psychology</h3>
+                        <p class="edu-inst">Cairo University</p>
+                    </div>
+                    <div class="edu-item">
+                        <div class="edu-meta">
+                            <span class="edu-year">2020 - PRES</span>
+                            <span class="edu-status">CONTINUOUS</span>
+                        </div>
+                        <h3 class="edu-degree">Advanced Software Systems</h3>
+                        <p class="edu-inst">
+                            Self-Directed Theoretical & Applied Research
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section stack animate" id="stack">
+            <div class="stack-grid">
+                <div class="stack-left">
+                    <h2 class="stack-title">THE_STACK</h2>
+                    <div class="stack-technical-label">EQUIPMENT_LOADOUT</div>
+                </div>
+                <div class="stack-right">
+                    <div class="ledgers-container">
+                        <ExpertiseLedger
+                            title="Core Languages"
+                            skills={[
+                                "TypeScript",
+                                "Rust",
+                                "C++",
+                                "Python",
+                                "SQL",
+                            ]}
+                        />
+                        <ExpertiseLedger
+                            title="Web Systems"
+                            skills={[
+                                "Node.js",
+                                "React",
+                                "Next.js",
+                                "Astro",
+                                "Three.js",
+                                "TailwindCSS",
+                            ]}
+                        />
+                        <ExpertiseLedger
+                            title="Infrastructure"
+                            skills={[
+                                "Docker",
+                                "Kubernetes",
+                                "AWS",
+                                "Prometheus",
+                                "Grafana",
+                                "Nginx",
+                            ]}
+                        />
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <section class="section brute-work" id="work-experience">
             <div class="section-header animate">
                 <h1 class="section-title">Career Path</h1>
@@ -174,6 +294,193 @@ const work = await Promise.all(
         @include screen(md) {
             font-size: 8rem;
         }
+    }
+
+    /* ── Hero Section ── */
+    .about-hero {
+        padding: 8rem 0 4rem 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+
+        @include screen(md) {
+            padding: 12rem 0 6rem 0;
+        }
+
+        .hero-labels {
+            display: flex;
+            gap: 2rem;
+            font-family: ui-monospace, "Cascadia Code", monospace;
+            font-size: 0.75rem;
+            letter-spacing: 0.2em;
+            opacity: 0.4;
+        }
+
+        .hero-title {
+            font-size: clamp(3.5rem, 15vw, 12rem);
+            font-weight: 900;
+            line-height: 0.8;
+            letter-spacing: -0.06em;
+            margin: 0;
+            text-transform: uppercase;
+
+            .separator {
+                opacity: 0.2;
+            }
+        }
+
+        .hero-tagline {
+            font-size: 1.25rem;
+            line-height: 1.4;
+            max-width: 40ch;
+            font-weight: 500;
+            opacity: 0.8;
+
+            @include screen(md) {
+                font-size: 1.75rem;
+            }
+        }
+    }
+
+    /* ── Philosophy & Education Grids ── */
+    .phil-grid,
+    .edu-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 2rem;
+        padding: 6rem 0;
+        border-top: 1px solid rgba(0, 0, 0, 0.1);
+
+        :global(.dark) & {
+            border-top-color: rgba(255, 255, 255, 0.1);
+        }
+
+        @include screen(md) {
+            grid-template-columns: 1fr 2fr;
+            gap: 4rem;
+        }
+    }
+
+    .phil-title,
+    .edu-title {
+        font-size: 1.5rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: -0.02em;
+        margin: 0;
+    }
+
+    .phil-technical-label,
+    .edu-technical-label {
+        font-family: ui-monospace, "Cascadia Code", monospace;
+        font-size: 0.65rem;
+        letter-spacing: 0.2em;
+        opacity: 0.3;
+        margin-top: 0.5rem;
+    }
+
+    .phil-text {
+        font-size: 1.5rem;
+        line-height: 1.5;
+        font-weight: 500;
+        color: rgba(0, 0, 0, 0.2); // Initial state for reveal
+        transition: color 0.3s ease;
+
+        :global(.dark) & {
+            color: rgba(255, 255, 255, 0.2);
+        }
+
+        @include screen(md) {
+            font-size: 2.25rem;
+            max-width: 25ch;
+        }
+
+        .highlight {
+            color: rgba(0, 0, 0, 0.9);
+            :global(.dark) & {
+                color: rgba(255, 255, 255, 0.9);
+            }
+        }
+    }
+
+    /* ── Education ── */
+    .edu-right {
+        display: flex;
+        flex-direction: column;
+        gap: 4rem;
+    }
+
+    .edu-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .edu-meta {
+        display: flex;
+        gap: 1.5rem;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        opacity: 0.4;
+    }
+
+    .edu-degree {
+        font-size: 1.75rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: -0.02em;
+        margin: 0;
+
+        @include screen(md) {
+            font-size: 2.5rem;
+        }
+    }
+
+    .edu-inst {
+        font-size: 1.125rem;
+        font-weight: 500;
+        opacity: 0.7;
+    }
+
+    /* ── Stack ── */
+    .stack-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 2rem;
+        padding: 6rem 0;
+        border-top: 1px solid rgba(0, 0, 0, 0.1);
+
+        :global(.dark) & {
+            border-top-color: rgba(255, 255, 255, 0.1);
+        }
+
+        @include screen(md) {
+            grid-template-columns: 1fr 2fr;
+            gap: 4rem;
+        }
+    }
+
+    .stack-title {
+        font-size: 1.5rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: -0.02em;
+        margin: 0;
+    }
+
+    .stack-technical-label {
+        font-family: ui-monospace, "Cascadia Code", monospace;
+        font-size: 0.65rem;
+        letter-spacing: 0.2em;
+        opacity: 0.3;
+        margin-top: 0.5rem;
+    }
+
+    .ledgers-container {
+        display: flex;
+        flex-direction: column;
+        gap: 3rem;
     }
 
     .brute-work {

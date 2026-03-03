@@ -1,0 +1,103 @@
+---
+interface Props {
+    title: string;
+    skills: string[];
+}
+
+const { title, skills } = Astro.props;
+---
+
+<div class="expertise-ledger animate">
+    <div class="ledger-header">
+        <div class="bracket-label">[SKILL_SET]</div>
+        <h4 class="ledger-title">{title}</h4>
+    </div>
+
+    <div class="ledger-tags">
+        {
+            skills.map((skill) => (
+                <div class="skill-tag">
+                    <span class="tag-label">{skill}</span>
+                </div>
+            ))
+        }
+    </div>
+</div>
+
+<style lang="scss">
+    @use "../../styles/variables" as *;
+    @use "../../styles/mixins" as *;
+
+    .expertise-ledger {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+        padding-bottom: 4rem;
+    }
+
+    .ledger-header {
+        .bracket-label {
+            font-family: ui-monospace, monospace;
+            font-size: 0.65rem;
+            font-weight: 700;
+            opacity: 0.4;
+            letter-spacing: 0.2em;
+            margin-bottom: 0.5rem;
+        }
+
+        .ledger-title {
+            font-size: 1.125rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin: 0;
+        }
+    }
+
+    .ledger-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    .skill-tag {
+        padding: 0.6rem 1.2rem;
+        background: rgba($color-black, 0.03);
+        border: 1px solid rgba($color-black, 0.08);
+        border-radius: 2px;
+        transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        cursor: default;
+
+        :global(.dark) & {
+            background: rgba($color-white, 0.03);
+            border-color: rgba($color-white, 0.08);
+        }
+
+        .tag-label {
+            font-family: $font-mono;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            opacity: 0.7;
+        }
+
+        &:hover {
+            background: $color-black;
+            border-color: $color-black;
+            transform: translateY(-2px);
+            .tag-label {
+                color: $color-white;
+                opacity: 1;
+            }
+
+            :global(.dark) & {
+                background: $color-white;
+                border-color: $color-white;
+                .tag-label {
+                    color: $color-black;
+                }
+            }
+        }
+    }
+</style>

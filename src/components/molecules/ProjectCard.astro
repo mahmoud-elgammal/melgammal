@@ -162,12 +162,19 @@ const subtitle = tags && tags.length > 0 ? tags[0] : "Project";
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 1.5rem; // Reduced for mobile
+        padding: 1.25rem; // Reduced for mobile
+        border-radius: 1.5rem; // Smaller radius for mobile
         box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.1);
         will-change: transform;
 
+        @include screen(md) {
+            padding: 2.5rem;
+            border-radius: 2rem;
+        }
+
         @include screen(lg) {
             padding: 3.5rem;
+            border-radius: 2.25rem;
         }
     }
 
@@ -225,7 +232,7 @@ const subtitle = tags && tags.length > 0 ? tags[0] : "Project";
         transform: translateY(-50%) rotate(-10deg);
         z-index: 3;
         font-family: $font-display;
-        font-size: clamp(2.5rem, 10vw, 4rem); // Scaled down for mobile
+        font-size: clamp(2rem, 8vw, 3rem); // Scaled down for mobile
         font-weight: 400;
         letter-spacing: 0.05em;
         white-space: nowrap;
@@ -235,6 +242,7 @@ const subtitle = tags && tags.length > 0 ? tags[0] : "Project";
         mix-blend-mode: overlay;
 
         @include screen(md) {
+            transform: translateY(-50%) rotate(-10deg);
             font-size: clamp(4rem, 10vw, 8rem);
         }
 
@@ -328,18 +336,30 @@ const subtitle = tags && tags.length > 0 ? tags[0] : "Project";
 
     .mobile-mockup {
         position: absolute;
-        width: 28%;
-        bottom: -10%;
-        right: -2%;
+        width: 22%; // Reduced from 28% for better mobile fit
+        bottom: -5%;
+        right: 2%;
         will-change: transform;
 
+        @include screen(md) {
+            width: 28%;
+            bottom: -10%;
+            right: -2%;
+        }
+
         .iphone-frame {
-            border: 6px solid #1a1a1a;
-            border-radius: 2rem;
+            border: 4px solid #1a1a1a;
+            border-radius: 1.25rem;
             background: #000;
             overflow: hidden;
             aspect-ratio: 9/19;
-            box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.5);
+
+            @include screen(md) {
+                border-width: 6px;
+                border-radius: 2rem;
+                box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.5);
+            }
 
             img {
                 width: 100%;
@@ -359,7 +379,7 @@ const subtitle = tags && tags.length > 0 ? tags[0] : "Project";
 
     .project-name {
         font-family: $font-display;
-        font-size: 1.75rem;
+        font-size: 1.25rem; // Scaled down for mobile
         font-weight: 400;
         margin: 0;
         color: rgba(0, 0, 0, 0.9);
@@ -369,6 +389,10 @@ const subtitle = tags && tags.length > 0 ? tags[0] : "Project";
         align-items: center;
         gap: 0.5rem;
         will-change: transform, color;
+
+        @include screen(md) {
+            font-size: 1.75rem;
+        }
 
         :global(.dark) & {
             color: rgba(255, 255, 255, 0.9);
