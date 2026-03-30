@@ -44,4 +44,29 @@
             @content;
         }
     }
+
+    // Max-width breakpoints for mobile-first overrides
+    @else if $size ==max-sm {
+        @media (max-width: #{$screen-sm - 1px}) {
+            @content;
+        }
+    }
+
+    @else if $size ==max-md {
+        @media (max-width: #{$screen-md - 1px}) {
+            @content;
+        }
+    }
+
+    @else if $size ==max-lg {
+        @media (max-width: #{$screen-lg - 1px}) {
+            @content;
+        }
+    }
+
+    @else if $size ==max-xl {
+        @media (max-width: #{$screen-xl - 1px}) {
+            @content;
+        }
+    }
 }
