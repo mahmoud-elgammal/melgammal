@@ -1,48 +1,51 @@
 ---
 interface Props {
-  size?: "sm" | "md" | "lg" | "xl";
-  className?: string;
+    size?: "sm" | "md" | "lg" | "xl";
+    className?: string;
 }
 
 const { size = "xl", className = "" } = Astro.props;
 ---
 
 <div class:list={["container", size, className]}>
-  <slot />
+    <slot />
 </div>
 
 <style lang="scss" is:global>
-  @use "../../styles/variables" as *;
-  @use "../../styles/mixins" as *;
+    .container {
+        width: 100%;
+        max-width: 100%;
+        margin-right: auto;
+        margin-left: auto;
+        padding-right: 0.1rem;
+        padding-left: 0.1rem;
 
-  .container {
-    width: 100%;
-    margin-right: auto;
-    margin-left: auto;
-    padding-right: 1.25rem; // Slightly more compact for mobile
-    padding-left: 1.25rem;
+        &.sm {
+            max-width: 768px;
+        }
+        &.md {
+            max-width: 1024px;
+        }
+        &.lg {
+            max-width: 1280px;
+        }
+        &.xl {
+            max-width: 1536px;
+        }
 
-    &.sm {
-      max-width: $screen-md;
-    } // Focused content (768px)
-    &.md {
-      max-width: $screen-lg;
-    } // Standard reading (1024px)
-    &.lg {
-      max-width: $screen-xl;
-    } // Wide layout (1280px)
-    &.xl {
-      max-width: $screen-2xl;
-    } // Cinematic (1536px)
+        @media (min-width: 640px) {
+            padding-right: 1.5rem;
+            padding-left: 1.5rem;
+        }
 
-    @include screen(sm) {
-      padding-right: 2rem;
-      padding-left: 2rem;
+        @media (min-width: 768px) {
+            padding-right: 2rem;
+            padding-left: 2rem;
+        }
+
+        @media (min-width: 1024px) {
+            padding-right: 3rem;
+            padding-left: 3rem;
+        }
     }
-
-    @include screen(md) {
-      padding-right: 3rem;
-      padding-left: 3rem;
-    }
-  }
 </style>

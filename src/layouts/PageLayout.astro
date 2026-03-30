@@ -5,8 +5,8 @@ import Footer from "@components/organisms/Footer.astro";
 import { SITE } from "@consts";
 
 type Props = {
-  title: string;
-  description: string;
+    title: string;
+    description: string;
 };
 
 import CommandMenu from "@components/organisms/CommandMenu.astro";
@@ -17,118 +17,125 @@ const { title, description } = Astro.props;
 ---
 
 <html lang="en">
-  <head>
-    <Head title={`${title} | ${SITE.NAME}`} description={description} />
-  </head>
-  <body>
-    <Header />
-    <CommandMenu />
-    <main id="page-main" class="page-content">
-      <slot />
-    </main>
-    <Footer />
-    <MediaLightbox />
-    <Cursor />
-    <script>
-      import Lenis from "lenis";
-      import { gsap } from "gsap";
-      import { ScrollTrigger } from "gsap/ScrollTrigger";
+    <head>
+        <Head title={`${title} | ${SITE.NAME}`} description={description} />
+    </head>
+    <body>
+        <Header />
+        <CommandMenu />
+        <main id="page-main" class="page-content">
+            <slot />
+        </main>
+        <Footer />
+        <MediaLightbox />
+        <Cursor />
+        <script>
+            import Lenis from "lenis";
+            import { gsap } from "gsap";
+            import { ScrollTrigger } from "gsap/ScrollTrigger";
 
-      gsap.registerPlugin(ScrollTrigger);
+            gsap.registerPlugin(ScrollTrigger);
 
-      // ── Scroll Personality Presets ──
-      const personalities = {
-        default: { lerp: 0.12, multiplier: 1 },
-        technical: { lerp: 0.22, multiplier: 1.4 },
-        cinematic: { lerp: 0.05, multiplier: 0.75 },
-        frozen: { lerp: 0.02, multiplier: 0.4 },
-      };
+            // ── Scroll Personality Presets ──
+            const personalities = {
+                default: { lerp: 0.12, multiplier: 1 },
+                technical: { lerp: 0.22, multiplier: 1.4 },
+                cinematic: { lerp: 0.05, multiplier: 0.75 },
+                frozen: { lerp: 0.02, multiplier: 0.4 },
+            };
 
-      // Proxied state for animation
-      const scrollState = { ...personalities.default };
+            // Proxied state for animation
+            const scrollState = { ...personalities.default };
 
-      const lenis = new Lenis({
-        lerp: scrollState.lerp,
-        wheelMultiplier: scrollState.multiplier,
-        smoothWheel: true,
-      });
+            const lenis = new Lenis({
+                lerp: scrollState.lerp,
+                wheelMultiplier: scrollState.multiplier,
+                smoothWheel: true,
+            });
 
-      // Synchronize Lenis with GSAP ScrollTrigger
-      lenis.on("scroll", ScrollTrigger.update);
+            // Synchronize Lenis with GSAP ScrollTrigger
+            lenis.on("scroll", ScrollTrigger.update);
 
-      gsap.ticker.add((time) => {
-        lenis.raf(time * 1000);
-      });
+            gsap.ticker.add((time) => {
+                lenis.raf(time * 1000);
+            });
 
-      gsap.ticker.lagSmoothing(0);
+            gsap.ticker.lagSmoothing(0);
 
-      // ── Dynamic Personality Transitioner ──
-      function initScrollPersonalities() {
-        const sections = document.querySelectorAll("[data-scroll-personality]");
+            // ── Dynamic Personality Transitioner ──
+            function initScrollPersonalities() {
+                const sections = document.querySelectorAll(
+                    "[data-scroll-personality]",
+                );
 
-        sections.forEach((section) => {
-          const personalityKey =
-            section.getAttribute("data-scroll-personality") || "default";
-          const target =
-            personalities[personalityKey as keyof typeof personalities] ||
-            personalities.default;
+                sections.forEach((section) => {
+                    const personalityKey =
+                        section.getAttribute("data-scroll-personality") ||
+                        "default";
+                    const target =
+                        personalities[
+                            personalityKey as keyof typeof personalities
+                        ] || personalities.default;
 
-          ScrollTrigger.create({
-            trigger: section,
-            start: "top 80%",
-            end: "bottom 20%",
-            onEnter: () => transitionTo(target),
-            onEnterBack: () => transitionTo(target),
-          });
-        });
-      }
+                    ScrollTrigger.create({
+                        trigger: section,
+                        start: "top 80%",
+                        end: "bottom 20%",
+                        onEnter: () => transitionTo(target),
+                        onEnterBack: () => transitionTo(target),
+                    });
+                });
+            }
 
-      function transitionTo(target: { lerp: number; multiplier: number }) {
-        gsap.to(scrollState, {
-          lerp: target.lerp,
-          multiplier: target.multiplier,
-          duration: 1.2,
-          ease: "power2.inOut",
-          onUpdate: () => {
-            // @ts-ignore - Updating Lenis internal state for real-time reactivity
-            lenis.options.lerp = scrollState.lerp;
-            // @ts-ignore
-            lenis.options.wheelMultiplier = scrollState.multiplier;
-          },
-        });
-      }
+            function transitionTo(target: {
+                lerp: number;
+                multiplier: number;
+            }) {
+                gsap.to(scrollState, {
+                    lerp: target.lerp,
+                    multiplier: target.multiplier,
+                    duration: 1.2,
+                    ease: "power2.inOut",
+                    onUpdate: () => {
+                        // @ts-ignore - Updating Lenis internal state for real-time reactivity
+                        lenis.options.lerp = scrollState.lerp;
+                        // @ts-ignore
+                        lenis.options.wheelMultiplier = scrollState.multiplier;
+                    },
+                });
+            }
 
-      // Initial reveal call
-      initScrollPersonalities();
-    </script>
-  </body>
+            // Initial reveal call
+            initScrollPersonalities();
+        </script>
+    </body>
 </html>
 
 <style>
-  /* ── Stacking context for the Sticky Footer reveal ── */
-  /* Remove height: 100% from html, body to allow scroll */
-  html,
-  body {
-  }
+    /* ── Stacking context for the Sticky Footer reveal ── */
+    /* Remove height: 100% from html, body to allow scroll */
+    html,
+    body {
+    }
 
-  /* ── Page Flow and Defaults ── */
-  html,
-  body {
-    margin: 0;
-    padding: 0;
-  }
+    /* ── Page Flow and Defaults ── */
+    html,
+    body {
+        margin: 0;
+        padding: 0;
+    }
 
-  /* The main content sits above the footer and scrolls normally */
-  .page-content {
-    position: relative;
-    z-index: 2;
-    background: var(
-      --color-light-bg,
-      #f4f4f5
-    ); /* Assuming SCSS context for existing global vars, fallback to white/black if not */
-  }
+    /* The main content sits above the footer and scrolls normally */
+    .page-content {
+        position: relative;
+        z-index: 2;
+        background: var(
+            --color-light-bg,
+            #f4f4f5
+        ); /* Assuming SCSS context for existing global vars, fallback to white/black if not */
+    }
 
-  :global(.dark) .page-content {
-    background: var(--color-dark-bg, #09090b);
-  }
+    :global(.dark) .page-content {
+        background: var(--color-dark-bg, #09090b);
+    }
 </style>
