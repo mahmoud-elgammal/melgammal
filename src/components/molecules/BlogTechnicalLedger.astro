@@ -146,31 +146,39 @@ const { title, data } = Astro.props;
 </style>
 
 <script>
-    import { gsap } from "gsap";
-    import { ScrollTrigger } from "gsap/ScrollTrigger";
+    import {
+        registerAnimation,
+        prefersReducedMotion,
+    } from "@lib/animation";
 
-    gsap.registerPlugin(ScrollTrigger);
+    document.addEventListener("astro:page-load", () => {
+        registerAnimation("blog-technical-ledger", (gsap) => {
+            const ledgers = document.querySelectorAll(".animate-ledger");
+            if (!ledgers.length) return;
 
-    function initLedger() {
-        const ledgers = document.querySelectorAll(".animate-ledger");
+            if (prefersReducedMotion()) {
+                ledgers.forEach((ledger) => {
+                    const rows = ledger.querySelectorAll(".v-inner");
+                    gsap.set(rows, { y: 0 });
+                });
+                return;
+            }
 
-        ledgers.forEach((ledger) => {
-            const rows = ledger.querySelectorAll(".v-inner");
+            ledgers.forEach((ledger) => {
+                const rows = ledger.querySelectorAll(".v-inner");
 
-            gsap.to(rows, {
-                y: 0,
-                duration: 0.8,
-                stagger: 0.1,
-                ease: "power4.out",
-                scrollTrigger: {
-                    trigger: ledger,
-                    start: "top 90%",
-                    toggleActions: "play none none none",
-                },
+                gsap.to(rows, {
+                    y: 0,
+                    duration: 0.8,
+                    stagger: 0.1,
+                    ease: "power4.out",
+                    scrollTrigger: {
+                        trigger: ledger,
+                        start: "top 90%",
+                        toggleActions: "play none none none",
+                    },
+                });
             });
         });
-    }
-
-    initLedger();
-    document.addEventListener("astro:page-load", initLedger);
+    });
 </script>

@@ -99,68 +99,74 @@ const description =
     /* ── Architectural Grid ── */
     .artifacts-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
-        gap: 2rem;
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
 
-        @media (max-width: $screen-sm) {
-            grid-template-columns: 1fr;
-            gap: 1.5rem;
+        @include screen(md) {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+        }
+
+        @include screen(xl) {
+            grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
         }
     }
 </style>
 
 <script>
-    import { gsap } from "gsap";
-    import { ScrollTrigger } from "gsap/ScrollTrigger";
-
-    gsap.registerPlugin(ScrollTrigger);
-
-    function initPlayground() {
-        const title = document.getElementById("pg-title");
-        const headerTop = document.querySelector(
-            ".header-top",
-        ) as HTMLElement | null;
-        const items = document.querySelectorAll(".playground-card");
-
-        const tl = gsap.timeline();
-
-        // Header metadata fade in
-        if (headerTop) {
-            tl.fromTo(
-                headerTop,
-                { opacity: 0 },
-                { opacity: 1, duration: 0.5 },
-                0.05,
-            );
-        }
-
-        // Title reveal
-        if (title) {
-            tl.fromTo(
-                title,
-                { opacity: 0, y: 30 },
-                { opacity: 1, y: 0, duration: 0.8, ease: "power4.out" },
-                0.15,
-            );
-        }
-
-        // Staggered item reveals on scroll
-        items.forEach((item) => {
-            gsap.from(item, {
-                opacity: 0,
-                y: 24,
-                duration: 0.6,
-                ease: "power4.out",
-                scrollTrigger: {
-                    trigger: item,
-                    start: "top 95%",
-                    toggleActions: "play none none none",
-                },
-            });
-        });
-    }
+    import {
+        registerAnimation,
+        prefersReducedMotion,
+    } from "@lib/animation";
 
     document.addEventListener("astro:page-load", () => {
-        initPlayground();
+        registerAnimation("playground:hero", (gsap) => {
+            const title = document.getElementById("pg-title");
+            const headerTop = document.querySelector(
+                ".header-top",
+            ) as HTMLElement | null;
+            const items = document.querySelectorAll(".playground-card");
+
+            if (prefersReducedMotion()) {
+                if (headerTop) gsap.set(headerTop, { opacity: 1 });
+                if (title) gsap.set(title, { opacity: 1, y: 0 });
+                gsap.set(items, { opacity: 1, y: 0 });
+                return;
+            }
+
+            const tl = gsap.timeline();
+
+            if (headerTop) {
+                tl.fromTo(
+                    headerTop,
+                    { opacity: 0 },
+                    { opacity: 1, duration: 0.5 },
+                    0.05,
+                );
+            }
+
+            if (title) {
+                tl.fromTo(
+                    title,
+                    { opacity: 0, y: 30 },
+                    { opacity: 1, y: 0, duration: 0.8, ease: "power4.out" },
+                    0.15,
+                );
+            }
+
+            items.forEach((item) => {
+                gsap.from(item, {
+                    opacity: 0,
+                    y: 24,
+                    duration: 0.6,
+                    ease: "power4.out",
+                    scrollTrigger: {
+                        trigger: item,
+                        start: "top 95%",
+                        toggleActions: "play none none none",
+                    },
+                });
+            });
+        });
     });
 </script>

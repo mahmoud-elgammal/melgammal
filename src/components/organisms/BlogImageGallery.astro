@@ -324,6 +324,10 @@
 
 <script>
     import { gsap } from "gsap";
+    import {
+        registerAnimation,
+        prefersReducedMotion,
+    } from "@lib/animation";
 
     class ImageGallery {
         private overlay: HTMLElement | null = null;
@@ -336,8 +340,10 @@
         private thumbBar: HTMLElement | null = null;
         private images: { src: string; alt: string; caption?: string }[] = [];
         private currentIndex: number = 0;
+        private signal: AbortSignal;
 
-        constructor() {
+        constructor(signal: AbortSignal) {
+            this.signal = signal;
             this.overlay = document.getElementById("blog-image-gallery");
             this.focalPicture = document.getElementById(
                 "focal-picture",
@@ -360,6 +366,7 @@
 
         private init() {
             if (!this.overlay) return;
+            const opts = { signal: this.signal };
 
             // Gather all gallery images from the page
             this.gatherImages();
@@ -368,35 +375,51 @@
             document
                 .querySelectorAll("[data-gallery-image]")
                 .forEach((el, idx) => {
-                    el.addEventListener("click", () => this.open(idx));
+                    el.addEventListener(
+                        "click",
+                        () => this.open(idx),
+                        opts,
+                    );
                 });
 
-            // Navigation
             document
                 .getElementById("gallery-prev")
-                ?.addEventListener("click", () => this.prev());
+                ?.addEventListener("click", () => this.prev(), opts);
             document
                 .getElementById("gallery-next")
-                ?.addEventListener("click", () => this.next());
+                ?.addEventListener("click", () => this.next(), opts);
             document
                 .getElementById("gallery-close")
-                ?.addEventListener("click", () => this.close());
+                ?.addEventListener("click", () => this.close(), opts);
 
-            this.overlay.addEventListener("click", (e) => {
-                if (
-                    e.target === this.overlay ||
-                    e.target === document.querySelector(".gallery-backdrop")
-                ) {
-                    this.close();
-                }
-            });
+            this.overlay.addEventListener(
+                "click",
+                (e) => {
+                    if (
+                        e.target === this.overlay ||
+                        e.target ===
+                            document.querySelector(".gallery-backdrop")
+                    ) {
+                        this.close();
+                    }
+                },
+                opts,
+            );
 
-            // Keyboard
-            document.addEventListener("keydown", (e) => {
-                if (!this.overlay?.classList.contains("active")) return;
-                if (e.key === "ArrowLeft") this.prev();
-                if (e.key === "ArrowRight") this.next();
-                if (e.key === "Escape") this.close();
+            document.addEventListener(
+                "keydown",
+                (e) => {
+                    if (!this.overlay?.classList.contains("active")) return;
+                    if (e.key === "ArrowLeft") this.prev();
+                    if (e.key === "ArrowRight") this.next();
+                    if (e.key === "Escape") this.close();
+                },
+                opts,
+            );
+
+            // Reset body overflow on dispose if user navigated away mid-open
+            this.signal.addEventListener("abort", () => {
+                document.body.style.overflow = "";
             });
         }
 
@@ -416,7 +439,6 @@
                 };
             });
 
-            // Injected Thumbnails
             if (this.thumbBar) {
                 this.thumbBar.innerHTML = "";
                 this.images.forEach((img, idx) => {
@@ -430,7 +452,11 @@
                             <img src="${img.src}" alt="${img.alt}" />
                         </picture>
                     `;
-                    thumb.addEventListener("click", () => this.goTo(idx));
+                    thumb.addEventListener(
+                        "click",
+                        () => this.goTo(idx),
+                        { signal: this.signal },
+                    );
                     this.thumbBar?.appendChild(thumb);
                 });
             }
@@ -444,34 +470,48 @@
                 document.body.style.overflow = "hidden";
                 this.updateDisplay();
 
-                // Entrance animation
-                gsap.fromTo(
-                    this.overlay,
-                    { opacity: 0 },
-                    { opacity: 1, duration: 0.4, ease: "power2.out" },
-                );
+                if (prefersReducedMotion()) {
+                    gsap.set(this.overlay, { opacity: 1 });
+                } else {
+                    gsap.fromTo(
+                        this.overlay,
+                        { opacity: 0 },
+                        { opacity: 1, duration: 0.4, ease: "power2.out" },
+                    );
+                }
             }
         }
 
         private close() {
-            if (this.overlay) {
-                gsap.to(this.overlay, {
-                    opacity: 0,
-                    duration: 0.3,
-                    ease: "power2.in",
-                    onComplete: () => {
-                        this.overlay?.classList.remove("active");
-                        if (this.overlay) this.overlay.style.display = "none";
-                        document.body.style.overflow = "";
-                    },
-                });
+            if (!this.overlay) return;
+            if (prefersReducedMotion()) {
+                gsap.set(this.overlay, { opacity: 0 });
+                this.overlay.classList.remove("active");
+                this.overlay.style.display = "none";
+                document.body.style.overflow = "";
+                return;
             }
+            gsap.to(this.overlay, {
+                opacity: 0,
+                duration: 0.3,
+                ease: "power2.in",
+                onComplete: () => {
+                    this.overlay?.classList.remove("active");
+                    if (this.overlay) this.overlay.style.display = "none";
+                    document.body.style.overflow = "";
+                },
+            });
         }
 
         private goTo(index: number) {
             if (index < 0 || index >= this.images.length) return;
 
-            // Slide/Fade transition
+            if (prefersReducedMotion()) {
+                this.currentIndex = index;
+                this.updateDisplay();
+                return;
+            }
+
             gsap.to(this.focalImg, {
                 opacity: 0,
                 x: -20,
@@ -483,7 +523,12 @@
                     gsap.fromTo(
                         this.focalImg,
                         { opacity: 0, x: 20 },
-                        { opacity: 1, x: 0, duration: 0.3, ease: "power2.out" },
+                        {
+                            opacity: 1,
+                            x: 0,
+                            duration: 0.3,
+                            ease: "power2.out",
+                        },
                     );
                 },
             });
@@ -538,10 +583,11 @@
         }
     }
 
-    const initGallery = () => {
-        new ImageGallery();
-    };
-
-    initGallery();
-    document.addEventListener("astro:page-load", initGallery);
+    document.addEventListener("astro:page-load", () => {
+        registerAnimation("blog-image-gallery", (_gsap, signal) => {
+            // eslint-disable-next-line no-new -- intentional fire-and-forget;
+            // disposal handled by the AbortSignal in the constructor.
+            new ImageGallery(signal);
+        });
+    });
 </script>

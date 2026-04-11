@@ -113,6 +113,10 @@ import { NAV_SHORTCUTS } from "@lib/shortcuts";
     // @ts-ignore
     import { tinykeys } from "tinykeys";
     import { NAV_SHORTCUTS } from "@lib/shortcuts";
+    import {
+        registerAnimation,
+        prefersReducedMotion,
+    } from "@lib/animation";
 
     /* ── Brand letter splitting ── */
     function splitBrandLetters(brand: HTMLElement): HTMLElement[] {
@@ -152,8 +156,8 @@ import { NAV_SHORTCUTS } from "@lib/shortcuts";
             document.dispatchEvent(new CustomEvent("header-ready"));
         };
 
-        // 1. Skip animation if already seen in this session
-        if (hasAnimated && brand) {
+        // 1. Skip animation if reduced motion OR already seen in this session
+        if ((hasAnimated || prefersReducedMotion()) && brand) {
             const letters = splitBrandLetters(brand);
             brand.style.opacity = "1";
             header!.classList.remove("header-anim");
@@ -164,6 +168,7 @@ import { NAV_SHORTCUTS } from "@lib/shortcuts";
                 y: 0,
                 scale: 1,
             });
+            sessionStorage.setItem("header-animated", "true");
             markReady();
             return;
         }
@@ -275,73 +280,92 @@ import { NAV_SHORTCUTS } from "@lib/shortcuts";
     }
 
     /* ── Micro-interaction: Magnetic hover on nav links ── */
-    function setupMagneticHover() {
+    function setupMagneticHover(signal: AbortSignal) {
         if (window.innerWidth < 1024) return; // Skip on mobile/tablet
+        if (prefersReducedMotion()) return;
         const links = document.querySelectorAll(
             ".header-nav-link",
         ) as NodeListOf<HTMLElement>;
 
         links.forEach((link) => {
-            link.addEventListener("mousemove", (e: MouseEvent) => {
-                const rect = link.getBoundingClientRect();
-                const centerX = rect.left + rect.width / 2;
-                const centerY = rect.top + rect.height / 2;
-                const distX = (e.clientX - centerX) / (rect.width / 2);
-                const distY = (e.clientY - centerY) / (rect.height / 2);
+            link.addEventListener(
+                "mousemove",
+                (e: MouseEvent) => {
+                    const rect = link.getBoundingClientRect();
+                    const centerX = rect.left + rect.width / 2;
+                    const centerY = rect.top + rect.height / 2;
+                    const distX = (e.clientX - centerX) / (rect.width / 2);
+                    const distY =
+                        (e.clientY - centerY) / (rect.height / 2);
 
-                gsap.to(link, {
-                    x: distX * 3,
-                    y: distY * 2,
-                    duration: 0.2,
-                    ease: "power2.out",
-                });
-            });
+                    gsap.to(link, {
+                        x: distX * 3,
+                        y: distY * 2,
+                        duration: 0.2,
+                        ease: "power2.out",
+                    });
+                },
+                { signal },
+            );
 
-            link.addEventListener("mouseleave", () => {
-                gsap.to(link, {
-                    x: 0,
-                    y: 0,
-                    duration: 0.4,
-                    ease: "power2.out",
-                });
-            });
+            link.addEventListener(
+                "mouseleave",
+                () => {
+                    gsap.to(link, {
+                        x: 0,
+                        y: 0,
+                        duration: 0.4,
+                        ease: "power2.out",
+                    });
+                },
+                { signal },
+            );
         });
     }
 
     /* ── Micro-interaction: Brand letter scatter on hover ── */
-    function setupBrandScatter() {
-        if (window.innerWidth < 1024) return; // Skip on mobile/tablet
+    function setupBrandScatter(signal: AbortSignal) {
+        if (window.innerWidth < 1024) return;
+        if (prefersReducedMotion()) return;
         const brand = document.getElementById("header-brand");
         if (!brand) return;
 
-        brand.addEventListener("mouseenter", () => {
-            const letters = brand.querySelectorAll(".brand-letter");
-            letters.forEach((letter) => {
-                const randomRotate = (Math.random() - 0.5) * 6; // ±3deg
-                const randomY = (Math.random() - 0.5) * 4; // ±2px
-                gsap.to(letter, {
-                    rotate: randomRotate,
-                    y: randomY,
-                    duration: 0.3,
+        brand.addEventListener(
+            "mouseenter",
+            () => {
+                const letters = brand.querySelectorAll(".brand-letter");
+                letters.forEach((letter) => {
+                    const randomRotate = (Math.random() - 0.5) * 6;
+                    const randomY = (Math.random() - 0.5) * 4;
+                    gsap.to(letter, {
+                        rotate: randomRotate,
+                        y: randomY,
+                        duration: 0.3,
+                        ease: "power2.out",
+                    });
+                });
+            },
+            { signal },
+        );
+
+        brand.addEventListener(
+            "mouseleave",
+            () => {
+                const letters = brand.querySelectorAll(".brand-letter");
+                gsap.to(letters, {
+                    rotate: 0,
+                    y: 0,
+                    duration: 0.4,
+                    stagger: 0.02,
                     ease: "power2.out",
                 });
-            });
-        });
-
-        brand.addEventListener("mouseleave", () => {
-            const letters = brand.querySelectorAll(".brand-letter");
-            gsap.to(letters, {
-                rotate: 0,
-                y: 0,
-                duration: 0.4,
-                stagger: 0.02,
-                ease: "power2.out",
-            });
-        });
+            },
+            { signal },
+        );
     }
 
     /* ── Mobile Menu Logic ── */
-    function setupMobileMenu() {
+    function setupMobileMenu(signal: AbortSignal) {
         const toggle = document.getElementById("mobile-menu-toggle");
         const overlay = document.getElementById("mobile-menu-overlay");
         const header = document.getElementById("site-header");
@@ -350,6 +374,7 @@ import { NAV_SHORTCUTS } from "@lib/shortcuts";
         if (!toggle || !overlay || !header) return;
 
         let isOpen = false;
+        const reduced = prefersReducedMotion();
 
         const toggleMenu = () => {
             isOpen = !isOpen;
@@ -358,7 +383,7 @@ import { NAV_SHORTCUTS } from "@lib/shortcuts";
             header.classList.toggle("menu-open", isOpen);
             document.body.style.overflow = isOpen ? "hidden" : "";
 
-            if (isOpen) {
+            if (isOpen && !reduced) {
                 gsap.fromTo(
                     ".mobile-nav-link",
                     { opacity: 0, y: 20, x: -10 },
@@ -372,36 +397,47 @@ import { NAV_SHORTCUTS } from "@lib/shortcuts";
                         delay: 0.2,
                     },
                 );
+            } else if (isOpen) {
+                gsap.set(".mobile-nav-link", { opacity: 1, y: 0, x: 0 });
             }
         };
 
-        toggle.addEventListener("click", toggleMenu);
+        toggle.addEventListener("click", toggleMenu, { signal });
 
-        // Close on link click
+        // Close on link click — and reset body overflow on dispose
         links.forEach((link) => {
-            link.addEventListener("click", () => {
-                if (isOpen) toggleMenu();
-            });
+            link.addEventListener(
+                "click",
+                () => {
+                    if (isOpen) toggleMenu();
+                },
+                { signal },
+            );
+        });
+
+        signal.addEventListener("abort", () => {
+            // Make sure we don't leave the body locked if disposed mid-open
+            document.body.style.overflow = "";
         });
     }
 
-    /* ── Init ── */
-    function initHeader() {
-        const header = document.getElementById("site-header");
-        if (!header || header.dataset.initialized) return;
+    document.addEventListener("astro:page-load", () => {
+        registerAnimation("site-header", (_gsap, signal) => {
+            const header = document.getElementById("site-header");
+            if (!header) return;
 
-        header.dataset.initialized = "true";
-        // @ts-ignore
-        window.headerReady = false;
+            // Re-init: registerAnimation already disposed any prior listeners
+            delete header.dataset.initialized;
+            header.dataset.initialized = "true";
+            // @ts-ignore
+            window.headerReady = false;
 
-        animateHeader();
-        setupMagneticHover();
-        setupBrandScatter();
-        setupMobileMenu();
-    }
-
-    // Rely solely on astro:page-load to prevent double-initialization
-    document.addEventListener("astro:page-load", initHeader);
+            animateHeader();
+            setupMagneticHover(signal);
+            setupBrandScatter(signal);
+            setupMobileMenu(signal);
+        });
+    });
 
     /* ── Keyboard shortcuts ── */
 
@@ -428,9 +464,15 @@ import { NAV_SHORTCUTS } from "@lib/shortcuts";
         }
     }
 
-    // Build help panel content
-    const list = document.getElementById("shortcut-list");
-    if (list) {
+    // ── Tinykeys binding (per-session, not per-page) ──
+    // Bind once at module load. Tinykeys returns an unbind function we keep
+    // around so a hot reload (HMR) or a future "destroy" hook can remove it.
+    let unbindShortcuts: (() => void) | null = null;
+
+    function buildShortcutPanel() {
+        const list = document.getElementById("shortcut-list");
+        if (!list || list.dataset.populated) return;
+        list.dataset.populated = "true";
         NAV_SHORTCUTS.forEach((s) => {
             const li = document.createElement("li");
             const kbdHtml = s.displayKeys
@@ -441,26 +483,37 @@ import { NAV_SHORTCUTS } from "@lib/shortcuts";
         });
     }
 
-    // Register all shortcuts from config
-    const bindings: Record<string, (e: KeyboardEvent) => void> = {};
+    function bindShortcuts() {
+        if (unbindShortcuts) return;
 
-    NAV_SHORTCUTS.forEach((shortcut) => {
-        bindings[shortcut.keys] = (e: KeyboardEvent) => {
+        const bindings: Record<string, (e: KeyboardEvent) => void> = {};
+
+        NAV_SHORTCUTS.forEach((shortcut) => {
+            bindings[shortcut.keys] = (e: KeyboardEvent) => {
+                e.preventDefault();
+                showToast(shortcut.label, shortcut.hint);
+                setTimeout(() => {
+                    window.location.href = shortcut.href;
+                }, 300);
+            };
+        });
+
+        bindings["Shift+?"] = (e: KeyboardEvent) => {
             e.preventDefault();
-            showToast(shortcut.label, shortcut.hint);
-            setTimeout(() => {
-                window.location.href = shortcut.href;
-            }, 300);
+            toggleHelpPanel();
         };
-    });
 
-    // ? to toggle help panel
-    bindings["Shift+?"] = (e: KeyboardEvent) => {
-        e.preventDefault();
-        toggleHelpPanel();
-    };
+        unbindShortcuts = tinykeys(window, bindings);
+    }
 
-    tinykeys(window, bindings);
+    // Build the panel + bindings on initial load. The Header's DOM survives
+    // view transitions, so these only need to run once per hard load.
+    buildShortcutPanel();
+    bindShortcuts();
+
+    // Re-build the shortcut panel after each page swap in case the DOM was
+    // replaced (idempotent thanks to dataset.populated).
+    document.addEventListener("astro:page-load", buildShortcutPanel);
 </script>
 
 <style lang="scss">
@@ -599,17 +652,17 @@ import { NAV_SHORTCUTS } from "@lib/shortcuts";
         z-index: 10000;
         display: flex;
         flex-direction: column;
-        padding: 6rem 1rem 1.5rem;
+        padding: 5rem 1rem 1.5rem;
         opacity: 0;
         pointer-events: none;
         transition: opacity 0.4s cubic-bezier(0.23, 1, 0.32, 1);
 
         @media (min-width: 480px) {
-            padding: 7rem 1.5rem 2rem;
+            padding: 6rem 1.5rem 2rem;
         }
 
         @media (min-width: 640px) {
-            padding: 8rem 2rem 2rem;
+            padding: 7rem 2rem 2rem;
         }
 
         :global(.dark) & {

@@ -127,65 +127,95 @@ const mediaId = `media-${Math.random().toString(36).substring(2, 9)}`;
 </style>
 
 <script>
-    function initInteractiveMedia() {
-        const triggers = document.querySelectorAll(
-            ".interactive-media-wrapper",
-        );
+    import { registerAnimation } from "@lib/animation";
 
-        triggers.forEach((container) => {
-            const cursor = container.querySelector(
-                ".hover-view-cursor",
-            ) as HTMLElement;
-            let rect: DOMRect | null = null;
+    document.addEventListener("astro:page-load", () => {
+        registerAnimation("interactive-media", (_gsap, signal) => {
+            const triggers = document.querySelectorAll(
+                ".interactive-media-wrapper",
+            );
 
-            // Mouse Tracking
-            container.addEventListener("mousemove", (e: Event) => {
-                const mouseEvent = e as MouseEvent;
-                if (!cursor) return;
+            triggers.forEach((container) => {
+                const cursor = container.querySelector(
+                    ".hover-view-cursor",
+                ) as HTMLElement;
+                let rect: DOMRect | null = null;
+                let pendingRaf = 0;
 
-                // PERFORMANCE: Use cached rect from mouseenter
-                if (!rect) rect = container.getBoundingClientRect();
+                container.addEventListener(
+                    "mousemove",
+                    (e: Event) => {
+                        const mouseEvent = e as MouseEvent;
+                        if (!cursor) return;
 
-                const x = mouseEvent.clientX - rect.left;
-                const y = mouseEvent.clientY - rect.top;
+                        if (!rect) rect = container.getBoundingClientRect();
 
-                requestAnimationFrame(() => {
-                    cursor.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
-                });
-            });
+                        const x = mouseEvent.clientX - rect.left;
+                        const y = mouseEvent.clientY - rect.top;
 
-            container.addEventListener("mouseleave", () => {
-                rect = null; // Clear cache
-                if (cursor) cursor.style.opacity = "0";
-            });
-            container.addEventListener("mouseenter", () => {
-                rect = container.getBoundingClientRect(); // Buffer the layout read
-                if (cursor) cursor.style.opacity = "1";
-            });
-
-            // Dispatch global event on click
-            container.addEventListener("click", () => {
-                const htmlContainer = container as HTMLElement;
-                const galleryJsonStr = htmlContainer.dataset.galleryJson;
-                const startIndex = parseInt(
-                    htmlContainer.dataset.galleryIndex || "0",
-                    10,
+                        if (pendingRaf) cancelAnimationFrame(pendingRaf);
+                        pendingRaf = requestAnimationFrame(() => {
+                            pendingRaf = 0;
+                            cursor.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
+                        });
+                    },
+                    { signal },
                 );
 
-                if (!galleryJsonStr) return;
+                container.addEventListener(
+                    "mouseleave",
+                    () => {
+                        rect = null;
+                        if (pendingRaf) {
+                            cancelAnimationFrame(pendingRaf);
+                            pendingRaf = 0;
+                        }
+                        if (cursor) cursor.style.opacity = "0";
+                    },
+                    { signal },
+                );
 
-                try {
-                    const galleryItems = JSON.parse(galleryJsonStr);
-                    const event = new CustomEvent("open-lightbox", {
-                        detail: { items: galleryItems, startIndex },
-                    });
-                    document.dispatchEvent(event);
-                } catch (e) {
-                    console.error("Failed to parse lightbox gallery data", e);
-                }
+                container.addEventListener(
+                    "mouseenter",
+                    () => {
+                        rect = container.getBoundingClientRect();
+                        if (cursor) cursor.style.opacity = "1";
+                    },
+                    { signal },
+                );
+
+                container.addEventListener(
+                    "click",
+                    () => {
+                        const htmlContainer = container as HTMLElement;
+                        const galleryJsonStr =
+                            htmlContainer.dataset.galleryJson;
+                        const startIndex = parseInt(
+                            htmlContainer.dataset.galleryIndex || "0",
+                            10,
+                        );
+
+                        if (!galleryJsonStr) return;
+
+                        try {
+                            const galleryItems = JSON.parse(galleryJsonStr);
+                            const event = new CustomEvent("open-lightbox", {
+                                detail: {
+                                    items: galleryItems,
+                                    startIndex,
+                                },
+                            });
+                            document.dispatchEvent(event);
+                        } catch (e) {
+                            console.error(
+                                "Failed to parse lightbox gallery data",
+                                e,
+                            );
+                        }
+                    },
+                    { signal },
+                );
             });
         });
-    }
-
-    document.addEventListener("astro:page-load", initInteractiveMedia);
+    });
 </script>

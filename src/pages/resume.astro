@@ -167,10 +167,14 @@ const skills = [
     @use "../styles/mixins" as *;
 
     .resume-wrapper {
-        padding: 4rem 0 8rem 0;
+        padding: 2rem 0 4rem 0;
         max-width: 900px;
         margin: 0 auto;
         color: $color-black;
+
+        @include screen(md) {
+            padding: 4rem 0 8rem 0;
+        }
 
         :global(.dark) & {
             color: $color-white;
@@ -193,17 +197,21 @@ const skills = [
         align-items: flex-end;
         border-bottom: 2px solid currentColor;
         padding-bottom: 2rem;
-        margin-bottom: 4rem;
+        margin-bottom: 3rem;
 
         @include screen(max-md) {
             flex-direction: column;
             align-items: flex-start;
-            gap: 2rem;
+            gap: 1.5rem;
+        }
+
+        @include screen(md) {
+            margin-bottom: 4rem;
         }
 
         .name {
             font-family: $font-display;
-            font-size: 3rem;
+            font-size: clamp(2rem, 8vw, 3rem);
             font-weight: 900;
             text-transform: uppercase;
             line-height: 0.9;
@@ -211,9 +219,13 @@ const skills = [
         }
 
         .tagline {
-            font-size: 1.25rem;
+            font-size: 1rem;
             opacity: 0.6;
             margin-top: 0.5rem;
+
+            @include screen(md) {
+                font-size: 1.25rem;
+            }
         }
 
         .contact-info {
@@ -273,19 +285,21 @@ const skills = [
 
         .item-header {
             display: flex;
+            flex-wrap: wrap;
             justify-content: space-between;
             align-items: baseline;
+            gap: 0.5rem;
             margin-bottom: 0.5rem;
 
             .company {
-                font-size: 1.75rem;
+                font-size: clamp(1.25rem, 5vw, 1.75rem);
                 font-weight: 800;
                 text-transform: uppercase;
             }
 
             .date {
                 font-family: $font-mono;
-                font-size: 0.875rem;
+                font-size: 0.8rem;
                 opacity: 0.5;
             }
         }
@@ -354,11 +368,12 @@ const skills = [
 
     .skills-grid {
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 2rem;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
 
-        @include screen(max-md) {
-            grid-template-columns: repeat(2, 1fr);
+        @include screen(md) {
+            grid-template-columns: repeat(4, 1fr);
+            gap: 2rem;
         }
 
         .skill-category {

@@ -183,15 +183,18 @@ const work = await Promise.all(
 </PageLayout>
 
 <script>
-    import { gsap } from "gsap";
-    import { ScrollTrigger } from "gsap/ScrollTrigger";
-
-    gsap.registerPlugin(ScrollTrigger);
+    import {
+        registerAnimation,
+        prefersReducedMotion,
+    } from "@lib/animation";
 
     /* ── Utilities ── */
     function wrapCharacters(element: HTMLElement) {
         if (element.dataset.charsWrapped) return;
-        const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+        const walker = document.createTreeWalker(
+            element,
+            NodeFilter.SHOW_TEXT,
+        );
         const textNodes: Node[] = [];
         let node;
         while ((node = walker.nextNode())) textNodes.push(node);
@@ -211,57 +214,68 @@ const work = await Promise.all(
         element.dataset.charsWrapped = "true";
     }
 
-    /* ── Wait for IntroLoader curtain ── */
+    document.addEventListener("astro:page-load", () => {
+        registerAnimation("about-page:brute-work", (gsap) => {
+            const bruteItemsElements =
+                document.querySelectorAll(".work-item-brute");
+            if (!bruteItemsElements.length) return;
 
-    async function initAboutAnimations() {
-        /* ── Branded Brute Scroll Reveals & Progress ── */
-        const bruteItemsElements =
-            document.querySelectorAll(".work-item-brute");
+            const reduced = prefersReducedMotion();
+            const isDark =
+                document.documentElement.classList.contains("dark");
+            const activeColor = isDark
+                ? "rgba(255,255,255,0.9)"
+                : "rgba(0,0,0,0.9)";
 
-        bruteItemsElements.forEach((item) => {
-            // 1. Entrance Reveal
-            gsap.from(item, {
-                opacity: 0,
-                y: 60,
-                filter: "blur(10px)",
-                duration: 1.2,
-                ease: "power2.out",
-                scrollTrigger: {
-                    trigger: item,
-                    start: "top 95%",
-                    toggleActions: "play none none none",
-                },
-            });
+            bruteItemsElements.forEach((item) => {
+                if (reduced) {
+                    // Snap into resolved state — no entrance, no scroll progress
+                    gsap.set(item, {
+                        opacity: 1,
+                        y: 0,
+                        filter: "blur(0px)",
+                    });
+                    const narrative = item.querySelector(".brute-narrative");
+                    if (narrative instanceof HTMLElement) {
+                        wrapCharacters(narrative);
+                        const chars = narrative.querySelectorAll("span");
+                        gsap.set(chars, { color: activeColor });
+                    }
+                    return;
+                }
 
-            // 2. Scroll-Linked Progress (Letter by Letter)
-            const narrative = item.querySelector(".brute-narrative");
-            if (narrative instanceof HTMLElement) {
-                wrapCharacters(narrative);
-                const chars = narrative.querySelectorAll("span");
-
-                const isDark =
-                    document.documentElement.classList.contains("dark");
-                const activeColor = isDark
-                    ? "rgba(255,255,255,0.9)"
-                    : "rgba(0,0,0,0.9)";
-
-                gsap.to(chars, {
-                    color: activeColor,
-                    duration: 0.1,
-                    stagger: 0.05,
+                gsap.from(item, {
+                    opacity: 0,
+                    y: 60,
+                    filter: "blur(10px)",
+                    duration: 1.2,
+                    ease: "power2.out",
                     scrollTrigger: {
-                        trigger: narrative,
+                        trigger: item,
                         start: "top 95%",
-                        end: "bottom 5%",
-                        scrub: 0.5,
+                        toggleActions: "play none none none",
                     },
                 });
-            }
-        });
-    }
 
-    document.addEventListener("astro:page-load", () => {
-        initAboutAnimations();
+                const narrative = item.querySelector(".brute-narrative");
+                if (narrative instanceof HTMLElement) {
+                    wrapCharacters(narrative);
+                    const chars = narrative.querySelectorAll("span");
+
+                    gsap.to(chars, {
+                        color: activeColor,
+                        duration: 0.1,
+                        stagger: 0.05,
+                        scrollTrigger: {
+                            trigger: narrative,
+                            start: "top 95%",
+                            end: "bottom 5%",
+                            scrub: 0.5,
+                        },
+                    });
+                }
+            });
+        });
     });
 </script>
 
@@ -281,7 +295,7 @@ const work = await Promise.all(
     }
 
     .section-title {
-        font-size: 3.5rem;
+        font-size: clamp(2.5rem, 10vw, 3.5rem);
         font-weight: 900;
         text-transform: uppercase;
         letter-spacing: -0.05em;
@@ -348,7 +362,7 @@ const work = await Promise.all(
         display: grid;
         grid-template-columns: 1fr;
         gap: 2rem;
-        padding: 6rem 0;
+        padding: 3rem 0;
         border-top: 1px solid rgba(0, 0, 0, 0.1);
 
         :global(.dark) & {
@@ -358,6 +372,7 @@ const work = await Promise.all(
         @include screen(md) {
             grid-template-columns: 1fr 2fr;
             gap: 4rem;
+            padding: 6rem 0;
         }
     }
 
@@ -380,7 +395,7 @@ const work = await Promise.all(
     }
 
     .phil-text {
-        font-size: 1.5rem;
+        font-size: 1.15rem;
         line-height: 1.5;
         font-weight: 500;
         color: rgba(0, 0, 0, 0.2); // Initial state for reveal
@@ -426,7 +441,7 @@ const work = await Promise.all(
     }
 
     .edu-degree {
-        font-size: 1.75rem;
+        font-size: 1.25rem;
         font-weight: 900;
         text-transform: uppercase;
         letter-spacing: -0.02em;
@@ -448,7 +463,12 @@ const work = await Promise.all(
         display: grid;
         grid-template-columns: 1fr;
         gap: 2rem;
-        padding: 6rem 0;
+        padding: 3rem 0;
+
+        @include screen(md) {
+            padding: 6rem 0;
+        }
+        // duplicate-safe: lower @include screen(md) below sets the columns
         border-top: 1px solid rgba(0, 0, 0, 0.1);
 
         :global(.dark) & {
@@ -485,14 +505,22 @@ const work = await Promise.all(
 
     .brute-work {
         position: relative;
-        padding: 4rem 0 8rem 0;
+        padding: 2rem 0 4rem 0;
         overflow: visible;
+
+        @include screen(md) {
+            padding: 4rem 0 8rem 0;
+        }
     }
 
     .work-container {
         display: flex;
         flex-direction: column;
-        gap: 12rem; // Massive spacing for brute rhythm
+        gap: 5rem;
+
+        @include screen(md) {
+            gap: 12rem; // Massive spacing for brute rhythm
+        }
     }
 
     .work-item-brute {
@@ -536,7 +564,7 @@ const work = await Promise.all(
     }
 
     .brute-num {
-        font-size: 5rem;
+        font-size: 3rem;
         font-weight: 900;
         line-height: 0.8;
         opacity: 0.1;
@@ -564,9 +592,10 @@ const work = await Promise.all(
     }
 
     .brute-company {
-        font-size: 4rem;
+        font-size: clamp(2rem, 10vw, 4rem);
         font-weight: 900;
         line-height: 0.9;
+        word-break: break-word;
         margin: 0;
         letter-spacing: -0.05em;
         text-transform: uppercase;
@@ -593,10 +622,15 @@ const work = await Promise.all(
     }
 
     .brute-narrative {
-        margin-top: 3rem;
+        margin-top: 2rem;
         max-width: 60ch;
-        font-size: 1.5rem; // Bigger brute scale
+        font-size: 1.05rem;
         line-height: 1.5;
+
+        @include screen(md) {
+            margin-top: 3rem;
+            font-size: 1.5rem;
+        }
         font-weight: 500;
         color: rgba(0, 0, 0, 0.15); // Initially dim for scroll progress
         transition: color 0.3s ease;

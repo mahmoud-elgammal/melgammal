@@ -77,9 +77,14 @@ const description =
     .contact-layout {
         display: flex;
         flex-direction: column;
-        gap: 5rem;
+        gap: 3rem;
         padding-top: 1rem;
-        padding-bottom: 12rem;
+        padding-bottom: 5rem;
+
+        @include screen(md) {
+            gap: 5rem;
+            padding-bottom: 12rem;
+        }
     }
 
     /* ── Header ── */
@@ -240,45 +245,71 @@ const description =
 </style>
 
 <script>
-    import { gsap } from "gsap";
+    import {
+        registerAnimation,
+        prefersReducedMotion,
+    } from "@lib/animation";
 
-    function initContact() {
-        const meta = document.getElementById("ct-meta");
-        const title = document.getElementById("ct-title");
-        const sub = document.getElementById("ct-sub");
-        const div = document.getElementById("ct-divider");
-        const info = document.getElementById("ct-info");
-        const form = document.getElementById("ct-form");
+    document.addEventListener("astro:page-load", () => {
+        registerAnimation("contact:hero", (gsap) => {
+            const meta = document.getElementById("ct-meta");
+            const title = document.getElementById("ct-title");
+            const sub = document.getElementById("ct-sub");
+            const div = document.getElementById("ct-divider");
+            const info = document.getElementById("ct-info");
+            const form = document.getElementById("ct-form");
 
-        if (!title) return;
+            if (!title) return;
 
-        const tl = gsap.timeline({
-            defaults: { duration: 0.8, ease: "power4.out" },
+            if (prefersReducedMotion()) {
+                gsap.set([meta, title, sub, info, form], {
+                    opacity: 1,
+                    y: 0,
+                });
+                gsap.set(div, { opacity: 1, scaleX: 1 });
+                return;
+            }
+
+            const tl = gsap.timeline({
+                defaults: { duration: 0.8, ease: "power4.out" },
+            });
+
+            tl.fromTo(
+                meta,
+                { opacity: 0 },
+                { opacity: 1, duration: 0.5 },
+                0.05,
+            )
+                .fromTo(
+                    title,
+                    { opacity: 0, y: 20 },
+                    { opacity: 1, y: 0 },
+                    0.15,
+                )
+                .fromTo(
+                    sub,
+                    { opacity: 0 },
+                    { opacity: 1, duration: 0.6 },
+                    0.35,
+                )
+                .fromTo(
+                    div,
+                    { opacity: 0, scaleX: 0 },
+                    { opacity: 1, scaleX: 1, transformOrigin: "left" },
+                    0.45,
+                )
+                .fromTo(
+                    info,
+                    { opacity: 0, y: 12 },
+                    { opacity: 1, y: 0, duration: 0.6 },
+                    0.55,
+                )
+                .fromTo(
+                    form,
+                    { opacity: 0, y: 12 },
+                    { opacity: 1, y: 0, duration: 0.6 },
+                    0.6,
+                );
         });
-
-        tl.fromTo(meta, { opacity: 0 }, { opacity: 1, duration: 0.5 }, 0.05)
-            .fromTo(title, { opacity: 0, y: 20 }, { opacity: 1, y: 0 }, 0.15)
-            .fromTo(sub, { opacity: 0 }, { opacity: 1, duration: 0.6 }, 0.35)
-            .fromTo(
-                div,
-                { opacity: 0, scaleX: 0 },
-                { opacity: 1, scaleX: 1, transformOrigin: "left" },
-                0.45,
-            )
-            .fromTo(
-                info,
-                { opacity: 0, y: 12 },
-                { opacity: 1, y: 0, duration: 0.6 },
-                0.55,
-            )
-            .fromTo(
-                form,
-                { opacity: 0, y: 12 },
-                { opacity: 1, y: 0, duration: 0.6 },
-                0.6,
-            );
-    }
-
-    initContact();
-    document.addEventListener("astro:page-load", initContact);
+    });
 </script>

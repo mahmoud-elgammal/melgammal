@@ -196,15 +196,24 @@ const { src, alt } = Astro.props;
 
     .corner-accents {
         position: absolute;
-        inset: 2rem;
+        inset: 1rem;
         pointer-events: none;
         z-index: 3;
 
+        @include screen(md) {
+            inset: 2rem;
+        }
+
         span {
             position: absolute;
-            width: 2rem;
-            height: 2rem;
+            width: 1.25rem;
+            height: 1.25rem;
             border: 1px solid rgba($color-white, 0.4);
+
+            @include screen(md) {
+                width: 2rem;
+                height: 2rem;
+            }
 
             &:nth-child(1) {
                 top: 0;
@@ -241,64 +250,74 @@ const { src, alt } = Astro.props;
 </style>
 
 <script>
-    import { gsap } from "gsap";
-    import { ScrollTrigger } from "gsap/ScrollTrigger";
-
-    gsap.registerPlugin(ScrollTrigger);
-
-    function initMonolithParallax() {
-        const monolith = document.getElementById("monolith-hero");
-        const crosshair = document.getElementById("hud-crosshair");
-        const wrapper = monolith?.closest(".animate") as HTMLElement | null;
-
-        if (wrapper) {
-            gsap.to(wrapper, {
-                opacity: 1,
-                y: 0,
-                scale: 1,
-                duration: 1.2,
-                ease: "power4.out",
-                scrollTrigger: {
-                    trigger: wrapper,
-                    start: "top 90%",
-                    toggleActions: "play none none none",
-                },
-            });
-        }
-
-        if (monolith) {
-            gsap.to(monolith, {
-                y: -60,
-                scale: 1.02,
-                rotateX: 8,
-                ease: "none",
-                scrollTrigger: {
-                    trigger: monolith,
-                    start: "top bottom",
-                    end: "bottom top",
-                    scrub: true,
-                },
-            });
-
-            monolith.addEventListener("mousemove", (e) => {
-                if (!crosshair) return;
-                const rect = monolith.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-
-                crosshair.style.left = `${x}px`;
-                crosshair.style.top = `${y}px`;
-
-                const labels = monolith.querySelectorAll(".coordinate-label");
-                if (labels[0])
-                    labels[0].textContent = `COORD_X: ${(x / rect.width).toFixed(2)}`;
-                if (labels[1])
-                    labels[1].textContent = `COORD_Y: ${(y / rect.height).toFixed(2)}`;
-            });
-        }
-    }
+    import {
+        registerAnimation,
+        prefersReducedMotion,
+    } from "@lib/animation";
 
     document.addEventListener("astro:page-load", () => {
-        initMonolithParallax();
+        registerAnimation("blog-monolith-image", (gsap, signal) => {
+            const monolith = document.getElementById("monolith-hero");
+            const crosshair = document.getElementById("hud-crosshair");
+            const wrapper = monolith?.closest(
+                ".animate",
+            ) as HTMLElement | null;
+            const reduced = prefersReducedMotion();
+
+            if (wrapper) {
+                if (reduced) {
+                    gsap.set(wrapper, { opacity: 1, y: 0, scale: 1 });
+                } else {
+                    gsap.to(wrapper, {
+                        opacity: 1,
+                        y: 0,
+                        scale: 1,
+                        duration: 1.2,
+                        ease: "power4.out",
+                        scrollTrigger: {
+                            trigger: wrapper,
+                            start: "top 90%",
+                            toggleActions: "play none none none",
+                        },
+                    });
+                }
+            }
+
+            if (monolith && !reduced) {
+                gsap.to(monolith, {
+                    y: -60,
+                    scale: 1.02,
+                    rotateX: 8,
+                    ease: "none",
+                    scrollTrigger: {
+                        trigger: monolith,
+                        start: "top bottom",
+                        end: "bottom top",
+                        scrub: true,
+                    },
+                });
+
+                monolith.addEventListener(
+                    "mousemove",
+                    (e) => {
+                        if (!crosshair) return;
+                        const rect = monolith.getBoundingClientRect();
+                        const x = e.clientX - rect.left;
+                        const y = e.clientY - rect.top;
+
+                        crosshair.style.left = `${x}px`;
+                        crosshair.style.top = `${y}px`;
+
+                        const labels =
+                            monolith.querySelectorAll(".coordinate-label");
+                        if (labels[0])
+                            labels[0].textContent = `COORD_X: ${(x / rect.width).toFixed(2)}`;
+                        if (labels[1])
+                            labels[1].textContent = `COORD_Y: ${(y / rect.height).toFixed(2)}`;
+                    },
+                    { signal },
+                );
+            }
+        });
     });
 </script>

@@ -54,8 +54,13 @@ const projects = (await getCollection("projects"))
     .work-layout {
         display: flex;
         flex-direction: column;
-        gap: 5rem;
-        padding-bottom: 10rem;
+        gap: 3rem;
+        padding-bottom: 5rem;
+
+        @include screen(md) {
+            gap: 5rem;
+            padding-bottom: 10rem;
+        }
     }
 
     /* ── Header ── */
@@ -101,7 +106,7 @@ const projects = (await getCollection("projects"))
         margin: 0;
         display: grid;
         grid-template-columns: 1fr;
-        gap: 4rem;
+        gap: 2.5rem;
 
         @include screen(md) {
             grid-template-columns: repeat(2, 1fr);
@@ -111,49 +116,63 @@ const projects = (await getCollection("projects"))
 </style>
 
 <script>
-    import { gsap } from "gsap";
+    import {
+        registerAnimation,
+        prefersReducedMotion,
+    } from "@lib/animation";
 
-    function initWork() {
-        const meta = document.getElementById("wk-meta");
-        const title = document.getElementById("wk-title");
-        const items = document.querySelectorAll("#wk-grid li");
+    document.addEventListener("astro:page-load", () => {
+        registerAnimation("work:hero", (gsap) => {
+            const meta = document.getElementById("wk-meta");
+            const title = document.getElementById("wk-title");
+            const items = document.querySelectorAll("#wk-grid li");
 
-        const tl = gsap.timeline();
+            if (prefersReducedMotion()) {
+                if (meta) gsap.set(meta, { opacity: 1 });
+                if (title) gsap.set(title, { opacity: 1, y: 0 });
+                if (items.length) gsap.set(items, { opacity: 1, y: 0 });
+                return;
+            }
 
-        if (meta) {
-            tl.fromTo(
-                meta,
-                { opacity: 0 },
-                { opacity: 1, duration: 0.5 },
-                0.05,
-            );
-        }
+            const tl = gsap.timeline();
 
-        if (title) {
-            tl.fromTo(
-                title,
-                { opacity: 0, y: 20 },
-                { opacity: 1, y: 0, duration: 0.8, ease: "power4.out" },
-                0.15,
-            );
-        }
+            if (meta) {
+                tl.fromTo(
+                    meta,
+                    { opacity: 0 },
+                    { opacity: 1, duration: 0.5 },
+                    0.05,
+                );
+            }
 
-        if (items.length) {
-            tl.fromTo(
-                items,
-                { opacity: 0, y: 24 },
-                {
-                    opacity: 1,
-                    y: 0,
-                    duration: 0.7,
-                    stagger: 0.12,
-                    ease: "power4.out",
-                },
-                0.35,
-            );
-        }
-    }
+            if (title) {
+                tl.fromTo(
+                    title,
+                    { opacity: 0, y: 20 },
+                    {
+                        opacity: 1,
+                        y: 0,
+                        duration: 0.8,
+                        ease: "power4.out",
+                    },
+                    0.15,
+                );
+            }
 
-    initWork();
-    document.addEventListener("astro:page-load", initWork);
+            if (items.length) {
+                tl.fromTo(
+                    items,
+                    { opacity: 0, y: 24 },
+                    {
+                        opacity: 1,
+                        y: 0,
+                        duration: 0.7,
+                        stagger: 0.12,
+                        ease: "power4.out",
+                    },
+                    0.35,
+                );
+            }
+        });
+    });
 </script>

@@ -245,142 +245,198 @@ const playerId = `player-${Math.random().toString(36).substring(2, 9)}`;
 </style>
 
 <script>
-    function initCustomPlayers() {
-        const players = document.querySelectorAll(".custom-video-player");
+    import { registerAnimation } from "@lib/animation";
 
-        players.forEach((container) => {
-            const video = container.querySelector(
-                ".video-element",
-            ) as HTMLVideoElement;
-            const progress = container.querySelector(
-                ".progress-fill",
-            ) as HTMLElement;
+    document.addEventListener("astro:page-load", () => {
+        registerAnimation("custom-video-player", (_gsap, signal) => {
+            const players = document.querySelectorAll(
+                ".custom-video-player",
+            );
 
-            const cursorElement = container.querySelector(
-                ".stark-cursor",
-            ) as HTMLElement;
-            const scrubArea = container.querySelector(
-                ".scrub-area",
-            ) as HTMLElement;
-            const muteToggle = container.querySelector(
-                ".stark-mute-toggle",
-            ) as HTMLElement;
-            const muteState = container.querySelector(
-                ".mute-state",
-            ) as HTMLElement;
+            players.forEach((container) => {
+                const video = container.querySelector(
+                    ".video-element",
+                ) as HTMLVideoElement;
+                const progress = container.querySelector(
+                    ".progress-fill",
+                ) as HTMLElement;
+                const cursorElement = container.querySelector(
+                    ".stark-cursor",
+                ) as HTMLElement;
+                const scrubArea = container.querySelector(
+                    ".scrub-area",
+                ) as HTMLElement;
+                const muteToggle = container.querySelector(
+                    ".stark-mute-toggle",
+                ) as HTMLElement;
+                const muteState = container.querySelector(
+                    ".mute-state",
+                ) as HTMLElement;
 
-            if (!video) return;
+                if (!video) return;
 
-            // Fast Cursor Tracking for real-time feel
-            container.addEventListener("mousemove", (e: Event) => {
-                const mouseEvent = e as MouseEvent;
-                if (!cursorElement) return;
-                const rect = container.getBoundingClientRect();
-                const x = mouseEvent.clientX - rect.left;
-                const y = mouseEvent.clientY - rect.top;
+                let pendingCursorRaf = 0;
 
-                requestAnimationFrame(() => {
-                    cursorElement.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
-                });
-            });
+                container.addEventListener(
+                    "mousemove",
+                    (e: Event) => {
+                        const mouseEvent = e as MouseEvent;
+                        if (!cursorElement) return;
+                        const rect = container.getBoundingClientRect();
+                        const x = mouseEvent.clientX - rect.left;
+                        const y = mouseEvent.clientY - rect.top;
 
-            // Prevent cursor clipping
-            container.addEventListener("mouseleave", () => {
-                if (cursorElement) cursorElement.style.opacity = "0";
-            });
-            container.addEventListener("mouseenter", () => {
-                if (cursorElement) cursorElement.style.opacity = "1";
-            });
-
-            // Handle Autoplay init
-            if (video.autoplay || video.loop) {
-                video.play().catch(() => {
-                    container.classList.remove("is-playing");
-                });
-                container.classList.add("is-playing");
-                if (video.muted && muteToggle)
-                    muteToggle.classList.add("is-muted");
-            }
-
-            // Massive click target (the whole container acts as play/pause except overlays)
-            container.addEventListener("click", (e) => {
-                const target = e.target as HTMLElement;
-                // Ignore clicks that land on interactable overlays
-                if (
-                    target.closest(".refined-mute-toggle") ||
-                    target.closest(".scrub-area")
-                )
-                    return;
-
-                if (video.paused) {
-                    video.play();
-                    container.classList.add("is-playing");
-                } else {
-                    video.pause();
-                    container.classList.remove("is-playing");
-                }
-            });
-
-            // Mute Toggle Interaction
-            if (muteToggle) {
-                muteToggle.addEventListener("click", (e) => {
-                    e.stopPropagation();
-                    video.muted = !video.muted;
-
-                    if (video.muted) {
-                        muteToggle.classList.add("is-muted");
-                        if (muteState) muteState.innerText = "OFF";
-                    } else {
-                        muteToggle.classList.remove("is-muted");
-                        if (muteState) muteState.innerText = "ON";
-                    }
-                });
-            }
-
-            // Scrub Area Interaction
-            if (scrubArea) {
-                scrubArea.addEventListener("click", (e: Event) => {
-                    e.stopPropagation();
-                    const mouseEvent = e as MouseEvent;
-                    const rect = scrubArea.getBoundingClientRect();
-                    const x = mouseEvent.clientX - rect.left;
-                    const percent = Math.max(0, Math.min(x / rect.width, 1));
-                    if (video.duration) {
-                        video.currentTime = percent * video.duration;
-                    }
-                });
-
-                // Smooth scrub dragging
-                let isDragging = false;
-                scrubArea.addEventListener(
-                    "mousedown",
-                    () => (isDragging = true),
+                        if (pendingCursorRaf)
+                            cancelAnimationFrame(pendingCursorRaf);
+                        pendingCursorRaf = requestAnimationFrame(() => {
+                            pendingCursorRaf = 0;
+                            cursorElement.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
+                        });
+                    },
+                    { signal },
                 );
-                window.addEventListener("mouseup", () => (isDragging = false));
-                window.addEventListener("mousemove", (e) => {
-                    if (!isDragging) return;
-                    const rect = scrubArea.getBoundingClientRect();
-                    const x = e.clientX - rect.left;
-                    const percent = Math.max(0, Math.min(x / rect.width, 1));
-                    if (video.duration) {
-                        video.currentTime = percent * video.duration;
-                    }
+
+                container.addEventListener(
+                    "mouseleave",
+                    () => {
+                        if (cursorElement)
+                            cursorElement.style.opacity = "0";
+                    },
+                    { signal },
+                );
+                container.addEventListener(
+                    "mouseenter",
+                    () => {
+                        if (cursorElement)
+                            cursorElement.style.opacity = "1";
+                    },
+                    { signal },
+                );
+
+                if (video.autoplay || video.loop) {
+                    video.play().catch(() => {
+                        container.classList.remove("is-playing");
+                    });
+                    container.classList.add("is-playing");
+                    if (video.muted && muteToggle)
+                        muteToggle.classList.add("is-muted");
+                }
+
+                container.addEventListener(
+                    "click",
+                    (e) => {
+                        const target = e.target as HTMLElement;
+                        if (
+                            target.closest(".refined-mute-toggle") ||
+                            target.closest(".scrub-area")
+                        )
+                            return;
+
+                        if (video.paused) {
+                            video.play();
+                            container.classList.add("is-playing");
+                        } else {
+                            video.pause();
+                            container.classList.remove("is-playing");
+                        }
+                    },
+                    { signal },
+                );
+
+                if (muteToggle) {
+                    muteToggle.addEventListener(
+                        "click",
+                        (e) => {
+                            e.stopPropagation();
+                            video.muted = !video.muted;
+                            if (video.muted) {
+                                muteToggle.classList.add("is-muted");
+                                if (muteState) muteState.innerText = "OFF";
+                            } else {
+                                muteToggle.classList.remove("is-muted");
+                                if (muteState) muteState.innerText = "ON";
+                            }
+                        },
+                        { signal },
+                    );
+                }
+
+                if (scrubArea) {
+                    scrubArea.addEventListener(
+                        "click",
+                        (e: Event) => {
+                            e.stopPropagation();
+                            const mouseEvent = e as MouseEvent;
+                            const rect =
+                                scrubArea.getBoundingClientRect();
+                            const x = mouseEvent.clientX - rect.left;
+                            const percent = Math.max(
+                                0,
+                                Math.min(x / rect.width, 1),
+                            );
+                            if (video.duration) {
+                                video.currentTime =
+                                    percent * video.duration;
+                            }
+                        },
+                        { signal },
+                    );
+
+                    let isDragging = false;
+                    scrubArea.addEventListener(
+                        "mousedown",
+                        () => (isDragging = true),
+                        { signal },
+                    );
+                    window.addEventListener(
+                        "mouseup",
+                        () => (isDragging = false),
+                        { signal },
+                    );
+                    window.addEventListener(
+                        "mousemove",
+                        (e) => {
+                            if (!isDragging) return;
+                            const rect =
+                                scrubArea.getBoundingClientRect();
+                            const x = e.clientX - rect.left;
+                            const percent = Math.max(
+                                0,
+                                Math.min(x / rect.width, 1),
+                            );
+                            if (video.duration) {
+                                video.currentTime =
+                                    percent * video.duration;
+                            }
+                        },
+                        { signal },
+                    );
+                }
+
+                video.addEventListener(
+                    "timeupdate",
+                    () => {
+                        if (!video.duration) return;
+                        const percent =
+                            (video.currentTime / video.duration) * 100;
+                        progress.style.width = `${percent}%`;
+                    },
+                    { signal },
+                );
+
+                video.addEventListener(
+                    "ended",
+                    () => {
+                        container.classList.remove("is-playing");
+                    },
+                    { signal },
+                );
+
+                signal.addEventListener("abort", () => {
+                    if (pendingCursorRaf)
+                        cancelAnimationFrame(pendingCursorRaf);
                 });
-            }
-
-            // Update hairline scrubber Glow & Width
-            video.addEventListener("timeupdate", () => {
-                if (!video.duration) return;
-                const percent = (video.currentTime / video.duration) * 100;
-                progress.style.width = `${percent}%`;
-            });
-
-            // Reset on end
-            video.addEventListener("ended", () => {
-                container.classList.remove("is-playing");
             });
         });
-    }
-
-    document.addEventListener("astro:page-load", initCustomPlayers);
+    });
 </script>

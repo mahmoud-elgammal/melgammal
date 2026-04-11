@@ -47,11 +47,15 @@ const { title, date, body } = Astro.props;
 
     .post-hero-text {
         position: relative;
-        padding: 0rem 0 6rem 0;
+        padding: 2rem 0 3rem 0;
         background: $color-light-bg;
         overflow: hidden;
         display: flex;
         align-items: center;
+
+        @include screen(md) {
+            padding: 0rem 0 6rem 0;
+        }
 
         :global(.dark) & {
             background: $color-dark-bg;
@@ -69,10 +73,15 @@ const { title, date, body } = Astro.props;
         flex-direction: column;
         gap: 0.75rem;
         width: fit-content;
-        padding: 1.5rem 0;
+        padding: 1rem 0;
         border-top: 1px solid rgba($color-black, 0.1);
         border-bottom: 1px solid rgba($color-black, 0.1);
-        margin-bottom: 3rem;
+        margin-bottom: 1.5rem;
+
+        @include screen(md) {
+            padding: 1.5rem 0;
+            margin-bottom: 3rem;
+        }
 
         :global(.dark) & {
             border-color: rgba($color-white, 0.1);
@@ -80,8 +89,12 @@ const { title, date, body } = Astro.props;
 
         .ledger-row {
             display: flex;
-            gap: 4rem;
+            gap: 2rem;
             justify-content: space-between;
+
+            @include screen(md) {
+                gap: 4rem;
+            }
             font-family: ui-monospace, monospace;
             font-size: 0.7rem;
 
@@ -156,18 +169,24 @@ const { title, date, body } = Astro.props;
 </style>
 
 <script>
-    import { gsap } from "gsap";
-    import { ScrollTrigger } from "gsap/ScrollTrigger";
+    import {
+        registerAnimation,
+        prefersReducedMotion,
+    } from "@lib/animation";
 
-    gsap.registerPlugin(ScrollTrigger);
+    document.addEventListener("astro:page-load", () => {
+        registerAnimation("blog-post-hero", (gsap) => {
+            const hero = document.querySelector(".post-hero-text");
+            const animatedItems = document.querySelectorAll(
+                ".post-hero-text .animate",
+            );
+            if (!hero || !animatedItems.length) return;
 
-    function initPostHeroText() {
-        const hero = document.querySelector(".post-hero-text");
-        const animatedItems = document.querySelectorAll(
-            ".post-hero-text .animate",
-        );
+            if (prefersReducedMotion()) {
+                gsap.set(animatedItems, { opacity: 1, y: 0 });
+                return;
+            }
 
-        if (hero && animatedItems.length > 0) {
             gsap.to(animatedItems, {
                 opacity: 1,
                 y: 0,
@@ -180,10 +199,6 @@ const { title, date, body } = Astro.props;
                     toggleActions: "play none none none",
                 },
             });
-        }
-    }
-
-    document.addEventListener("astro:page-load", () => {
-        initPostHeroText();
+        });
     });
 </script>

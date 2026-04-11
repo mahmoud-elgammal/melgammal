@@ -184,13 +184,20 @@
 
 <script>
     import { gsap } from "gsap";
+    import { prefersReducedMotion } from "@lib/animation";
 
     interface PreloadedItem {
         src: string;
         type: string;
     }
 
+    // MediaLightbox lives in the layout shell — bind once per session.
+    let lightboxInitialized = false;
+
     function initLightbox() {
+        if (lightboxInitialized) return;
+        lightboxInitialized = true;
+
         const overlay = document.getElementById("global-media-lightbox");
         const injectTarget = document.getElementById("lightbox-content-inject");
         const cursor = document.getElementById("lb-cursor");
@@ -285,6 +292,7 @@
         };
 
         // Mouse Tracking & Intent Calculation
+        let pendingCursorRaf = 0;
         overlay.addEventListener("mousemove", (e: MouseEvent) => {
             if (!isOpen) return;
 
@@ -293,8 +301,9 @@
             const width = window.innerWidth;
             const height = window.innerHeight;
 
-            // Update cursor position directly
-            requestAnimationFrame(() => {
+            if (pendingCursorRaf) cancelAnimationFrame(pendingCursorRaf);
+            pendingCursorRaf = requestAnimationFrame(() => {
+                pendingCursorRaf = 0;
                 cursor.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
             });
 
@@ -336,14 +345,18 @@
             renderDots();
             renderSlide(currentIndex);
 
-            // Animate In
+            // Animate In (or snap for reduced motion)
             isOpen = true;
             overlay.classList.add("is-active");
-            gsap.to(overlay, {
-                opacity: 1,
-                duration: 0.4,
-                ease: "power3.out",
-            });
+            if (prefersReducedMotion()) {
+                gsap.set(overlay, { opacity: 1 });
+            } else {
+                gsap.to(overlay, {
+                    opacity: 1,
+                    duration: 0.4,
+                    ease: "power3.out",
+                });
+            }
         });
 
         // Click Action Handling
@@ -363,19 +376,25 @@
             } else {
                 // CLOSE
                 isOpen = false;
-                gsap.to(overlay, {
-                    opacity: 0,
-                    duration: 0.3,
-                    ease: "power2.in",
-                    onComplete: () => {
-                        overlay.classList.remove("is-active");
-                        injectTarget.innerHTML = ""; // Kill video instances
-                    },
-                });
+                if (prefersReducedMotion()) {
+                    gsap.set(overlay, { opacity: 0 });
+                    overlay.classList.remove("is-active");
+                    injectTarget.innerHTML = "";
+                } else {
+                    gsap.to(overlay, {
+                        opacity: 0,
+                        duration: 0.3,
+                        ease: "power2.in",
+                        onComplete: () => {
+                            overlay.classList.remove("is-active");
+                            injectTarget.innerHTML = "";
+                        },
+                    });
+                }
             }
         });
     }
 
-    // Bind once properly
-    document.addEventListener("astro:page-load", initLightbox);
+    // Bind once at module load (DOM lives in layout, survives view swaps)
+    initLightbox();
 </script>

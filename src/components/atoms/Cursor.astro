@@ -73,64 +73,61 @@
 </style>
 
 <script>
-    import { gsap } from "gsap";
+    import {
+        registerAnimation,
+        prefersReducedMotion,
+    } from "@lib/animation";
 
-    class GlobalCursor {
-        private el: HTMLElement;
-        private ring: HTMLElement;
-        private content: HTMLElement;
-        private xTo: any;
-        private yTo: any;
-        private isVisible = false;
-        private cleanupCallbacks: (() => void)[] = [];
+    document.addEventListener("astro:page-load", () => {
+        registerAnimation("global-cursor", (gsap, signal) => {
+            const el = document.getElementById("global-cursor");
+            if (!el) return;
 
-        constructor() {
-            this.el = document.getElementById("global-cursor")!;
-            this.ring = this.el.querySelector(".cursor-ring")!;
-            this.content = this.el.querySelector(".cursor-content")!;
+            // Reduced motion / coarse pointer / no hover: hide entirely.
+            // (CSS already hides on coarse pointer; this catches a11y prefs.)
+            if (prefersReducedMotion()) {
+                el.style.display = "none";
+                return;
+            }
 
-            if (!this.el) return;
+            const content = el.querySelector(".cursor-content") as HTMLElement;
 
-            // Center origin so we don't have to read client properties every frame
-            gsap.set(this.el, { xPercent: -50, yPercent: -50 });
+            // Center origin so we never read client properties every frame
+            gsap.set(el, { xPercent: -50, yPercent: -50 });
 
-            this.xTo = gsap.quickTo(this.el, "x", {
+            const xTo = gsap.quickTo(el, "x", {
                 duration: 0.2,
                 ease: "power3",
             });
-            this.yTo = gsap.quickTo(this.el, "y", {
+            const yTo = gsap.quickTo(el, "y", {
                 duration: 0.2,
                 ease: "power3",
             });
 
-            this.init();
-        }
+            let isVisible = false;
 
-        private init() {
             const onMouseMove = (e: MouseEvent) => {
-                if (!this.isVisible) {
-                    this.isVisible = true;
-                    gsap.to(this.el, { autoAlpha: 1, duration: 0.3 });
+                if (!isVisible) {
+                    isVisible = true;
+                    gsap.to(el, { autoAlpha: 1, duration: 0.3 });
                 }
-                this.xTo(e.clientX);
-                this.yTo(e.clientY);
+                xTo(e.clientX);
+                yTo(e.clientY);
             };
 
             const onMouseLeaveDoc = () => {
-                if (this.isVisible) {
-                    this.isVisible = false;
-                    gsap.to(this.el, { autoAlpha: 0, duration: 0.3 });
+                if (isVisible) {
+                    isVisible = false;
+                    gsap.to(el, { autoAlpha: 0, duration: 0.3 });
                 }
             };
 
-            // Global Event Listeners
-            const onCursorEnter = (e: any) => {
-                const { text, size = 110 } = e.detail || {};
-                this.el.classList.add("is-expanded");
-                if (text) {
-                    this.content.innerText = text;
-                }
-                gsap.to(this.el, {
+            const onCursorEnter = (e: Event) => {
+                const detail = (e as CustomEvent).detail || {};
+                const { text, size = 110 } = detail;
+                el.classList.add("is-expanded");
+                if (text && content) content.innerText = text;
+                gsap.to(el, {
                     width: size,
                     height: size,
                     duration: 0.6,
@@ -139,9 +136,9 @@
             };
 
             const onCursorLeave = () => {
-                this.el.classList.remove("is-expanded");
-                this.content.innerText = "";
-                gsap.to(this.el, {
+                el.classList.remove("is-expanded");
+                if (content) content.innerText = "";
+                gsap.to(el, {
                     width: 20,
                     height: 20,
                     duration: 0.4,
@@ -150,41 +147,21 @@
             };
 
             const onMouseDown = () => {
-                gsap.to(this.el, { scale: 0.85, duration: 0.2 });
+                gsap.to(el, { scale: 0.85, duration: 0.2 });
             };
 
             const onMouseUp = () => {
-                gsap.to(this.el, { scale: 1, duration: 0.3 });
+                gsap.to(el, { scale: 1, duration: 0.3 });
             };
 
-            window.addEventListener("mousemove", onMouseMove);
-            document.addEventListener("mouseleave", onMouseLeaveDoc);
-            window.addEventListener("cursor:enter", onCursorEnter);
-            window.addEventListener("cursor:leave", onCursorLeave);
-            window.addEventListener("mousedown", onMouseDown);
-            window.addEventListener("mouseup", onMouseUp);
-
-            this.cleanupCallbacks.push(
-                () => window.removeEventListener("mousemove", onMouseMove),
-                () =>
-                    document.removeEventListener("mouseleave", onMouseLeaveDoc),
-                () => window.removeEventListener("cursor:enter", onCursorEnter),
-                () => window.removeEventListener("cursor:leave", onCursorLeave),
-                () => window.removeEventListener("mousedown", onMouseDown),
-                () => window.removeEventListener("mouseup", onMouseUp),
-            );
-        }
-
-        public destroy() {
-            this.cleanupCallbacks.forEach((cb) => cb());
-        }
-    }
-
-    let globalCursorInstance: GlobalCursor | null = null;
-
-    // Initialize on page load and cleanup on transitions to prevent stacking ghost event listeners
-    document.addEventListener("astro:page-load", () => {
-        if (globalCursorInstance) globalCursorInstance.destroy();
-        globalCursorInstance = new GlobalCursor();
+            window.addEventListener("mousemove", onMouseMove, { signal });
+            document.addEventListener("mouseleave", onMouseLeaveDoc, {
+                signal,
+            });
+            window.addEventListener("cursor:enter", onCursorEnter, { signal });
+            window.addEventListener("cursor:leave", onCursorLeave, { signal });
+            window.addEventListener("mousedown", onMouseDown, { signal });
+            window.addEventListener("mouseup", onMouseUp, { signal });
+        });
     });
 </script>

@@ -32,19 +32,24 @@ import Container from "@components/atoms/Container.astro";
 
     .process-hero {
         position: relative;
-        min-height: 80vh;
+        min-height: 70vh;
         display: flex;
         align-items: center;
-        padding-top: 10rem;
+        padding-top: 7rem;
         overflow: hidden;
+
+        @include screen(md) {
+            min-height: 80vh;
+            padding-top: 10rem;
+        }
     }
 
     .vertical-title {
+        display: none;
         position: absolute;
         left: 2rem;
         top: 50%;
         transform: translateY(-50%);
-        display: flex;
         flex-direction: column;
         font-size: 0.75rem;
         font-weight: 900;
@@ -54,6 +59,10 @@ import Container from "@components/atoms/Container.astro";
         opacity: 0.1;
         gap: 2rem;
         pointer-events: none;
+
+        @include screen(md) {
+            display: flex;
+        }
 
         .word {
             transform: rotate(180deg);
@@ -88,11 +97,15 @@ import Container from "@components/atoms/Container.astro";
         }
 
         .description {
-            font-size: 1.25rem;
+            font-size: 1rem;
             line-height: 1.6;
             opacity: 0.7;
             max-width: 50ch;
             margin: 0;
+
+            @include screen(md) {
+                font-size: 1.25rem;
+            }
         }
     }
 

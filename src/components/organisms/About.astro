@@ -108,11 +108,19 @@ import Link from "../atoms/Link.astro";
         }
 
         .intro-hook {
-            font-size: 1.35rem;
+            font-size: 1.15rem;
             line-height: 1.4;
             color: rgba($color-black, 0.9);
-            max-width: 320px;
+            max-width: 100%;
             font-weight: 500;
+
+            @include screen(md) {
+                font-size: 1.35rem;
+            }
+
+            @include screen(lg) {
+                max-width: 320px;
+            }
 
             .phonetic {
                 font-family: ui-monospace, "Cascadia Code", monospace;
@@ -283,104 +291,119 @@ import Link from "../atoms/Link.astro";
 </style>
 
 <script>
-    import { gsap } from "gsap";
-    import { ScrollTrigger } from "gsap/ScrollTrigger";
+    import {
+        registerAnimation,
+        prefersReducedMotion,
+    } from "@lib/animation";
 
-    gsap.registerPlugin(ScrollTrigger);
+    // Theme observer is bound exactly once for the whole session and never
+    // re-bound across view transitions (the same html element is reused).
+    let themeObserver: MutationObserver | null = null;
 
-    function initRevealText() {
-        const revealElements = document.querySelectorAll(".reveal-text");
-
-        // Define base RGB values based on theme
-        const isDark = document.documentElement.classList.contains("dark");
-        const rgbColor = isDark ? "255, 255, 255" : "0, 0, 0";
-        const baseOpacity = 0.25;
-
-        revealElements.forEach((el) => {
-            // Check if already split to avoid double splitting on re-init
-            if (el.classList.contains("is-split")) return;
-            el.classList.add("is-split");
-
-            // Split text into words while preserving HTML elements like <span class="highlight">
-            const nodes = Array.from(el.childNodes);
-            el.innerHTML = "";
-
-            const allWordSpans: HTMLElement[] = [];
-
-            nodes.forEach((node) => {
-                if (node.nodeType === Node.TEXT_NODE) {
-                    const text = node.textContent || "";
-                    const words = text.split(/(\s+)/); // Split keeping spaces
-
-                    words.forEach((word) => {
-                        if (word.trim() === "") {
-                            el.appendChild(document.createTextNode(word));
-                        } else {
-                            const wordSpan = document.createElement("span");
-                            wordSpan.className = "reveal-word";
-                            wordSpan.textContent = word;
-                            wordSpan.style.setProperty(
-                                "--text-color-rgb",
-                                rgbColor,
-                            );
-                            wordSpan.style.setProperty(
-                                "--reveal-progress",
-                                baseOpacity.toString(),
-                            );
-                            el.appendChild(wordSpan);
-                            allWordSpans.push(wordSpan);
-                        }
+    function ensureThemeObserver() {
+        if (themeObserver) return;
+        themeObserver = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.attributeName === "class") {
+                    const isDark =
+                        document.documentElement.classList.contains("dark");
+                    const rgbColor = isDark ? "255, 255, 255" : "0, 0, 0";
+                    document.querySelectorAll(".reveal-word").forEach((el) => {
+                        (el as HTMLElement).style.setProperty(
+                            "--text-color-rgb",
+                            rgbColor,
+                        );
                     });
-                } else if (node.nodeType === Node.ELEMENT_NODE) {
-                    // For nested elements like <span class="highlight">, treat the whole element as a word block
-                    // or carefully split its internals if needed. For simplicity, we wrap it in a reveal-word
-                    const wrapper = document.createElement("span");
-                    wrapper.className = "reveal-word element-wrapper";
-                    wrapper.style.setProperty("--text-color-rgb", rgbColor);
-                    wrapper.style.setProperty("--reveal-progress", "1"); // Keep highlights fully visible usually, or animate them too
-                    wrapper.style.display = "inline-block";
-                    wrapper.appendChild(node);
-                    el.appendChild(wrapper);
-                    allWordSpans.push(wrapper);
                 }
             });
-
-            // Animate
-            const tl = gsap.timeline({
-                scrollTrigger: {
-                    trigger: el,
-                    start: "top 85%", // Start revealing when element enters bottom 15% of screen
-                    end: "bottom 60%", // Fully revealed before it hits the middle/top
-                    scrub: 0.5, // Smooth scrubbing effect tied to scroll
-                },
-            });
-
-            tl.to(allWordSpans, {
-                "--reveal-progress": 1,
-                stagger: 0.05,
-                ease: "none",
-            });
         });
+        themeObserver.observe(document.documentElement, { attributes: true });
     }
 
-    // Run on mount and view transitions
-    document.addEventListener("astro:page-load", initRevealText);
+    document.addEventListener("astro:page-load", () => {
+        ensureThemeObserver();
 
-    // Listen for theme changes to update RGB values
-    const observer = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-            if (mutation.attributeName === "class") {
-                const isDark =
-                    document.documentElement.classList.contains("dark");
-                const rgbColor = isDark ? "255, 255, 255" : "0, 0, 0";
-                document.querySelectorAll(".reveal-word").forEach((el) => {
-                    (el as HTMLElement).style.setProperty(
-                        "--text-color-rgb",
-                        rgbColor,
-                    );
+        registerAnimation("about-organism:reveal-text", (gsap) => {
+            const revealElements = document.querySelectorAll(".reveal-text");
+            if (!revealElements.length) return;
+
+            const isDark =
+                document.documentElement.classList.contains("dark");
+            const rgbColor = isDark ? "255, 255, 255" : "0, 0, 0";
+            const baseOpacity = 0.25;
+
+            revealElements.forEach((el) => {
+                // Skip elements already split by an earlier mount
+                if (el.classList.contains("is-split")) return;
+                el.classList.add("is-split");
+
+                const nodes = Array.from(el.childNodes);
+                el.innerHTML = "";
+
+                const allWordSpans: HTMLElement[] = [];
+
+                nodes.forEach((node) => {
+                    if (node.nodeType === Node.TEXT_NODE) {
+                        const text = node.textContent || "";
+                        const words = text.split(/(\s+)/);
+
+                        words.forEach((word) => {
+                            if (word.trim() === "") {
+                                el.appendChild(
+                                    document.createTextNode(word),
+                                );
+                            } else {
+                                const wordSpan =
+                                    document.createElement("span");
+                                wordSpan.className = "reveal-word";
+                                wordSpan.textContent = word;
+                                wordSpan.style.setProperty(
+                                    "--text-color-rgb",
+                                    rgbColor,
+                                );
+                                wordSpan.style.setProperty(
+                                    "--reveal-progress",
+                                    baseOpacity.toString(),
+                                );
+                                el.appendChild(wordSpan);
+                                allWordSpans.push(wordSpan);
+                            }
+                        });
+                    } else if (node.nodeType === Node.ELEMENT_NODE) {
+                        const wrapper = document.createElement("span");
+                        wrapper.className = "reveal-word element-wrapper";
+                        wrapper.style.setProperty(
+                            "--text-color-rgb",
+                            rgbColor,
+                        );
+                        wrapper.style.setProperty("--reveal-progress", "1");
+                        wrapper.style.display = "inline-block";
+                        wrapper.appendChild(node);
+                        el.appendChild(wrapper);
+                        allWordSpans.push(wrapper);
+                    }
                 });
-            }
+
+                // Reduced motion: snap straight to fully revealed
+                if (prefersReducedMotion()) {
+                    allWordSpans.forEach((s) =>
+                        s.style.setProperty("--reveal-progress", "1"),
+                    );
+                    return;
+                }
+
+                gsap.to(allWordSpans, {
+                    "--reveal-progress": 1,
+                    stagger: 0.05,
+                    ease: "none",
+                    scrollTrigger: {
+                        trigger: el,
+                        start: "top 85%",
+                        end: "bottom 60%",
+                        scrub: 0.5,
+                    },
+                });
+            });
         });
     });
-    observer.observe(document.documentElement, { attributes: true });
 </script>

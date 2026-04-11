@@ -61,6 +61,10 @@
 <script>
     import Matter from "matter-js";
     import { gsap } from "gsap";
+    import {
+        registerAnimation,
+        prefersReducedMotion,
+    } from "@lib/animation";
 
     const {
         Engine,
@@ -99,11 +103,13 @@
         private mouse = { x: 0, y: 0, active: false };
         private theme: "light" | "dark" = "light";
         private observer: MutationObserver | null = null;
+        private intersectionObserver: IntersectionObserver | null = null;
         private rafId: number | null = null;
         private isMobile: boolean = false;
-        private resizeHandler: () => void;
+        private signal: AbortSignal;
 
-        constructor() {
+        constructor(signal: AbortSignal) {
+            this.signal = signal;
             this.board = document.getElementById("prism-board")!;
             this.canvas = document.getElementById(
                 "expertise-canvas",
@@ -114,7 +120,9 @@
                 : "light";
 
             this.observer = new MutationObserver(() => {
-                this.theme = document.documentElement.classList.contains("dark")
+                this.theme = document.documentElement.classList.contains(
+                    "dark",
+                )
                     ? "dark"
                     : "light";
             });
@@ -123,27 +131,32 @@
                 attributeFilter: ["class"],
             });
 
-            this.resizeHandler = () => this.resize();
-
-            // PERFORMANCE: Defer expensive layout-heavy initialization until the section is in view
-            const intersectionObserver = new IntersectionObserver(
+            // PERFORMANCE: Defer init until the section is in view
+            this.intersectionObserver = new IntersectionObserver(
                 (entries) => {
                     entries.forEach((entry) => {
                         if (entry.isIntersecting) {
                             this.init();
-                            intersectionObserver.disconnect();
+                            this.intersectionObserver?.disconnect();
+                            this.intersectionObserver = null;
                         }
                     });
                 },
                 { rootMargin: "200px" },
             );
 
-            intersectionObserver.observe(this.board);
+            this.intersectionObserver.observe(this.board);
+
+            // Auto-dispose when the registered animation is reverted
+            this.signal.addEventListener("abort", () => this.stop());
         }
 
         private init() {
             this.resize();
-            window.addEventListener("resize", this.resizeHandler);
+            window.addEventListener("resize", () => this.resize(), {
+                signal: this.signal,
+                passive: true,
+            });
 
             // CPU SAVER: Bypass all heavy Physics simulation if mobile viewport
             if (this.isMobile) return;
@@ -248,35 +261,43 @@
             const coordX = document.getElementById("lens-x");
             const coordY = document.getElementById("lens-y");
 
-            this.board.addEventListener("mousemove", (e) => {
-                const target = e.target as HTMLElement;
-                if (target === this.canvas) {
-                    this.mouse.x = e.offsetX;
-                    this.mouse.y = e.offsetY;
-                } else {
-                    const rect = this.boardRect;
-                    this.mouse.x = e.clientX - rect.left;
-                    this.mouse.y = e.clientY - rect.top;
-                }
-                this.mouse.active = true;
+            this.board.addEventListener(
+                "mousemove",
+                (e) => {
+                    const target = e.target as HTMLElement;
+                    if (target === this.canvas) {
+                        this.mouse.x = e.offsetX;
+                        this.mouse.y = e.offsetY;
+                    } else {
+                        const rect = this.boardRect;
+                        this.mouse.x = e.clientX - rect.left;
+                        this.mouse.y = e.clientY - rect.top;
+                    }
+                    this.mouse.active = true;
 
-                if (lens && !this.rafId) {
-                    this.rafId = requestAnimationFrame(() => {
-                        lens.style.transform = `translate3d(${this.mouse.x - 125}px, ${this.mouse.y - 125}px, 0)`;
-                        lens.style.opacity = "1";
-                        if (coordX)
-                            coordX.innerText = `X: ${Math.round(this.mouse.x).toString().padStart(3, "0")}`;
-                        if (coordY)
-                            coordY.innerText = `Y: ${Math.round(this.mouse.y).toString().padStart(3, "0")}`;
-                        this.rafId = null;
-                    });
-                }
-            });
+                    if (lens && !this.rafId) {
+                        this.rafId = requestAnimationFrame(() => {
+                            lens.style.transform = `translate3d(${this.mouse.x - 125}px, ${this.mouse.y - 125}px, 0)`;
+                            lens.style.opacity = "1";
+                            if (coordX)
+                                coordX.innerText = `X: ${Math.round(this.mouse.x).toString().padStart(3, "0")}`;
+                            if (coordY)
+                                coordY.innerText = `Y: ${Math.round(this.mouse.y).toString().padStart(3, "0")}`;
+                            this.rafId = null;
+                        });
+                    }
+                },
+                { signal: this.signal },
+            );
 
-            this.board.addEventListener("mouseleave", () => {
-                this.mouse.active = false;
-                if (lens) lens.style.opacity = "0";
-            });
+            this.board.addEventListener(
+                "mouseleave",
+                () => {
+                    this.mouse.active = false;
+                    if (lens) lens.style.opacity = "0";
+                },
+                { signal: this.signal },
+            );
         }
 
         private draw() {
@@ -371,19 +392,50 @@
         }
 
         public stop() {
-            if (this.runner) Runner.stop(this.runner);
-            if (this.engine) Engine.clear(this.engine);
-            if (this.observer) this.observer.disconnect();
-            if (this.rafId) cancelAnimationFrame(this.rafId);
-            window.removeEventListener("resize", this.resizeHandler);
+            if (this.runner) {
+                Runner.stop(this.runner);
+                this.runner = null;
+            }
+            if (this.engine) {
+                Engine.clear(this.engine);
+                this.engine = null;
+            }
+            if (this.observer) {
+                this.observer.disconnect();
+                this.observer = null;
+            }
+            if (this.intersectionObserver) {
+                this.intersectionObserver.disconnect();
+                this.intersectionObserver = null;
+            }
+            if (this.rafId) {
+                cancelAnimationFrame(this.rafId);
+                this.rafId = null;
+            }
+            // Resize listener is auto-removed via the AbortSignal
         }
     }
 
-    let instance: ExpertiseCanvas | null = null;
-
     document.addEventListener("astro:page-load", () => {
-        if (instance) instance.stop();
-        instance = new ExpertiseCanvas();
+        registerAnimation("expertise-canvas", (_gsap, signal) => {
+            // Reduced motion: skip the entire physics simulation; the static
+            // mobile fallback CSS rule already shows a clean skill list on
+            // small viewports, but on desktop with reduced-motion we just
+            // hide the architectural void to avoid any kinetic motion.
+            if (prefersReducedMotion()) {
+                const board = document.getElementById("prism-board");
+                if (board) board.style.display = "none";
+                return;
+            }
+
+            const board = document.getElementById("prism-board");
+            const canvas = document.getElementById("expertise-canvas");
+            if (!board || !canvas) return;
+
+            // eslint-disable-next-line no-new -- intentional fire-and-forget;
+            // disposal is wired through the AbortSignal in the constructor.
+            new ExpertiseCanvas(signal);
+        });
     });
 </script>
 

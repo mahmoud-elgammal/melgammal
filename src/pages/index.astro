@@ -99,17 +99,21 @@ const projects = (await getCollection("projects"))
 <script>
     import { gsap } from "gsap";
     import { ScrollTrigger } from "gsap/ScrollTrigger";
+    import {
+        registerAnimation,
+        prefersReducedMotion,
+    } from "@lib/animation";
 
     gsap.registerPlugin(ScrollTrigger);
 
-    /* ── Wait for IntroLoader curtain ── */
-
     /* ── Custom GSAP ASCII Scrambler ── */
-    /* ── Custom GSAP ASCII Scrambler ── */
-    function setupAsciiHoverEffect(wordDivs: HTMLElement[]) {
+    function setupAsciiHoverEffect(
+        wordDivs: HTMLElement[],
+        signal: AbortSignal,
+    ) {
         if (window.innerWidth < 1024) return; // Skip on mobile/tablet (no hover)
+        if (prefersReducedMotion()) return;
         const chars = "_+-*/=<>!@#$%^&()[]{}\\/|?".split("");
-        const brandMessage = "MELGAMMAL"; // Core brand identifier
 
         wordDivs.forEach((wordDiv) => {
             const spans = Array.from(
@@ -144,62 +148,60 @@ const projects = (await getCollection("projects"))
                 setTimeout(runWidthBatch, 200);
             }
 
-            wordDiv.addEventListener("mouseenter", () => {
-                isHovered = true;
+            wordDiv.addEventListener(
+                "mouseenter",
+                () => {
+                    isHovered = true;
 
-                spans.forEach((span, i) => {
-                    gsap.killTweensOf(span); // Stop any outgoing animations immediately
-
-                    // Scramble phase (continuous glitching while hovered)
-                    gsap.to(span, {
-                        duration: 1.5, // Arbitrary long duration, we rely on mouseleave to stop
-                        ease: "none",
-                        repeat: -1, // Infinite repeat while hovered
-                        onUpdate: function () {
-                            if (isHovered && Math.random() > 0.3) {
-                                span.textContent =
-                                    chars[
-                                        Math.floor(Math.random() * chars.length)
-                                    ];
-                            }
-                        },
+                    spans.forEach((span) => {
+                        gsap.killTweensOf(span);
+                        gsap.to(span, {
+                            duration: 1.5,
+                            ease: "none",
+                            repeat: -1,
+                            onUpdate: function () {
+                                if (isHovered && Math.random() > 0.3) {
+                                    span.textContent =
+                                        chars[
+                                            Math.floor(
+                                                Math.random() * chars.length,
+                                            )
+                                        ];
+                                }
+                            },
+                        });
                     });
-                });
-            });
+                },
+                { signal },
+            );
 
-            wordDiv.addEventListener("mouseleave", () => {
-                isHovered = false;
+            wordDiv.addEventListener(
+                "mouseleave",
+                () => {
+                    isHovered = false;
 
-                spans.forEach((span, i) => {
-                    const orig = originalTexts[i];
-                    gsap.killTweensOf(span); // Stop scrambling immediately
-
-                    // Immediately resolve back to original text with a quick sequential sweep
-                    gsap.to(span, {
-                        duration: 0.05,
-                        delay: i * 0.02,
-                        onStart: () => {
-                            span.textContent = orig;
-                        },
+                    spans.forEach((span, i) => {
+                        const orig = originalTexts[i];
+                        gsap.killTweensOf(span);
+                        gsap.to(span, {
+                            duration: 0.05,
+                            delay: i * 0.02,
+                            onStart: () => {
+                                span.textContent = orig;
+                            },
+                        });
                     });
-                });
-            });
+                },
+                { signal },
+            );
         });
     }
 
-    declare global {
-        interface Window {
-            heroAnimationContext: gsap.Context;
-        }
-    }
-
-    async function animateHero() {
-        // Create a root GSAP context for better memory management and ScrollTrigger reliability
-        const ctx = gsap.context(() => {
+    document.addEventListener("astro:page-load", () => {
+        registerAnimation("home:hero", (gsap, signal) => {
             const statusCard = document.getElementById("hero-status-card");
             const heroTitle = document.getElementById("hero-title");
-
-            const tl = gsap.timeline();
+            const reduced = prefersReducedMotion();
 
             if (heroTitle) {
                 const lines = [
@@ -215,7 +217,6 @@ const projects = (await getCollection("projects"))
                     lineDiv.style.display = "flex";
                     lineDiv.style.flexWrap = "wrap";
 
-                    // Process word by word to keep them together
                     const words = line.split(" ");
                     words.forEach((word, wordIndex) => {
                         const wordDiv = document.createElement("div");
@@ -227,8 +228,8 @@ const projects = (await getCollection("projects"))
                             const wrapper = document.createElement("span");
                             wrapper.style.display = "inline-block";
                             wrapper.style.overflow = "hidden";
-                            wrapper.style.lineHeight = "0.9"; // Tighter bounding box
-                            wrapper.style.padding = "0.05em 0"; // Prevent clipping
+                            wrapper.style.lineHeight = "0.9";
+                            wrapper.style.padding = "0.05em 0";
 
                             const span = document.createElement("span");
                             span.classList.add("char-span");
@@ -243,7 +244,6 @@ const projects = (await getCollection("projects"))
 
                         lineDiv.appendChild(wordDiv);
 
-                        // Add space after word (except last word)
                         if (wordIndex < words.length - 1) {
                             const spaceSpan = document.createElement("span");
                             spaceSpan.innerHTML = "&nbsp;";
@@ -254,91 +254,96 @@ const projects = (await getCollection("projects"))
                     heroTitle.appendChild(lineDiv);
                 });
 
-                // 1. Reveal the overall container first (avoids layout jumping)
-                // Using set instead of timeline beat for LCP efficiency
                 gsap.set(heroTitle, { opacity: 1 });
 
-                // 2. Cinematic character stagger entrance
-                tl.fromTo(
-                    allSpans,
-                    {
-                        opacity: 0,
-                        y: "110%", // Come from below the mask
-                        rotationZ: 10,
-                        rotationX: -60,
-                        scale: 0.8,
-                        transformPerspective: 800,
-                    },
-                    {
+                if (reduced) {
+                    gsap.set(allSpans, {
                         opacity: 1,
                         y: "0%",
                         rotationZ: 0,
                         rotationX: 0,
                         scale: 1,
-                        duration: 0.8, // Faster for UX
-                        stagger: 0.01, // Faster for UX
-                        ease: "power4.out",
-                        onComplete: () => {
-                            const wordDivs = Array.from(
-                                heroTitle.querySelectorAll(".hover-word"),
-                            ) as HTMLElement[];
-                            setupAsciiHoverEffect(wordDivs);
-                        },
-                    },
-                    "0", // Start immediately with the timeline
-                );
-            }
+                    });
+                    if (statusCard)
+                        gsap.set(statusCard, {
+                            y: 0,
+                            filter: "blur(0px)",
+                        });
+                } else {
+                    const tl = gsap.timeline();
 
-            if (statusCard) {
-                // LCP CRITICAL: Do not animate opacity from 0 for the LCP candidate.
-                // We only animate a subtle entrance transform/blur to keep the feel.
-                tl.fromTo(
-                    statusCard,
-                    {
-                        y: 10,
-                        filter: "blur(4px)",
-                    },
-                    {
-                        y: 0,
-                        filter: "blur(0px)",
-                        duration: 0.6,
-                        ease: "power2.out",
-                    },
-                    "0", // Start literally frame 0
-                );
+                    tl.fromTo(
+                        allSpans,
+                        {
+                            opacity: 0,
+                            y: "110%",
+                            rotationZ: 10,
+                            rotationX: -60,
+                            scale: 0.8,
+                            transformPerspective: 800,
+                        },
+                        {
+                            opacity: 1,
+                            y: "0%",
+                            rotationZ: 0,
+                            rotationX: 0,
+                            scale: 1,
+                            duration: 0.8,
+                            stagger: 0.01,
+                            ease: "power4.out",
+                            onComplete: () => {
+                                const wordDivs = Array.from(
+                                    heroTitle.querySelectorAll(".hover-word"),
+                                ) as HTMLElement[];
+                                setupAsciiHoverEffect(wordDivs, signal);
+                            },
+                        },
+                        "0",
+                    );
+
+                    if (statusCard) {
+                        tl.fromTo(
+                            statusCard,
+                            {
+                                y: 10,
+                                filter: "blur(4px)",
+                            },
+                            {
+                                y: 0,
+                                filter: "blur(0px)",
+                                duration: 0.6,
+                                ease: "power2.out",
+                            },
+                            "0",
+                        );
+                    }
+                }
             }
 
             /* ── Scroll Reveals for Sections ── */
-            // Important: using fromTo ensures reliability over `.from` when dealing with opacity
-            document.querySelectorAll(".animate").forEach((el) => {
-                gsap.fromTo(
-                    el,
-                    { opacity: 0, y: 30 },
-                    {
-                        opacity: 1,
-                        y: 0,
-                        duration: 0.8,
-                        ease: "power2.out",
-                        scrollTrigger: {
-                            trigger: el,
-                            start: "top 85%",
-                            toggleActions: "play none none none",
+            const animateEls = document.querySelectorAll(".animate");
+            if (reduced) {
+                gsap.set(animateEls, { opacity: 1, y: 0 });
+            } else {
+                animateEls.forEach((el) => {
+                    gsap.fromTo(
+                        el,
+                        { opacity: 0, y: 30 },
+                        {
+                            opacity: 1,
+                            y: 0,
+                            duration: 0.8,
+                            ease: "power2.out",
+                            scrollTrigger: {
+                                trigger: el,
+                                start: "top 85%",
+                                toggleActions: "play none none none",
+                            },
                         },
-                    },
-                );
-            });
+                    );
+                });
+            }
         });
-
-        // Store context to clean up if needed in view transitions
-        window.heroAnimationContext = ctx;
-    }
-
-    document.addEventListener("astro:page-load", () => {
-        // Clean up previous context if it exists (Astro View Transitions)
-        if (window.heroAnimationContext) {
-            window.heroAnimationContext.revert();
-        }
-        animateHero();
     });
 </script>
 

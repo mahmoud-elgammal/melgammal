@@ -94,11 +94,20 @@ const {
 
     .process-section {
         position: relative;
-        padding: 15rem 0;
+        padding: 6rem 0;
         overflow: hidden;
         display: flex;
         align-items: center;
-        min-height: 100vh;
+        min-height: auto;
+
+        @include screen(md) {
+            padding: 10rem 0;
+        }
+
+        @include screen(lg) {
+            padding: 15rem 0;
+            min-height: 100vh;
+        }
     }
 
     .ghost-index {
@@ -129,9 +138,13 @@ const {
     .section-grid {
         display: flex;
         flex-direction: column;
-        gap: 6rem;
+        gap: 3rem;
         position: relative;
         z-index: 1;
+
+        @include screen(md) {
+            gap: 6rem;
+        }
     }
 
     .bracket-label {
@@ -153,11 +166,16 @@ const {
     }
 
     .phase-description {
-        font-size: 1.125rem;
+        font-size: 1rem;
         line-height: 1.7;
         opacity: 0.8;
-        margin-bottom: 4rem;
+        margin-bottom: 2.5rem;
         max-width: 60ch;
+
+        @include screen(md) {
+            font-size: 1.125rem;
+            margin-bottom: 4rem;
+        }
     }
 
     .tech-ledger {
@@ -291,29 +309,36 @@ const {
 </style>
 
 <script>
-    import { gsap } from "gsap";
-    import { ScrollTrigger } from "gsap/ScrollTrigger";
-
-    gsap.registerPlugin(ScrollTrigger);
-
-    function initProcessSections() {
-        const animatedElements = document.querySelectorAll(".animate");
-        animatedElements.forEach((el) => {
-            gsap.from(el, {
-                opacity: 0,
-                y: 30,
-                duration: 1,
-                ease: "power4.out",
-                scrollTrigger: {
-                    trigger: el,
-                    start: "top 85%",
-                    toggleActions: "play none none none",
-                },
-            });
-        });
-    }
+    import {
+        registerAnimation,
+        prefersReducedMotion,
+    } from "@lib/animation";
 
     document.addEventListener("astro:page-load", () => {
-        initProcessSections();
+        registerAnimation("process-section:animate", (gsap) => {
+            const animatedElements = document.querySelectorAll(
+                ".process-section .animate",
+            );
+            if (!animatedElements.length) return;
+
+            if (prefersReducedMotion()) {
+                gsap.set(animatedElements, { opacity: 1, y: 0 });
+                return;
+            }
+
+            animatedElements.forEach((el) => {
+                gsap.from(el, {
+                    opacity: 0,
+                    y: 30,
+                    duration: 1,
+                    ease: "power4.out",
+                    scrollTrigger: {
+                        trigger: el,
+                        start: "top 85%",
+                        toggleActions: "play none none none",
+                    },
+                });
+            });
+        });
     });
 </script>

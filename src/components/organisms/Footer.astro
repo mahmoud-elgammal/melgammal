@@ -138,15 +138,27 @@ import Link from "../atoms/Link.astro";
 </footer>
 
 <script>
-  import { gsap } from "gsap";
-  import { ScrollTrigger } from "gsap/ScrollTrigger";
+  import {
+    registerAnimation,
+    prefersReducedMotion,
+  } from "@lib/animation";
 
-  gsap.registerPlugin(ScrollTrigger);
+  // Single ticker interval is tracked at module scope so we can clear it
+  // before the next page swap (registerAnimation can't manage timers).
+  let footerTickerInterval: number | undefined;
 
-  function initFooter() {
-    // Wrap in a context for proper cleanup during View Transitions
-    const ctx = gsap.context(() => {
-      // 1. Cairo Time Ticker
+  document.addEventListener("astro:before-swap", () => {
+    if (footerTickerInterval !== undefined) {
+      window.clearInterval(footerTickerInterval);
+      footerTickerInterval = undefined;
+    }
+  });
+
+  document.addEventListener("astro:page-load", () => {
+    registerAnimation("footer", (gsap, signal) => {
+      const reduced = prefersReducedMotion();
+
+      // ── 1. Cairo Time Ticker (always runs, unrelated to motion) ──
       const ticker = document.getElementById("footer-ticker");
       if (ticker) {
         const update = () => {
@@ -159,15 +171,25 @@ import Link from "../atoms/Link.astro";
           });
         };
         update();
-        if ((window as any).footerTickerInterval)
-          clearInterval((window as any).footerTickerInterval);
-        (window as any).footerTickerInterval = setInterval(update, 1000);
+        if (footerTickerInterval !== undefined) {
+          window.clearInterval(footerTickerInterval);
+        }
+        footerTickerInterval = window.setInterval(update, 1000);
       }
 
-      // 2. Art Director Entrance Animations
+      // ── 2. Art Director Entrance Animations ──
       const impactSection = document.querySelector(".impact-section");
-      const displayImpact = document.querySelector(".display-impact");
+      const displayImpact = document.querySelector(
+        ".display-impact",
+      ) as HTMLElement | null;
       const footerGrid = document.getElementById("footer-grid");
+
+      if (reduced) {
+        // Snap straight to resolved state
+        if (displayImpact) gsap.set(displayImpact, { opacity: 1 });
+        gsap.set(".ledger-col", { opacity: 1, y: 0, rotationX: 0 });
+        return;
+      }
 
       if (footerGrid) {
         gsap.fromTo(
@@ -192,13 +214,12 @@ import Link from "../atoms/Link.astro";
         displayImpact.innerHTML = "";
         const letters: HTMLElement[] = [];
 
-        // Wrap each letter in a span and an overflow-hidden mask wrapper for sharp cuts
         text.split("").forEach((char) => {
           const wrapper = document.createElement("span");
           wrapper.style.display = "inline-block";
           wrapper.style.overflow = "hidden";
-          wrapper.style.lineHeight = "0.9"; // Tighter bounding box
-          wrapper.style.padding = "0.05em 0"; // Prevent clipping
+          wrapper.style.lineHeight = "0.9";
+          wrapper.style.padding = "0.05em 0";
 
           const span = document.createElement("span");
           span.textContent = char === " " ? "\u00A0" : char;
@@ -210,14 +231,13 @@ import Link from "../atoms/Link.astro";
           letters.push(span);
         });
 
-        // Make the container visible now that children are ready to animate
         gsap.set(displayImpact, { opacity: 1 });
 
         gsap.fromTo(
           letters,
           {
             opacity: 0,
-            y: "110%", // Come from below the mask
+            y: "110%",
             rotationZ: 10,
             rotationX: -60,
             scale: 0.8,
@@ -234,13 +254,12 @@ import Link from "../atoms/Link.astro";
             ease: "power4.out",
             scrollTrigger: {
               trigger: impactSection,
-              start: "top 80%", // Trigger slightly earlier
+              start: "top 80%",
               toggleActions: "play none none none",
             },
           },
         );
 
-        // Staggered Ledger Columns - sweeping up
         gsap.fromTo(
           ".ledger-col",
           {
@@ -263,85 +282,98 @@ import Link from "../atoms/Link.astro";
             },
           },
         );
-        // 3. Magnetic Impact Cursor (Desktop Only)
+
+        // ── 3. Magnetic Impact Cursor (Desktop Only) ──
         if (window.innerWidth >= 1024) {
-          let impactBounds: DOMRect;
+          let impactBounds: DOMRect | null = null;
 
-          displayImpact.addEventListener("mouseenter", () => {
-            impactBounds = displayImpact.getBoundingClientRect();
-            window.dispatchEvent(
-              new CustomEvent("cursor:enter", {
-                detail: { text: "TALK", size: 120 },
-              }),
-            );
-            gsap.to(displayImpact, {
-              scale: 0.98,
-              duration: 0.6,
-              ease: "power3.out",
-            });
-          });
-
-          displayImpact.addEventListener("mousemove", (e: Event) => {
-            const mouseEvent = e as MouseEvent;
-            if (!impactBounds)
+          displayImpact.addEventListener(
+            "mouseenter",
+            () => {
               impactBounds = displayImpact.getBoundingClientRect();
+              window.dispatchEvent(
+                new CustomEvent("cursor:enter", {
+                  detail: { text: "TALK", size: 120 },
+                }),
+              );
+              gsap.to(displayImpact, {
+                scale: 0.98,
+                duration: 0.6,
+                ease: "power3.out",
+              });
+            },
+            { signal },
+          );
 
-            // Parallax text
-            const xNorm =
-              ((mouseEvent.clientX - impactBounds.left) / impactBounds.width -
-                0.5) *
-              2;
-            const yNorm =
-              ((mouseEvent.clientY - impactBounds.top) / impactBounds.height -
-                0.5) *
-              2;
+          displayImpact.addEventListener(
+            "mousemove",
+            (e: Event) => {
+              const mouseEvent = e as MouseEvent;
+              if (!impactBounds)
+                impactBounds = displayImpact.getBoundingClientRect();
 
-            gsap.to(displayImpact, {
-              x: xNorm * 20,
-              y: yNorm * 20,
-              duration: 0.6,
-              ease: "power2.out",
-            });
-          });
+              const xNorm =
+                ((mouseEvent.clientX - impactBounds.left) /
+                  impactBounds.width -
+                  0.5) *
+                2;
+              const yNorm =
+                ((mouseEvent.clientY - impactBounds.top) /
+                  impactBounds.height -
+                  0.5) *
+                2;
 
-          displayImpact.addEventListener("mouseleave", () => {
-            window.dispatchEvent(new CustomEvent("cursor:leave"));
-            gsap.to(displayImpact, {
-              scale: 1,
-              x: 0,
-              y: 0,
-              duration: 1,
-              ease: "elastic.out(1, 0.4)",
-            });
-          });
+              gsap.to(displayImpact, {
+                x: xNorm * 20,
+                y: yNorm * 20,
+                duration: 0.6,
+                ease: "power2.out",
+              });
+            },
+            { signal },
+          );
 
-          // Clicking effect
-          displayImpact.addEventListener("mousedown", () => {
-            gsap.to(displayImpact, {
-              scale: 0.95,
-              duration: 0.2,
-              ease: "power2.out",
-            });
-          });
-          displayImpact.addEventListener("mouseup", () => {
-            gsap.to(displayImpact, {
-              scale: 0.98,
-              duration: 0.4,
-              ease: "back.out(1.5)",
-            });
-          });
+          displayImpact.addEventListener(
+            "mouseleave",
+            () => {
+              window.dispatchEvent(new CustomEvent("cursor:leave"));
+              gsap.to(displayImpact, {
+                scale: 1,
+                x: 0,
+                y: 0,
+                duration: 1,
+                ease: "elastic.out(1, 0.4)",
+              });
+            },
+            { signal },
+          );
+
+          displayImpact.addEventListener(
+            "mousedown",
+            () => {
+              gsap.to(displayImpact, {
+                scale: 0.95,
+                duration: 0.2,
+                ease: "power2.out",
+              });
+            },
+            { signal },
+          );
+
+          displayImpact.addEventListener(
+            "mouseup",
+            () => {
+              gsap.to(displayImpact, {
+                scale: 0.98,
+                duration: 0.4,
+                ease: "back.out(1.5)",
+              });
+            },
+            { signal },
+          );
         }
       }
     });
-
-    (window as any).footerAnimationContext = ctx;
-  }
-
-  document.addEventListener("astro:page-load", () => {
-    if ((window as any).footerAnimationContext) {
-      (window as any).footerAnimationContext.revert();
-    }
-    initFooter();
   });
 </script>
 
@@ -400,7 +432,11 @@ import Link from "../atoms/Link.astro";
     z-index: 1;
     display: flex;
     flex-direction: column;
-    gap: 8rem;
+    gap: 4rem;
+
+    @include screen(md) {
+      gap: 8rem;
+    }
   }
 
   /* --- BAND A: MASSIVE IMPACT --- */
@@ -515,7 +551,7 @@ import Link from "../atoms/Link.astro";
     grid-template-columns: 1fr;
     gap: 3rem;
 
-    @include screen(sm) {
+    @include screen(md) {
       grid-template-columns: repeat(2, 1fr);
     }
     @include screen(lg) {

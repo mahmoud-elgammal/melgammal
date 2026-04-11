@@ -225,112 +225,133 @@ const galleryJsonString = JSON.stringify(lightboxGallery);
 </style>
 
 <script>
-    function initSwipers() {
-        const swipers = document.querySelectorAll(".media-swiper-container");
+    import { registerAnimation } from "@lib/animation";
 
-        swipers.forEach((swiper) => {
-            const track = swiper.querySelector(".swiper-track") as HTMLElement;
-            const progressFill = swiper.querySelector(
-                ".track-fill",
-            ) as HTMLElement;
-            const currentLabel = swiper.querySelector(
-                ".current-slide",
-            ) as HTMLElement;
-            const slides = track.querySelectorAll(".swiper-slide");
-
-            if (!track || slides.length === 0) return;
-
-            const total = slides.length;
-            let maxScroll = track.scrollWidth - track.clientWidth;
-            let slideWidth = (slides[0] as HTMLElement).offsetWidth || 1;
-
-            // Cache dimensions on resize
-            window.addEventListener(
-                "resize",
-                () => {
-                    maxScroll = track.scrollWidth - track.clientWidth;
-                    slideWidth = (slides[0] as HTMLElement).offsetWidth || 1;
-                },
-                { passive: true },
+    document.addEventListener("astro:page-load", () => {
+        registerAnimation("media-swiper", (_gsap, signal) => {
+            const swipers = document.querySelectorAll(
+                ".media-swiper-container",
             );
 
-            // Update Native Scroll Progress
-            const updateScroll = () => {
-                // Calculate raw scroll progress (0 to 1)
-                let progress = 0;
+            swipers.forEach((swiper) => {
+                const track = swiper.querySelector(
+                    ".swiper-track",
+                ) as HTMLElement;
+                const progressFill = swiper.querySelector(
+                    ".track-fill",
+                ) as HTMLElement;
+                const currentLabel = swiper.querySelector(
+                    ".current-slide",
+                ) as HTMLElement;
+                const slides = track.querySelectorAll(".swiper-slide");
 
-                if (maxScroll > 0) {
-                    progress = track.scrollLeft / maxScroll;
-                }
+                if (!track || slides.length === 0) return;
 
-                // Update hairline bar
-                if (progressFill) {
-                    progressFill.style.width = `${progress * 100}%`;
-                }
+                const total = slides.length;
+                let maxScroll = track.scrollWidth - track.clientWidth;
+                let slideWidth =
+                    (slides[0] as HTMLElement).offsetWidth || 1;
 
-                // Determine active slide index based on scroll position
-                // A simple heuristic: how many slide widths have we passed?
-                let activeIdx = Math.round(track.scrollLeft / slideWidth);
+                window.addEventListener(
+                    "resize",
+                    () => {
+                        maxScroll = track.scrollWidth - track.clientWidth;
+                        slideWidth =
+                            (slides[0] as HTMLElement).offsetWidth || 1;
+                    },
+                    { passive: true, signal },
+                );
 
-                // Clamp it securely
-                activeIdx = Math.max(0, Math.min(activeIdx, total - 1));
-
-                // Update geometric counter e.g., 01, 02...
-                if (currentLabel) {
-                    currentLabel.innerText = String(activeIdx + 1).padStart(
-                        2,
-                        "0",
+                let pendingScrollRaf = 0;
+                const updateScroll = () => {
+                    let progress = 0;
+                    if (maxScroll > 0) {
+                        progress = track.scrollLeft / maxScroll;
+                    }
+                    if (progressFill) {
+                        progressFill.style.width = `${progress * 100}%`;
+                    }
+                    let activeIdx = Math.round(
+                        track.scrollLeft / slideWidth,
                     );
-                }
-            };
+                    activeIdx = Math.max(0, Math.min(activeIdx, total - 1));
+                    if (currentLabel) {
+                        currentLabel.innerText = String(
+                            activeIdx + 1,
+                        ).padStart(2, "0");
+                    }
+                };
 
-            track.addEventListener(
-                "scroll",
-                () => {
-                    requestAnimationFrame(updateScroll);
-                },
-                { passive: true },
-            );
+                track.addEventListener(
+                    "scroll",
+                    () => {
+                        if (pendingScrollRaf)
+                            cancelAnimationFrame(pendingScrollRaf);
+                        pendingScrollRaf = requestAnimationFrame(() => {
+                            pendingScrollRaf = 0;
+                            updateScroll();
+                        });
+                    },
+                    { passive: true, signal },
+                );
 
-            // ── Desktop Drag-to-Scroll Logic ──
-            let isDown = false;
-            let startX = 0;
-            let scrollLeft = 0;
+                // ── Desktop Drag-to-Scroll Logic ──
+                let isDown = false;
+                let startX = 0;
+                let scrollLeft = 0;
 
-            track.addEventListener("mousedown", (e) => {
-                isDown = true;
-                track.style.cursor = "grabbing";
-                track.style.scrollSnapType = "none"; // Disable snap while dragging
-                // Disable smooth scroll behavior temporarily if any
-                track.style.scrollBehavior = "auto";
-                startX = e.pageX - track.offsetLeft;
-                scrollLeft = track.scrollLeft;
+                track.addEventListener(
+                    "mousedown",
+                    (e) => {
+                        isDown = true;
+                        track.style.cursor = "grabbing";
+                        track.style.scrollSnapType = "none";
+                        track.style.scrollBehavior = "auto";
+                        startX = e.pageX - track.offsetLeft;
+                        scrollLeft = track.scrollLeft;
+                    },
+                    { signal },
+                );
+
+                track.addEventListener(
+                    "mouseleave",
+                    () => {
+                        isDown = false;
+                        track.style.cursor = "";
+                        track.style.scrollSnapType = "x mandatory";
+                    },
+                    { signal },
+                );
+
+                track.addEventListener(
+                    "mouseup",
+                    () => {
+                        isDown = false;
+                        track.style.cursor = "";
+                        track.style.scrollSnapType = "x mandatory";
+                    },
+                    { signal },
+                );
+
+                track.addEventListener(
+                    "mousemove",
+                    (e) => {
+                        if (!isDown) return;
+                        e.preventDefault();
+                        const x = e.pageX - track.offsetLeft;
+                        const walk = (x - startX) * 2;
+                        track.scrollLeft = scrollLeft - walk;
+                    },
+                    { signal },
+                );
+
+                signal.addEventListener("abort", () => {
+                    if (pendingScrollRaf)
+                        cancelAnimationFrame(pendingScrollRaf);
+                });
+
+                updateScroll();
             });
-
-            track.addEventListener("mouseleave", () => {
-                isDown = false;
-                track.style.cursor = "";
-                track.style.scrollSnapType = "x mandatory";
-            });
-
-            track.addEventListener("mouseup", () => {
-                isDown = false;
-                track.style.cursor = "";
-                track.style.scrollSnapType = "x mandatory";
-            });
-
-            track.addEventListener("mousemove", (e) => {
-                if (!isDown) return;
-                e.preventDefault();
-                const x = e.pageX - track.offsetLeft;
-                const walk = (x - startX) * 2; // Scroll speed multiplier
-                track.scrollLeft = scrollLeft - walk;
-            });
-
-            // Init on load
-            updateScroll();
         });
-    }
-
-    document.addEventListener("astro:page-load", initSwipers);
+    });
 </script>

@@ -113,13 +113,25 @@ const setB_loop = [...setB, ...setB];
 
     .testimonials-kinetic {
         position: relative;
-        padding: 15rem 0;
+        padding: 6rem 0;
         overflow: hidden;
         background: transparent;
+
+        @include screen(md) {
+            padding: 10rem 0;
+        }
+
+        @include screen(lg) {
+            padding: 15rem 0;
+        }
     }
 
     .intro-ledger {
-        margin-bottom: 6rem;
+        margin-bottom: 3rem;
+
+        @include screen(md) {
+            margin-bottom: 6rem;
+        }
         position: relative;
         z-index: 2;
 
@@ -166,11 +178,11 @@ const setB_loop = [...setB, ...setB];
     }
 
     .testimonial-card {
-        flex: 0 0 650px;
+        flex: 0 0 85vw;
         background: rgba($color-black, 0.02);
         border: 1px solid rgba($color-black, 0.05);
-        padding: 3.5rem;
-        border-radius: 2.5rem;
+        padding: 2rem;
+        border-radius: 1.5rem;
         display: flex;
         flex-direction: column;
         gap: 2.5rem;
@@ -201,8 +213,12 @@ const setB_loop = [...setB, ...setB];
     }
 
     .massive-quote {
-        font-size: 1.5rem;
+        font-size: 1.1rem;
         font-weight: 800;
+
+        @include screen(md) {
+            font-size: 1.5rem;
+        }
         line-height: 1.2;
         letter-spacing: -0.02em;
         margin: 0;
@@ -250,54 +266,64 @@ const setB_loop = [...setB, ...setB];
     @include screen(sm) {
         .testimonial-card {
             flex: 0 0 500px;
+            padding: 2.5rem;
+            border-radius: 2rem;
         }
     }
 
     @include screen(md) {
         .testimonial-card {
             flex: 0 0 650px;
+            padding: 3.5rem;
+            border-radius: 2.5rem;
         }
     }
 </style>
 
 <script>
-    import { gsap } from "gsap";
-    import { ScrollTrigger } from "gsap/ScrollTrigger";
-
-    gsap.registerPlugin(ScrollTrigger);
-
-    function initTestimonials() {
-        const trackLTR = document.querySelector(".track-ltr .track-inner");
-        const trackRTL = document.querySelector(".track-rtl .track-inner");
-
-        if (trackLTR) {
-            gsap.to(trackLTR, {
-                x: "25%",
-                ease: "none",
-                scrollTrigger: {
-                    trigger: ".testimonials-kinetic",
-                    start: "top bottom",
-                    end: "bottom top",
-                    scrub: true,
-                },
-            });
-        }
-
-        if (trackRTL) {
-            gsap.to(trackRTL, {
-                x: "-25%",
-                ease: "none",
-                scrollTrigger: {
-                    trigger: ".testimonials-kinetic",
-                    start: "top bottom",
-                    end: "bottom top",
-                    scrub: true,
-                },
-            });
-        }
-    }
+    import {
+        registerAnimation,
+        prefersReducedMotion,
+    } from "@lib/animation";
 
     document.addEventListener("astro:page-load", () => {
-        initTestimonials();
+        registerAnimation("testimonials:marquee", (gsap) => {
+            const trackLTR = document.querySelector(
+                ".track-ltr .track-inner",
+            );
+            const trackRTL = document.querySelector(
+                ".track-rtl .track-inner",
+            );
+
+            // Reduced motion: leave the marquee tracks static (CSS already
+            // shows them at their natural position; nothing to set).
+            if (prefersReducedMotion()) return;
+
+            if (trackLTR) {
+                gsap.to(trackLTR, {
+                    x: "25%",
+                    ease: "none",
+                    scrollTrigger: {
+                        trigger: ".testimonials-kinetic",
+                        start: "top bottom",
+                        end: "bottom top",
+                        scrub: true,
+                    },
+                });
+            }
+
+            if (trackRTL) {
+                gsap.to(trackRTL, {
+                    x: "-25%",
+                    ease: "none",
+                    scrollTrigger: {
+                        trigger: ".testimonials-kinetic",
+                        start: "top bottom",
+                        end: "bottom top",
+                        scrub: true,
+                    },
+                });
+            }
+        });
     });
 </script>

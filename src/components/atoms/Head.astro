@@ -103,28 +103,57 @@ const { title, description, image = "/nano.png" } = Astro.props;
 </script>
 
 <script is:inline>
+  // ── Lifecycle-safe init: each call disposes the previous run's listeners ──
+  // Astro view transitions fire `astro:after-swap` on every navigation, so we
+  // were stacking duplicate scroll/click/media-query listeners on each swap.
+  // We now track an AbortController per init and abort it before re-binding.
+  let pageController = null;
+  let themeMqlBound = false;
+
   function init() {
+    // Tear down listeners from the previous page (if any)
+    if (pageController) pageController.abort();
+    pageController = new AbortController();
+    const { signal } = pageController;
+
     onScroll();
     animate();
 
     const backToTop = document.getElementById("back-to-top");
-    backToTop?.addEventListener("click", (event) => scrollToTop(event));
+    backToTop?.addEventListener("click", (event) => scrollToTop(event), {
+      signal,
+    });
 
     const backToPrev = document.getElementById("back-to-prev");
-    backToPrev?.addEventListener("click", () => window.history.back());
+    backToPrev?.addEventListener("click", () => window.history.back(), {
+      signal,
+    });
 
-    // Listen for system theme changes
-    window
-      .matchMedia("(prefers-color-scheme: dark)")
-      .addEventListener("change", (event) => {
-        toggleTheme(event.matches);
-      });
+    document.addEventListener("scroll", onScroll, { signal, passive: true });
 
-    document.addEventListener("scroll", onScroll);
+    // The OS theme listener should bind exactly once for the whole session
+    if (!themeMqlBound) {
+      themeMqlBound = true;
+      window
+        .matchMedia("(prefers-color-scheme: dark)")
+        .addEventListener("change", (event) => {
+          toggleTheme(event.matches);
+        });
+    }
   }
 
   function animate() {
+    // Honor prefers-reduced-motion: reveal everything instantly
+    const reduced = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+
     const animateElements = document.querySelectorAll(".animate");
+
+    if (reduced) {
+      animateElements.forEach((el) => el.classList.add("show"));
+      return;
+    }
 
     animateElements.forEach((element, index) => {
       setTimeout(() => {

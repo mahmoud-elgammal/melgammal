@@ -33,8 +33,15 @@ const { title, description } = Astro.props;
             import Lenis from "lenis";
             import { gsap } from "gsap";
             import { ScrollTrigger } from "gsap/ScrollTrigger";
+            import {
+                installAnimationLifecycle,
+                registerAnimation,
+                prefersReducedMotion,
+                refreshScrollTriggers,
+            } from "@lib/animation";
 
             gsap.registerPlugin(ScrollTrigger);
+            installAnimationLifecycle();
 
             // ── Scroll Personality Presets ──
             const personalities = {
@@ -44,60 +51,53 @@ const { title, description } = Astro.props;
                 frozen: { lerp: 0.02, multiplier: 0.4 },
             };
 
-            // Proxied state for animation
-            const scrollState = { ...personalities.default };
+            type Personality = (typeof personalities)[keyof typeof personalities];
+            const scrollState: Personality = { ...personalities.default };
 
-            const lenis = new Lenis({
-                lerp: scrollState.lerp,
-                wheelMultiplier: scrollState.multiplier,
-                smoothWheel: true,
-            });
+            // ── Lenis init (runs once per hard load — survives view transitions) ──
+            let lenis: Lenis | null = null;
+            let rafTickerHandler: ((time: number) => void) | null = null;
 
-            // Synchronize Lenis with GSAP ScrollTrigger
-            lenis.on("scroll", ScrollTrigger.update);
+            function initLenis() {
+                if (lenis) return;
+                if (prefersReducedMotion()) return; // honor user preference
 
-            gsap.ticker.add((time) => {
-                lenis.raf(time * 1000);
-            });
-
-            gsap.ticker.lagSmoothing(0);
-
-            // ── Dynamic Personality Transitioner ──
-            function initScrollPersonalities() {
-                const sections = document.querySelectorAll(
-                    "[data-scroll-personality]",
-                );
-
-                sections.forEach((section) => {
-                    const personalityKey =
-                        section.getAttribute("data-scroll-personality") ||
-                        "default";
-                    const target =
-                        personalities[
-                            personalityKey as keyof typeof personalities
-                        ] || personalities.default;
-
-                    ScrollTrigger.create({
-                        trigger: section,
-                        start: "top 80%",
-                        end: "bottom 20%",
-                        onEnter: () => transitionTo(target),
-                        onEnterBack: () => transitionTo(target),
-                    });
+                lenis = new Lenis({
+                    lerp: scrollState.lerp,
+                    wheelMultiplier: scrollState.multiplier,
+                    smoothWheel: true,
                 });
+
+                lenis.on("scroll", ScrollTrigger.update);
+
+                rafTickerHandler = (time: number) => {
+                    lenis?.raf(time * 1000);
+                };
+                gsap.ticker.add(rafTickerHandler);
+                gsap.ticker.lagSmoothing(0);
             }
 
-            function transitionTo(target: {
-                lerp: number;
-                multiplier: number;
-            }) {
+            function destroyLenis() {
+                if (rafTickerHandler) {
+                    gsap.ticker.remove(rafTickerHandler);
+                    rafTickerHandler = null;
+                }
+                if (lenis) {
+                    lenis.destroy();
+                    lenis = null;
+                }
+            }
+
+            function transitionTo(target: Personality) {
+                if (!lenis) return;
                 gsap.to(scrollState, {
                     lerp: target.lerp,
                     multiplier: target.multiplier,
                     duration: 1.2,
                     ease: "power2.inOut",
                     onUpdate: () => {
-                        // @ts-ignore - Updating Lenis internal state for real-time reactivity
+                        if (!lenis) return;
+                        // @ts-ignore - mutating Lenis internal options for live reactivity
                         lenis.options.lerp = scrollState.lerp;
                         // @ts-ignore
                         lenis.options.wheelMultiplier = scrollState.multiplier;
@@ -105,8 +105,81 @@ const { title, description } = Astro.props;
                 });
             }
 
-            // Initial reveal call
-            initScrollPersonalities();
+            // ── Per-page setup: scroll personalities + ScrollTrigger refresh ──
+            function setupPageAnimations() {
+                if (prefersReducedMotion()) {
+                    // Reveal all .animate elements instantly so nothing stays hidden
+                    document
+                        .querySelectorAll<HTMLElement>(".animate")
+                        .forEach((el) => {
+                            el.style.opacity = "1";
+                            el.style.transform = "none";
+                        });
+                    return;
+                }
+
+                registerAnimation("page-layout:scroll-personalities", () => {
+                    const sections = document.querySelectorAll(
+                        "[data-scroll-personality]",
+                    );
+
+                    sections.forEach((section) => {
+                        const personalityKey =
+                            section.getAttribute("data-scroll-personality") ||
+                            "default";
+                        const target =
+                            personalities[
+                                personalityKey as keyof typeof personalities
+                            ] || personalities.default;
+
+                        ScrollTrigger.create({
+                            trigger: section,
+                            start: "top 80%",
+                            end: "bottom 20%",
+                            onEnter: () => transitionTo(target),
+                            onEnterBack: () => transitionTo(target),
+                        });
+                    });
+                });
+
+                // Recompute trigger positions once images/fonts settle
+                requestAnimationFrame(() => refreshScrollTriggers());
+            }
+
+            // ── Resize handling: keep ScrollTrigger in sync with viewport ──
+            let resizeTimer: number | undefined;
+            window.addEventListener("resize", () => {
+                window.clearTimeout(resizeTimer);
+                resizeTimer = window.setTimeout(() => {
+                    refreshScrollTriggers();
+                }, 150);
+            });
+
+            // ── Initial bootstrap ──
+            initLenis();
+            setupPageAnimations();
+
+            // ── Re-bind after each view transition ──
+            document.addEventListener("astro:after-swap", () => {
+                // Lenis survives swaps; if it was killed (e.g. reduced-motion
+                // toggled mid-session) re-initialize it now.
+                initLenis();
+                setupPageAnimations();
+            });
+
+            // ── React to OS-level reduced-motion changes mid-session ──
+            const motionMql = window.matchMedia(
+                "(prefers-reduced-motion: reduce)",
+            );
+            motionMql.addEventListener("change", (e) => {
+                if (e.matches) {
+                    destroyLenis();
+                    setupPageAnimations();
+                } else {
+                    initLenis();
+                    setupPageAnimations();
+                }
+            });
         </script>
     </body>
 </html>

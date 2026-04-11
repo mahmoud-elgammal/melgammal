@@ -59,13 +59,21 @@ const { Content, headings } = await post.render();
 
   .blog-content-vessel {
     padding-top: 2.5rem;
-    padding-bottom: 15rem;
+    padding-bottom: 6rem;
+
+    @include screen(md) {
+      padding-bottom: 15rem;
+    }
   }
 
   .prose-monolith {
     color: rgba($color-black, 0.85);
     line-height: 1.8;
-    font-size: 1.125rem;
+    font-size: 1rem;
+
+    @include screen(md) {
+      font-size: 1.125rem;
+    }
 
     :global(.dark) & {
       color: rgba($color-white, 0.85);
@@ -77,13 +85,20 @@ const { Content, headings } = await post.render();
     }
 
     :global(h2) {
-      font-size: 1.75rem;
+      font-size: 1.4rem;
       font-weight: 800;
-      margin-top: 5rem;
-      margin-bottom: 2rem;
+      margin-top: 3rem;
+      margin-bottom: 1.5rem;
       text-transform: uppercase;
       letter-spacing: -0.02em;
       color: $color-black;
+
+      @include screen(md) {
+        font-size: 1.75rem;
+        margin-top: 5rem;
+        margin-bottom: 2rem;
+      }
+
       :global(.dark) & {
         color: $color-white;
       }
@@ -120,14 +135,21 @@ const { Content, headings } = await post.render();
     }
 
     :global(pre) {
-      margin: 4rem 0;
-      padding: 2.5rem;
+      margin: 2rem 0;
+      padding: 1.5rem;
       border-radius: 0.75rem;
       background: #1c1917 !important;
       border: 1px solid rgba(255, 255, 255, 0.05);
-      font-size: 0.9rem;
+      font-size: 0.8rem;
       position: relative;
-      overflow: visible;
+      overflow-x: auto;
+
+      @include screen(md) {
+        margin: 4rem 0;
+        padding: 2.5rem;
+        font-size: 0.9rem;
+        overflow: visible;
+      }
 
       &::before {
         content: "[CODE_SOURCE]";
@@ -156,9 +178,14 @@ const { Content, headings } = await post.render();
   }
 
   .post-footer {
-    margin-top: 10rem;
-    padding-top: 5rem;
+    margin-top: 4rem;
+    padding-top: 2rem;
     position: relative;
+
+    @include screen(md) {
+      margin-top: 10rem;
+      padding-top: 5rem;
+    }
 
     .bracket-label {
       font-family: ui-monospace, monospace;
@@ -187,28 +214,33 @@ const { Content, headings } = await post.render();
 </style>
 
 <script>
-  import { gsap } from "gsap";
-  import { ScrollTrigger } from "gsap/ScrollTrigger";
+  import {
+    registerAnimation,
+    prefersReducedMotion,
+  } from "@lib/animation";
 
-  gsap.registerPlugin(ScrollTrigger);
+  document.addEventListener("astro:page-load", () => {
+    registerAnimation("blog-post:reveal", (gsap) => {
+      const elements = document.querySelectorAll(".animate");
 
-  function initBlogAnimate() {
-    const elements = document.querySelectorAll(".animate");
-    elements.forEach((el) => {
-      gsap.to(el, {
-        opacity: 1,
-        y: 0,
-        duration: 1,
-        ease: "power4.out",
-        scrollTrigger: {
-          trigger: el,
-          start: "top 90%",
-          toggleActions: "play none none none",
-        },
+      if (prefersReducedMotion()) {
+        gsap.set(elements, { opacity: 1, y: 0 });
+        return;
+      }
+
+      elements.forEach((el) => {
+        gsap.to(el, {
+          opacity: 1,
+          y: 0,
+          duration: 1,
+          ease: "power4.out",
+          scrollTrigger: {
+            trigger: el,
+            start: "top 90%",
+            toggleActions: "play none none none",
+          },
+        });
       });
     });
-  }
-  document.addEventListener("astro:page-load", () => {
-    initBlogAnimate();
   });
 </script>

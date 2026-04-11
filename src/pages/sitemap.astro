@@ -310,15 +310,24 @@ const tree = [
 </style>
 
 <script>
-    import { gsap } from "gsap";
+    import {
+        registerAnimation,
+        prefersReducedMotion,
+    } from "@lib/animation";
 
     document.addEventListener("astro:page-load", () => {
-        gsap.to(".animate", {
-            opacity: 1,
-            y: 0,
-            duration: 0.8,
-            stagger: 0.1,
-            ease: "power2.out",
+        registerAnimation("sitemap:reveal", (gsap) => {
+            if (prefersReducedMotion()) {
+                gsap.set(".animate", { opacity: 1, y: 0 });
+                return;
+            }
+            gsap.to(".animate", {
+                opacity: 1,
+                y: 0,
+                duration: 0.8,
+                stagger: 0.1,
+                ease: "power2.out",
+            });
         });
     });
 </script>

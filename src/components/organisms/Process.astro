@@ -260,30 +260,34 @@ const steps = [
 </style>
 
 <script>
-    import { gsap } from "gsap";
-    import { ScrollTrigger } from "gsap/ScrollTrigger";
-
-    gsap.registerPlugin(ScrollTrigger);
-
-    function initProcess() {
-        const blocks = document.querySelectorAll(".process-block");
-
-        blocks.forEach((block) => {
-            gsap.from(block, {
-                opacity: 0,
-                y: 40,
-                duration: 1.2,
-                ease: "power4.out",
-                scrollTrigger: {
-                    trigger: block,
-                    start: "top 90%",
-                    toggleActions: "play none none none",
-                },
-            });
-        });
-    }
+    import {
+        registerAnimation,
+        prefersReducedMotion,
+    } from "@lib/animation";
 
     document.addEventListener("astro:page-load", () => {
-        initProcess();
+        registerAnimation("process-section-list", (gsap) => {
+            const blocks = document.querySelectorAll(".process-block");
+            if (!blocks.length) return;
+
+            if (prefersReducedMotion()) {
+                gsap.set(blocks, { opacity: 1, y: 0 });
+                return;
+            }
+
+            blocks.forEach((block) => {
+                gsap.from(block, {
+                    opacity: 0,
+                    y: 40,
+                    duration: 1.2,
+                    ease: "power4.out",
+                    scrollTrigger: {
+                        trigger: block,
+                        start: "top 90%",
+                        toggleActions: "play none none none",
+                    },
+                });
+            });
+        });
     });
 </script>

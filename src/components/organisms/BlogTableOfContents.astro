@@ -166,40 +166,49 @@ const filteredHeadings = headings.filter((h) => h.depth <= 3);
 </style>
 
 <script>
-    function initTOC() {
-        const tocLinks = document.querySelectorAll(".toc-link");
-        const headings = Array.from(tocLinks)
-            .map((link) =>
-                document.getElementById(link.getAttribute("data-slug") || ""),
-            )
-            .filter((h) => h !== null) as HTMLElement[];
+    import { registerAnimation } from "@lib/animation";
 
-        if (headings.length === 0) return;
+    document.addEventListener("astro:page-load", () => {
+        registerAnimation("blog-toc", (_gsap, signal) => {
+            const tocLinks = document.querySelectorAll(".toc-link");
+            const headings = Array.from(tocLinks)
+                .map((link) =>
+                    document.getElementById(
+                        link.getAttribute("data-slug") || "",
+                    ),
+                )
+                .filter((h) => h !== null) as HTMLElement[];
 
-        const observerOptions = {
-            root: null,
-            rootMargin: "0px 0px -80% 0px",
-            threshold: 0,
-        };
+            if (headings.length === 0) return;
 
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach((entry) => {
-                if (entry.isIntersecting) {
-                    const id = entry.target.getAttribute("id");
-                    tocLinks.forEach((link) => {
-                        if (link.getAttribute("data-slug") === id) {
-                            link.classList.add("active");
-                        } else {
-                            link.classList.remove("active");
+            const observer = new IntersectionObserver(
+                (entries) => {
+                    entries.forEach((entry) => {
+                        if (entry.isIntersecting) {
+                            const id = entry.target.getAttribute("id");
+                            tocLinks.forEach((link) => {
+                                if (
+                                    link.getAttribute("data-slug") === id
+                                ) {
+                                    link.classList.add("active");
+                                } else {
+                                    link.classList.remove("active");
+                                }
+                            });
                         }
                     });
-                }
-            });
-        }, observerOptions);
+                },
+                {
+                    root: null,
+                    rootMargin: "0px 0px -80% 0px",
+                    threshold: 0,
+                },
+            );
 
-        headings.forEach((heading) => observer.observe(heading));
-    }
+            headings.forEach((heading) => observer.observe(heading));
 
-    initTOC();
-    document.addEventListener("astro:page-load", initTOC);
+            // Tear down the observer on view transition
+            signal.addEventListener("abort", () => observer.disconnect());
+        });
+    });
 </script>

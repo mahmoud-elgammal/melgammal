@@ -60,6 +60,12 @@
     // @ts-ignore
     import { tinykeys } from "tinykeys";
     import { getCommands, type Command } from "@lib/commands";
+    import { prefersReducedMotion } from "@lib/animation";
+
+    // CommandMenu lives in the layout shell — its DOM survives view
+    // transitions, so we bind listeners ONCE per session and never re-bind
+    // them on astro:page-load. Tinykeys, scroll lock, and overlay state
+    // are all session-scoped.
 
     const overlay = document.getElementById("cmdk-overlay");
     const modal = document.getElementById("cmdk-modal");
@@ -70,11 +76,14 @@
     let filteredCommands: Command[] = [];
     let selectedIndex = 0;
     let isOpen = false;
+    let initialized = false;
 
     function init() {
+        if (initialized) return;
+        initialized = true;
+
         allCommands = getCommands();
 
-        // Globals
         tinykeys(window, {
             "$mod+k": (e: KeyboardEvent) => {
                 e.preventDefault();
@@ -85,17 +94,14 @@
             },
         });
 
-        // Overlay click
         overlay?.addEventListener("click", (e) => {
             if (e.target === overlay) toggle(false);
         });
 
-        // Input search
         input?.addEventListener("input", (e) => {
             renderResults((e.target as HTMLInputElement).value);
         });
 
-        // Input keys
         input?.addEventListener("keydown", (e) => {
             if (e.key === "ArrowDown") {
                 e.preventDefault();
@@ -131,48 +137,68 @@
         overlay.setAttribute("aria-hidden", String(!open));
 
         lockScroll(open);
+        const reduced = prefersReducedMotion();
 
         if (open) {
             overlay.style.display = "flex";
 
-            // Dramatic backdrop blur fade in
-            gsap.fromTo(
-                overlay,
-                { opacity: 0, backdropFilter: "blur(0px) saturate(100%)" },
-                {
+            if (reduced) {
+                gsap.set(overlay, {
                     opacity: 1,
                     backdropFilter: "blur(24px) saturate(200%)",
-                    duration: 0.6,
-                    ease: "power3.out",
-                },
-            );
-
-            // Architectural Modal 3D Reveal
-            gsap.fromTo(
-                modal,
-                {
-                    scale: 0.9,
-                    y: 60,
-                    rotationX: -15,
-                    opacity: 0,
-                    transformPerspective: 1200,
-                },
-                {
+                });
+                gsap.set(modal, {
                     scale: 1,
                     y: 0,
                     rotationX: 0,
                     opacity: 1,
-                    duration: 0.8,
-                    ease: "expo.out",
-                    clearProps: "transformPerspective",
-                },
-            );
+                });
+            } else {
+                gsap.fromTo(
+                    overlay,
+                    {
+                        opacity: 0,
+                        backdropFilter: "blur(0px) saturate(100%)",
+                    },
+                    {
+                        opacity: 1,
+                        backdropFilter: "blur(24px) saturate(200%)",
+                        duration: 0.6,
+                        ease: "power3.out",
+                    },
+                );
+
+                gsap.fromTo(
+                    modal,
+                    {
+                        scale: 0.9,
+                        y: 60,
+                        rotationX: -15,
+                        opacity: 0,
+                        transformPerspective: 1200,
+                    },
+                    {
+                        scale: 1,
+                        y: 0,
+                        rotationX: 0,
+                        opacity: 1,
+                        duration: 0.8,
+                        ease: "expo.out",
+                        clearProps: "transformPerspective",
+                    },
+                );
+            }
 
             input?.focus();
             input.value = "";
             renderResults("");
         } else {
-            // Rapid cinematic exit
+            if (reduced) {
+                overlay.style.display = "none";
+                gsap.set(overlay, { opacity: 0 });
+                gsap.set(modal, { opacity: 0 });
+                return;
+            }
             gsap.to(overlay, {
                 opacity: 0,
                 backdropFilter: "blur(0px) saturate(100%)",
@@ -270,7 +296,11 @@
             ".cmdk-section-header",
         );
 
-        // Reset opacities first
+        if (prefersReducedMotion()) {
+            gsap.set([headers, items], { opacity: 1, x: 0, y: 0, scale: 1 });
+            return;
+        }
+
         gsap.set([headers, items], { opacity: 0 });
 
         gsap.fromTo(
@@ -312,12 +342,13 @@
             selected.classList.add("selected");
             selected.scrollIntoView({ block: "nearest" });
 
-            // Micro-interaction on selection change
-            gsap.fromTo(
-                selected,
-                { x: -4 },
-                { x: 0, duration: 0.3, ease: "back.out(2)" },
-            );
+            if (!prefersReducedMotion()) {
+                gsap.fromTo(
+                    selected,
+                    { x: -4 },
+                    { x: 0, duration: 0.3, ease: "back.out(2)" },
+                );
+            }
         }
     }
 
@@ -336,12 +367,7 @@
         }
     }
 
-    // Handle view transitions
-    document.addEventListener("astro:page-load", () => {
-        init();
-    });
-
-    // Initial load
+    // Bind once at module load (DOM lives in layout, survives view swaps)
     init();
 </script>
 

@@ -321,7 +321,10 @@
 </style>
 
 <script>
-    import { gsap } from "gsap";
+    import {
+        registerAnimation,
+        prefersReducedMotion,
+    } from "@lib/animation";
 
     const VALIDATORS: Record<string, (v: string) => string | null> = {
         name: (v) =>
@@ -370,80 +373,115 @@
         return true;
     }
 
-    function initContactForm() {
-        const form = document.getElementById(
-            "contact-form",
-        ) as HTMLFormElement | null;
-        if (!form) return;
+    document.addEventListener("astro:page-load", () => {
+        registerAnimation("contact-form", (gsap, signal) => {
+            const form = document.getElementById(
+                "contact-form",
+            ) as HTMLFormElement | null;
+            if (!form) return;
 
-        const fields = form.querySelectorAll(".field");
-        const submitBtn = document.getElementById(
-            "cf-submit",
-        ) as HTMLButtonElement;
-        const statusEl = document.getElementById("cf-status")!;
+            const fields = form.querySelectorAll(".field");
+            const submitBtn = document.getElementById(
+                "cf-submit",
+            ) as HTMLButtonElement;
+            const statusEl = document.getElementById("cf-status")!;
+            const reduced = prefersReducedMotion();
 
-        // Staggered field reveal
-        gsap.fromTo(
-            fields,
-            { opacity: 0, y: 16 },
-            {
-                opacity: 1,
-                y: 0,
-                duration: 0.6,
-                stagger: 0.1,
-                delay: 0.2,
-                ease: "power4.out",
-            },
-        );
-
-        // Live validation on blur
-        fields.forEach((field) => {
-            const input = field.querySelector("input, textarea");
-            input?.addEventListener("blur", () => validateField(field));
-            input?.addEventListener("input", () => {
-                if (field.classList.contains("has-error")) validateField(field);
-            });
-        });
-
-        // Submit
-        form.addEventListener("submit", async (e) => {
-            e.preventDefault();
-
-            // Validate all
-            let valid = true;
-            fields.forEach((f) => {
-                if (!validateField(f)) valid = false;
-            });
-            if (!valid) {
-                // Shake invalid fields
-                const errorFields = form.querySelectorAll(".field.has-error");
-                gsap.to(errorFields, {
-                    x: (i) => (i % 2 === 0 ? -6 : 6),
-                    duration: 0.1,
-                    repeat: 5,
-                    yoyo: true,
-                    ease: "power2.inOut",
-                    onComplete: () => {
-                        gsap.to(errorFields, { x: 0, duration: 0.1 });
+            // Staggered field reveal (or instant for reduced motion)
+            if (reduced) {
+                gsap.set(fields, { opacity: 1, y: 0 });
+            } else {
+                gsap.fromTo(
+                    fields,
+                    { opacity: 0, y: 16 },
+                    {
+                        opacity: 1,
+                        y: 0,
+                        duration: 0.6,
+                        stagger: 0.1,
+                        delay: 0.2,
+                        ease: "power4.out",
                     },
-                });
-                return;
+                );
             }
 
-            // Simulate send
-            submitBtn.disabled = true;
-            submitBtn.classList.add("sending");
-            submitBtn.querySelector(".btn-text")!.textContent = "Sending...";
+            // Live validation
+            fields.forEach((field) => {
+                const input = field.querySelector("input, textarea");
+                input?.addEventListener(
+                    "blur",
+                    () => validateField(field),
+                    { signal },
+                );
+                input?.addEventListener(
+                    "input",
+                    () => {
+                        if (field.classList.contains("has-error"))
+                            validateField(field);
+                    },
+                    { signal },
+                );
+            });
 
-            await new Promise((r) => setTimeout(r, 1200));
+            // Submit handler — track timer so we can clear it on swap
+            let pendingSimTimer: number | undefined;
+            signal.addEventListener("abort", () => {
+                if (pendingSimTimer !== undefined)
+                    window.clearTimeout(pendingSimTimer);
+            });
 
-            statusEl.textContent = "[OK] Message sent. I'll be in touch soon.";
-            statusEl.className = "form-status visible success";
-            submitBtn.querySelector(".btn-text")!.textContent = "Sent ✓";
-            submitBtn.classList.remove("sending");
+            form.addEventListener(
+                "submit",
+                async (e) => {
+                    e.preventDefault();
+
+                    let valid = true;
+                    fields.forEach((f) => {
+                        if (!validateField(f)) valid = false;
+                    });
+
+                    if (!valid) {
+                        const errorFields =
+                            form.querySelectorAll(".field.has-error");
+                        if (!reduced) {
+                            gsap.to(errorFields, {
+                                x: (i) => (i % 2 === 0 ? -6 : 6),
+                                duration: 0.1,
+                                repeat: 5,
+                                yoyo: true,
+                                ease: "power2.inOut",
+                                onComplete: () => {
+                                    gsap.to(errorFields, {
+                                        x: 0,
+                                        duration: 0.1,
+                                    });
+                                },
+                            });
+                        }
+                        return;
+                    }
+
+                    // Simulate send
+                    submitBtn.disabled = true;
+                    submitBtn.classList.add("sending");
+                    submitBtn.querySelector(".btn-text")!.textContent =
+                        "Sending...";
+
+                    await new Promise((r) => {
+                        pendingSimTimer = window.setTimeout(r, 1200);
+                    });
+
+                    if (signal.aborted) return;
+
+                    statusEl.textContent =
+                        "[OK] Message sent. I'll be in touch soon.";
+                    statusEl.className = "form-status visible success";
+                    submitBtn.querySelector(".btn-text")!.textContent =
+                        "Sent \u2713";
+                    submitBtn.classList.remove("sending");
+                },
+                { signal },
+            );
         });
-    }
-
-    initContactForm();
-    document.addEventListener("astro:page-load", initContactForm);
+    });
 </script>

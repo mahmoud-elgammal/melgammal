@@ -398,24 +398,34 @@ const st = statusConfig[status] || statusConfig.shipped;
 <!-- ══════════════════════════════════════════ -->
 <style lang="scss">
   @use "../../styles/variables" as *;
+  @use "../../styles/mixins" as *;
 
   /* ── Editorial Hero ── */
   .editorial-hero {
     position: relative;
-    padding: 8rem 0 4rem;
+    padding: 4rem 0 2rem;
     background: transparent;
+
+    @include screen(md) {
+      padding: 8rem 0 4rem;
+    }
   }
 
   .editorial-title {
-    font-size: clamp(4rem, 12vw, 10rem);
+    font-size: clamp(2.25rem, 12vw, 10rem);
     font-family: $font-display;
     font-weight: 400;
     letter-spacing: 0.02em;
     line-height: 1.1;
-    margin: 0 0 6rem 0;
+    margin: 0 0 3rem 0;
     color: $color-black;
+    word-break: break-word;
     :global(.dark) & {
       color: $color-white;
+    }
+
+    @include screen(md) {
+      margin: 0 0 6rem 0;
     }
   }
 
@@ -656,11 +666,17 @@ const st = statusConfig[status] || statusConfig.shipped;
       position: relative;
       background: #000;
       color: #fff;
-      padding: 3rem 4rem;
-      border-radius: 2.5rem;
+      padding: 1.5rem 1.5rem;
+      border-radius: 1.5rem;
       border: none;
-      margin: 5rem 0;
+      margin: 2.5rem 0;
       overflow: hidden;
+
+      @include screen(md) {
+        padding: 3rem 4rem;
+        border-radius: 2.5rem;
+        margin: 5rem 0;
+      }
       transform: translateY(30px);
       opacity: 0;
       transition: all 1.2s cubic-bezier(0.16, 1, 0.3, 1);
@@ -788,17 +804,26 @@ const st = statusConfig[status] || statusConfig.shipped;
 
   /* ═══════════════ PROJECT IMPACT ═══════════════ */
   .cs-impact {
-    padding: 2rem 0 8rem;
+    padding: 2rem 0 4rem;
     position: relative;
     max-width: 800px;
     margin: 0 auto;
+
+    @include screen(md) {
+      padding: 2rem 0 8rem;
+    }
   }
 
   .impact-header {
     display: flex;
     flex-direction: column;
-    gap: 6rem;
-    margin-bottom: 5rem;
+    gap: 3rem;
+    margin-bottom: 3rem;
+
+    @include screen(md) {
+      gap: 6rem;
+      margin-bottom: 5rem;
+    }
   }
 
   .impact-headline {
@@ -1195,7 +1220,7 @@ const st = statusConfig[status] || statusConfig.shipped;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    font-size: clamp(8rem, 18vw, 24rem); /* Massive, viewport-responsive */
+    font-size: clamp(4rem, 18vw, 24rem); /* Massive, viewport-responsive */
     font-family: ui-sans-serif, system-ui, sans-serif;
     font-weight: 900;
     letter-spacing: -0.04em;
@@ -1861,10 +1886,16 @@ const st = statusConfig[status] || statusConfig.shipped;
   import { gsap } from "gsap";
   import { ScrollTrigger } from "gsap/ScrollTrigger";
   import { ScrollToPlugin } from "gsap/ScrollToPlugin";
+  import {
+    registerAnimation,
+    prefersReducedMotion,
+  } from "@lib/animation";
 
   gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
 
-  function initCaseStudy() {
+  function initCaseStudy(signal: AbortSignal) {
+    const reduced = prefersReducedMotion();
+
     // ── Brand theme takeover ──
     const hero = document.querySelector(".editorial-hero") as HTMLElement;
     if (hero) {
@@ -1875,24 +1906,30 @@ const st = statusConfig[status] || statusConfig.shipped;
       const baseBg = isDark ? "#1c1917" : "#f5f5f4";
       document.body.style.background = `color-mix(in srgb, ${brand} 3%, ${baseBg})`;
 
-      gsap.to(hero, {
-        opacity: 1,
-        y: 0,
-        duration: 1,
-        ease: "power4.out",
-        scrollTrigger: {
-          trigger: hero,
-          start: "top 90%",
-        },
-      });
+      if (reduced) {
+        gsap.set(hero, { opacity: 1, y: 0 });
+      } else {
+        gsap.to(hero, {
+          opacity: 1,
+          y: 0,
+          duration: 1,
+          ease: "power4.out",
+          scrollTrigger: {
+            trigger: hero,
+            start: "top 90%",
+          },
+        });
+      }
     }
 
     // ── Scroll animations (standard) ──
-    document
-      .querySelectorAll(
-        ".editorial-image-monolith.animate, .editorial-meta.animate, .editorial-title.animate, .cs-overview .animate, .cs-gallery .animate, .cs-impact.animate, .cs-impact .animate, .cs-cta .animate, .cs-footer.animate, .cs-gantt-section .animate, .gantt-container.animate",
-      )
-      .forEach((el) => {
+    const standardAnimateEls = document.querySelectorAll(
+      ".editorial-image-monolith.animate, .editorial-meta.animate, .editorial-title.animate, .cs-overview .animate, .cs-gallery .animate, .cs-impact.animate, .cs-impact .animate, .cs-cta .animate, .cs-footer.animate, .cs-gantt-section .animate, .gantt-container.animate",
+    );
+    if (reduced) {
+      gsap.set(standardAnimateEls, { opacity: 1, y: 0 });
+    } else {
+      standardAnimateEls.forEach((el) => {
         gsap.to(el, {
           opacity: 1,
           y: 0,
@@ -1905,6 +1942,7 @@ const st = statusConfig[status] || statusConfig.shipped;
           },
         });
       });
+    }
 
     // ── Impact Row Stagger ──
     const impactRows = document.querySelectorAll(".impact-row");
@@ -2137,7 +2175,7 @@ const st = statusConfig[status] || statusConfig.shipped;
           }
         });
 
-        // Close on outside click
+        // Close on outside click — listener removed automatically on swap
         document.addEventListener("click", (e) => {
           const target = e.target as Node;
           if (!sharePopover.contains(target) && !shareTrigger.contains(target)) {
@@ -2146,7 +2184,7 @@ const st = statusConfig[status] || statusConfig.shipped;
           if (chaptersPopover && chaptersTrigger && !chaptersPopover.contains(target) && !chaptersTrigger.contains(target)) {
             chaptersPopover.classList.remove("open");
           }
-        });
+        }, { signal });
       }
 
       // Copy link inside popover
@@ -2165,7 +2203,7 @@ const st = statusConfig[status] || statusConfig.shipped;
 
     // ── Next Case Background Animation ──
     const nextBgText = document.querySelector(".next-bg-text");
-    if (nextBgText) {
+    if (nextBgText && !reduced) {
       // Horizontal Parallax on Scroll
       gsap.to(nextBgText, {
         x: -150,
@@ -2187,16 +2225,16 @@ const st = statusConfig[status] || statusConfig.shipped;
       });
     }
 
-    return () => {
+    // Restore the body background when this page is left
+    signal.addEventListener("abort", () => {
       document.body.style.background = "";
-    };
+    });
   }
 
-  let cleanup: (() => void) | undefined;
-  document.addEventListener("astro:before-swap", () => cleanup?.());
   document.addEventListener("astro:page-load", () => {
-    if (window.location.pathname.startsWith("/projects/")) {
-      cleanup = initCaseStudy();
-    }
+    if (!window.location.pathname.startsWith("/projects/")) return;
+    registerAnimation("project-case-study", (_gsap, signal) => {
+      initCaseStudy(signal);
+    });
   });
 </script>
