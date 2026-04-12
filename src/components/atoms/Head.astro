@@ -1,11 +1,11 @@
 ---
 import "../../styles/global.scss";
-import outfitWoff2 from "@fontsource-variable/outfit/files/outfit-latin-wght-normal.woff2";
-import interWoff2 from "@fontsource-variable/inter/files/inter-latin-wght-normal.woff2";
+import spaceGroteskWoff2 from "@fontsource-variable/space-grotesk/files/space-grotesk-latin-wght-normal.woff2";
+import jakartaWoff2 from "@fontsource-variable/plus-jakarta-sans/files/plus-jakarta-sans-latin-wght-normal.woff2";
 import jbMonoWoff2 from "@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2";
 
-import "@fontsource-variable/outfit";
-import "@fontsource-variable/inter";
+import "@fontsource-variable/space-grotesk";
+import "@fontsource-variable/plus-jakarta-sans";
 import "@fontsource-variable/jetbrains-mono";
 
 import "katex/dist/katex.min.css";
@@ -45,12 +45,12 @@ const { title, description, image = "/nano.png" } = Astro.props;
 <!-- Font preloads -->
 <link
   rel="preload"
-  href={outfitWoff2}
+  href={spaceGroteskWoff2}
   as="font"
   type="font/woff2"
   crossorigin
 />
-<link rel="preload" href={interWoff2} as="font" type="font/woff2" crossorigin />
+<link rel="preload" href={jakartaWoff2} as="font" type="font/woff2" crossorigin />
 <link
   rel="preload"
   href={jbMonoWoff2}

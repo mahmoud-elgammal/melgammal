@@ -1,18 +1,18 @@
 // Colors
-$color-light-bg: #f5f5f4; // stone-100
-$color-dark-bg: #1c1917; // stone-900
+$color-light-bg: #fafaf8; // warm cream
+$color-dark-bg: #111110; // deep charcoal
 
-$color-light-text: rgba(0, 0, 0, 0.5);
-$color-dark-text: rgba(255, 255, 255, 0.75);
+$color-light-text: rgba(0, 0, 0, 0.55);
+$color-dark-text: rgba(255, 255, 255, 0.7);
 
-$color-black: #000000;
-$color-white: #ffffff;
+$color-black: #0a0a0a;
+$color-white: #f8f8f6;
 
 // Fonts
-$font-display: "Outfit Variable", "sans-serif";
-$font-sans: "Inter Variable", "sans-serif", "ui-sans-serif", "system-ui";
+$font-display: "Space Grotesk Variable", "sans-serif";
+$font-sans: "Plus Jakarta Sans Variable", "sans-serif", "ui-sans-serif", "system-ui";
 $font-mono: "JetBrains Mono Variable", "monospace", "ui-monospace";
-$font-serif: "Inter", "serif"; // Fallback body to sans for monolith feel
+$font-serif: "Plus Jakarta Sans", "serif";
 
 // Breakpoints
 $screen-sm: 640px;

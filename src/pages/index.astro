@@ -387,9 +387,10 @@ const projects = (await getCollection("projects"))
     }
 
     .display-title {
-        font-size: clamp(2.2rem, 10vw, 3.5rem); // Fluid small
-        line-height: 1.1;
-        font-weight: 700;
+        font-size: clamp(2.2rem, 10vw, 3.5rem);
+        line-height: 1.05;
+        font-weight: 600;
+        letter-spacing: -0.04em;
         color: $color-black;
         margin: 0;
 
@@ -398,7 +399,7 @@ const projects = (await getCollection("projects"))
         }
 
         @include screen(md) {
-            font-size: clamp(4rem, 8vw, 8.2rem); // Fluid large
+            font-size: clamp(4rem, 8vw, 8.2rem);
         }
     }
 
@@ -432,6 +433,8 @@ const projects = (await getCollection("projects"))
 
     .section-title {
         font-weight: 600;
+        letter-spacing: -0.02em;
+        text-transform: none;
         color: $color-black;
 
         :global(.dark) & {
