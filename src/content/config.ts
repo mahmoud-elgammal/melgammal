@@ -37,6 +37,8 @@ const projects = defineCollection({
     imageMobile: image().optional(),
     color: z.string().optional(),
     status: z.enum(["shipped", "in-progress", "concept"]).default("shipped"),
+    locked: z.boolean().optional(),
+    passwordHash: z.string().optional(),
     role: z.string().optional(),
     duration: z.string().optional(),
     client: z.string().optional(),

@@ -1,12 +1,15 @@
 ---
 import "../../styles/global.scss";
-import spaceGroteskWoff2 from "@fontsource-variable/space-grotesk/files/space-grotesk-latin-wght-normal.woff2";
+import bricolageWoff2 from "@fontsource-variable/bricolage-grotesque/files/bricolage-grotesque-latin-wght-normal.woff2";
 import jakartaWoff2 from "@fontsource-variable/plus-jakarta-sans/files/plus-jakarta-sans-latin-wght-normal.woff2";
 import jbMonoWoff2 from "@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2";
 
-import "@fontsource-variable/space-grotesk";
+import "@fontsource-variable/bricolage-grotesque";
 import "@fontsource-variable/plus-jakarta-sans";
 import "@fontsource-variable/jetbrains-mono";
+// Loaded for the Expertise canvas's kinetic skill-tag rendering, which
+// intentionally uses a different, denser display face than page headings.
+import "@fontsource/anton";
 
 import "katex/dist/katex.min.css";
 
@@ -45,7 +48,7 @@ const { title, description, image = "/nano.png" } = Astro.props;
 <!-- Font preloads -->
 <link
   rel="preload"
-  href={spaceGroteskWoff2}
+  href={bricolageWoff2}
   as="font"
   type="font/woff2"
   crossorigin

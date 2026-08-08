@@ -4,8 +4,10 @@ import sitemap from "@astrojs/sitemap";
 import compress from "astro-compress";
 // import partytown from "@astrojs/partytown";
 import cloudflare from "@astrojs/cloudflare";
+// import { n } from '@astrojs'
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
+import icon from "astro-icon";
 
 export default defineConfig({
   site: "http://melgammal.com",
@@ -45,6 +47,7 @@ export default defineConfig({
     }),
     sitemap(),
     compress(),
+    icon(),
     // partytown({
     //   config: {
     //     forward: ["dataLayer.push"],

@@ -1,5 +1,42 @@
 ---
+import { Icon } from "astro-icon/components";
 
+const SKILLS = [
+    { name: "Node.js", slug: "nodejs", icon: "logos:nodejs-icon", size: "lg" },
+    {
+        name: "TypeScript",
+        slug: "typescript",
+        icon: "logos:typescript-icon",
+        size: "md",
+    },
+    { name: "React", slug: "react", icon: "logos:react", size: "sm" },
+    {
+        name: "Prometheus",
+        slug: "prometheus",
+        icon: "logos:prometheus",
+        size: "lg",
+    },
+    { name: "Grafana", slug: "grafana", icon: "logos:grafana", size: "md" },
+    { name: "Docker", slug: "docker", icon: "logos:docker-icon", size: "sm" },
+    { name: "K8s", slug: "k8s", icon: "logos:kubernetes", size: "md" },
+    {
+        name: "k6",
+        slug: "k6",
+        icon: "simple-icons:k6",
+        color: "#7D64FF",
+        size: "sm",
+    },
+    { name: "Three.js", slug: "threejs", icon: "logos:threejs", size: "lg" },
+    {
+        name: "React Native",
+        slug: "react-native",
+        icon: "logos:react",
+        size: "sm",
+    },
+    { name: "Rust", slug: "rust", icon: "logos:rust", size: "md" },
+    { name: "AWS", slug: "aws", icon: "logos:aws", size: "md" },
+    { name: "Astro.js", slug: "astro", icon: "logos:astro-icon", size: "lg" },
+];
 ---
 
 <section
@@ -14,6 +51,13 @@
         <!-- Canvas Rendering Layer -->
         <canvas id="expertise-canvas" class="expertise-canvas"></canvas>
 
+        <!-- WebGL glow/chromatic-aberration pass, sampling the 2D canvas
+             above and distorting it around the cursor -->
+        <canvas
+            id="expertise-glow-canvas"
+            class="expertise-glow-canvas"
+        ></canvas>
+
         <!-- Interactive Technical HUD -->
         <div class="discovery-lens" id="discovery-lens">
             <div class="lens-labels">
@@ -24,6 +68,21 @@
             <div class="lens-crosshair"></div>
         </div>
     </div>
+
+    <!-- Server-rendered icon source: the canvas script reads these SVGs
+         to rasterize them onto <canvas>, since Astro's Icon component
+         only runs at build/server time. -->
+    <div class="icon-sprite-source" aria-hidden="true">
+        {
+            SKILLS.map((skill) => (
+                <Icon
+                    name={skill.icon}
+                    id={`skill-icon-${skill.slug}`}
+                    style={skill.color ? `color:${skill.color}` : undefined}
+                />
+            ))
+        }
+    </div>
 </section>
 
 <div class="expertise-mobile-fallback">
@@ -33,25 +92,15 @@
     <ul class="mobile-skills-list">
         <!-- Render from server to eliminate all JS dependency on mobile -->
         {
-            [
-                { name: "Node.js", weight: "800", size: "lg" },
-                { name: "TypeScript", weight: "600", size: "md" },
-                { name: "React", weight: "300", size: "sm" },
-                { name: "Prometheus", weight: "800", size: "lg" },
-                { name: "Grafana", weight: "600", size: "md" },
-                { name: "Docker", weight: "300", size: "sm" },
-                { name: "K8s", weight: "800", size: "md" },
-                { name: "k6", weight: "600", size: "sm" },
-                { name: "Three.js", weight: "300", size: "lg" },
-                { name: "React Native", weight: "800", size: "sm" },
-                { name: "Rust", weight: "600", size: "md" },
-                { name: "AWS", weight: "300", size: "md" },
-                { name: "Astro.js", weight: "800", size: "lg" },
-            ].map((skill) => (
-                <li
-                    class={`skill-pill weight-${skill.weight} size-${skill.size}`}
-                >
-                    {skill.name}
+            SKILLS.map((skill) => (
+                <li class={`skill-pill size-${skill.size}`}>
+                    <Icon
+                        name={skill.icon}
+                        title={skill.name}
+                        style={
+                            skill.color ? `color:${skill.color}` : undefined
+                        }
+                    />
                 </li>
             ))
         }
@@ -76,19 +125,24 @@
     } = Matter;
 
     const SKILLS = [
-        { name: "Node.js", depth: 1.25, weight: "800", size: "lg" },
-        { name: "TypeScript", depth: 1, weight: "600", size: "md" },
-        { name: "React", depth: 0.75, weight: "300", size: "sm" },
-        { name: "Prometheus", depth: 1.25, weight: "800", size: "lg" },
-        { name: "Grafana", depth: 1, weight: "600", size: "md" },
-        { name: "Docker", depth: 0.75, weight: "300", size: "sm" },
-        { name: "K8s", depth: 1.25, weight: "800", size: "md" },
-        { name: "k6", depth: 1, weight: "600", size: "sm" },
-        { name: "Three.js", depth: 0.75, weight: "300", size: "lg" },
-        { name: "React Native", depth: 1.25, weight: "800", size: "sm" },
-        { name: "Rust", depth: 1, weight: "600", size: "md" },
-        { name: "AWS", depth: 0.75, weight: "300", size: "md" },
-        { name: "Astro.js", depth: 1.25, weight: "800", size: "lg" },
+        { name: "Node.js", slug: "nodejs", depth: 1.25, size: "lg" },
+        { name: "TypeScript", slug: "typescript", depth: 1, size: "md" },
+        { name: "React", slug: "react", depth: 0.75, size: "sm" },
+        { name: "Prometheus", slug: "prometheus", depth: 1.25, size: "lg" },
+        { name: "Grafana", slug: "grafana", depth: 1, size: "md" },
+        { name: "Docker", slug: "docker", depth: 0.75, size: "sm" },
+        { name: "K8s", slug: "k8s", depth: 1.25, size: "md" },
+        { name: "k6", slug: "k6", depth: 1, size: "sm" },
+        { name: "Three.js", slug: "threejs", depth: 0.75, size: "lg" },
+        {
+            name: "React Native",
+            slug: "react-native",
+            depth: 1.25,
+            size: "sm",
+        },
+        { name: "Rust", slug: "rust", depth: 1, size: "md" },
+        { name: "AWS", slug: "aws", depth: 0.75, size: "md" },
+        { name: "Astro.js", slug: "astro", depth: 1.25, size: "lg" },
     ];
 
     class ExpertiseCanvas {
@@ -107,6 +161,7 @@
         private rafId: number | null = null;
         private isMobile: boolean = false;
         private signal: AbortSignal;
+        private icons: Map<string, HTMLImageElement> = new Map();
 
         constructor(signal: AbortSignal) {
             this.signal = signal;
@@ -161,6 +216,8 @@
             // CPU SAVER: Bypass all heavy Physics simulation if mobile viewport
             if (this.isMobile) return;
 
+            this.loadIcons();
+
             // Physics Setup
             this.engine = Engine.create();
             this.engine.gravity.y = 0;
@@ -170,20 +227,16 @@
 
             // Create Physics Bodies
             this.bodies = SKILLS.map((skill) => {
-                const fontSize = this.getFontSize(skill.size);
-                this.ctx.font = `${skill.weight} ${fontSize}px "Anton"`;
-                const textMetrics = this.ctx.measureText(skill.name);
-
-                const paddingH = fontSize * 1.5;
-                const paddingV = fontSize * 0.8;
-                const rectW = textMetrics.width + paddingH;
-                const rectH = fontSize + paddingV;
+                const iconSize = this.getIconSize(skill.size);
+                const padding = iconSize * 0.9;
+                const rectW = iconSize + padding;
+                const rectH = iconSize + padding;
 
                 const x = (Math.random() * 0.6 + 0.2) * width;
                 const y = (Math.random() * 0.6 + 0.2) * height;
 
                 const body = Bodies.rectangle(x, y, rectW, rectH, {
-                    chamfer: { radius: 2 },
+                    chamfer: { radius: 10 },
                     restitution: 0.8,
                     frictionAir: 0.04 / skill.depth,
                     label: "skill-tag",
@@ -194,6 +247,7 @@
                     skill,
                     width: rectW,
                     height: rectH,
+                    iconSize,
                     revealOpacity: 0,
                 };
             });
@@ -238,10 +292,34 @@
             Events.on(this.engine, "afterUpdate", () => this.draw());
         }
 
-        private getFontSize(size: string) {
-            if (size === "lg") return this.isMobile ? 24 : 32;
-            if (size === "md") return this.isMobile ? 18 : 22;
-            return this.isMobile ? 14 : 16;
+        private getIconSize(size: string) {
+            if (size === "lg") return this.isMobile ? 40 : 56;
+            if (size === "md") return this.isMobile ? 32 : 44;
+            return this.isMobile ? 24 : 34;
+        }
+
+        // Rasterizes each server-rendered icon (see .icon-sprite-source)
+        // into an Image the canvas can drawImage() every frame. astro-icon
+        // renders each icon as a <symbol>+<use> pair rather than a flat,
+        // self-contained <svg>, so a standalone document has to be
+        // reassembled from the <symbol>'s viewBox/markup before it's valid
+        // as a data: URI image source.
+        private loadIcons() {
+            SKILLS.forEach((skill) => {
+                const source = document.getElementById(
+                    `skill-icon-${skill.slug}`,
+                );
+                const symbol = source?.querySelector("symbol");
+                if (!symbol) return;
+
+                const viewBox = symbol.getAttribute("viewBox") || "0 0 24 24";
+                const style = source!.getAttribute("style") || "";
+                const markup = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}" style="${style}">${symbol.innerHTML}</svg>`;
+
+                const img = new Image();
+                img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(markup)}`;
+                this.icons.set(skill.slug, img);
+            });
         }
 
         private resize() {
@@ -309,7 +387,7 @@
             );
 
             sortedBodies.forEach(
-                ({ body, skill, width, height, revealOpacity }) => {
+                ({ body, skill, width, height, iconSize, revealOpacity }) => {
                     const { depth } = skill;
 
                     // Attraction Physics
@@ -373,18 +451,41 @@
 
                     this.ctx.globalAlpha = opacity;
 
-                    // Box
+                    // Chip background
                     this.ctx.fillStyle =
-                        this.theme === "dark" ? "#ffffff" : "#000000";
-                    this.ctx.fillRect(-width / 2, -height / 2, width, height);
+                        this.theme === "dark" ? "#1c1c1a" : "#ffffff";
+                    this.ctx.beginPath();
+                    this.ctx.roundRect(
+                        -width / 2,
+                        -height / 2,
+                        width,
+                        height,
+                        10,
+                    );
+                    this.ctx.fill();
+                    this.ctx.strokeStyle =
+                        this.theme === "dark"
+                            ? "rgba(255,255,255,0.08)"
+                            : "rgba(0,0,0,0.06)";
+                    this.ctx.lineWidth = 1;
+                    this.ctx.stroke();
 
-                    // Text
-                    this.ctx.fillStyle =
-                        this.theme === "dark" ? "#000000" : "#ffffff";
-                    this.ctx.font = `${skill.weight} ${this.getFontSize(skill.size)}px "Anton"`;
-                    this.ctx.textAlign = "center";
-                    this.ctx.textBaseline = "middle";
-                    this.ctx.fillText(skill.name, 0, 1); // Tiny vertical offset for optical centering
+                    // Colored logo, aspect-ratio preserved within the chip
+                    const img = this.icons.get(skill.slug);
+                    if (img && img.complete && img.naturalWidth > 0) {
+                        const aspect = img.naturalWidth / img.naturalHeight;
+                        let drawW = iconSize;
+                        let drawH = iconSize;
+                        if (aspect > 1) drawH = iconSize / aspect;
+                        else drawW = iconSize * aspect;
+                        this.ctx.drawImage(
+                            img,
+                            -drawW / 2,
+                            -drawH / 2,
+                            drawW,
+                            drawH,
+                        );
+                    }
 
                     this.ctx.restore();
                 },
@@ -412,7 +513,258 @@
                 cancelAnimationFrame(this.rafId);
                 this.rafId = null;
             }
+            this.icons.clear();
             // Resize listener is auto-removed via the AbortSignal
+        }
+    }
+
+    const GLOW_VERTEX_SRC = `
+        attribute vec2 aPosition;
+        void main() {
+            gl_Position = vec4(aPosition, 0.0, 1.0);
+        }
+    `;
+
+    // Renders nothing outside a soft circular radius around the cursor —
+    // this is a "lens" pass, not a full-canvas effect, so the plain 2D
+    // physics canvas underneath shows through normally everywhere else.
+    const GLOW_FRAGMENT_SRC = `
+        precision highp float;
+        uniform sampler2D uTexture;
+        uniform vec2 uResolution;
+        uniform vec2 uMouse;
+        uniform float uRadius;
+
+        void main() {
+            if (uMouse.x < 0.0) discard;
+
+            float dist = distance(gl_FragCoord.xy, uMouse);
+            if (dist > uRadius) discard;
+
+            vec2 uv = gl_FragCoord.xy / uResolution.xy;
+            vec2 mouseUv = uMouse / uResolution;
+            vec2 dir = normalize(uv - mouseUv + 0.0001);
+
+            float edgeFade = smoothstep(uRadius, uRadius * 0.55, dist);
+            float aberration = 0.01 * (dist / uRadius);
+
+            float r = texture2D(uTexture, uv + dir * aberration).r;
+            float g = texture2D(uTexture, uv).g;
+            float b = texture2D(uTexture, uv - dir * aberration).b;
+            vec3 color = vec3(r, g, b) * 1.2;
+
+            gl_FragColor = vec4(color, edgeFade * 0.85);
+        }
+    `;
+
+    function compileGlowShader(
+        gl: WebGLRenderingContext,
+        type: number,
+        source: string,
+    ): WebGLShader | null {
+        const shader = gl.createShader(type);
+        if (!shader) return null;
+        gl.shaderSource(shader, source);
+        gl.compileShader(shader);
+        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+            gl.deleteShader(shader);
+            return null;
+        }
+        return shader;
+    }
+
+    // A chromatic-aberration "lens" that follows the cursor over the skill
+    // canvas, sampling the live 2D physics render as its texture each
+    // frame. Purely additive on top of ExpertiseCanvas — never replaces it.
+    class ExpertiseGlowFX {
+        private sourceCanvas: HTMLCanvasElement;
+        private canvas: HTMLCanvasElement;
+        private gl: WebGLRenderingContext;
+        private program: WebGLProgram;
+        private texture: WebGLTexture;
+        private uniforms: Record<string, WebGLUniformLocation | null> = {};
+        private dpr = Math.min(window.devicePixelRatio || 1, 2);
+        private mouse = { x: -1, y: -1 };
+        private rafId: number | null = null;
+        private board: HTMLElement;
+        private boardRect!: DOMRect;
+
+        constructor(
+            board: HTMLElement,
+            sourceCanvas: HTMLCanvasElement,
+            canvas: HTMLCanvasElement,
+            signal: AbortSignal,
+        ) {
+            this.board = board;
+            this.sourceCanvas = sourceCanvas;
+            this.canvas = canvas;
+
+            const gl = (canvas.getContext("webgl") ||
+                canvas.getContext(
+                    "experimental-webgl",
+                )) as WebGLRenderingContext | null;
+            if (!gl) throw new Error("WebGL unavailable");
+            this.gl = gl;
+
+            const program = this.createProgram();
+            if (!program) throw new Error("shader program failed");
+            this.program = program;
+
+            const texture = gl.createTexture();
+            if (!texture) throw new Error("texture creation failed");
+            this.texture = texture;
+
+            this.setupGeometry();
+            this.resize();
+
+            window.addEventListener("resize", () => this.resize(), {
+                signal,
+                passive: true,
+            });
+
+            board.addEventListener(
+                "mousemove",
+                (e) => {
+                    this.mouse.x =
+                        (e.clientX - this.boardRect.left) * this.dpr;
+                    this.mouse.y =
+                        (this.boardRect.height -
+                            (e.clientY - this.boardRect.top)) *
+                        this.dpr;
+                },
+                { signal, passive: true },
+            );
+            board.addEventListener(
+                "mouseleave",
+                () => {
+                    this.mouse.x = -1;
+                    this.mouse.y = -1;
+                },
+                { signal, passive: true },
+            );
+
+            signal.addEventListener("abort", () => this.stop());
+            this.loop();
+        }
+
+        private createProgram(): WebGLProgram | null {
+            const { gl } = this;
+            const vertexShader = compileGlowShader(
+                gl,
+                gl.VERTEX_SHADER,
+                GLOW_VERTEX_SRC,
+            );
+            const fragmentShader = compileGlowShader(
+                gl,
+                gl.FRAGMENT_SHADER,
+                GLOW_FRAGMENT_SRC,
+            );
+            if (!vertexShader || !fragmentShader) return null;
+
+            const program = gl.createProgram();
+            if (!program) return null;
+            gl.attachShader(program, vertexShader);
+            gl.attachShader(program, fragmentShader);
+            gl.linkProgram(program);
+            if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+                return null;
+            }
+
+            gl.useProgram(program);
+            ["uTexture", "uResolution", "uMouse", "uRadius"].forEach(
+                (name) => {
+                    this.uniforms[name] = gl.getUniformLocation(
+                        program,
+                        name,
+                    );
+                },
+            );
+            return program;
+        }
+
+        private setupGeometry() {
+            const { gl, program } = this;
+            const positions = new Float32Array([-1, -1, 3, -1, -1, 3]);
+            const buffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+            gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
+
+            const aPosition = gl.getAttribLocation(program, "aPosition");
+            gl.enableVertexAttribArray(aPosition);
+            gl.vertexAttribPointer(aPosition, 2, gl.FLOAT, false, 0, 0);
+        }
+
+        private resize() {
+            this.boardRect = this.board.getBoundingClientRect();
+            const width = Math.max(1, this.boardRect.width);
+            const height = Math.max(1, this.boardRect.height);
+            this.canvas.width = Math.round(width * this.dpr);
+            this.canvas.height = Math.round(height * this.dpr);
+            this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+        }
+
+        private loop = () => {
+            this.rafId = requestAnimationFrame(this.loop);
+            if (this.mouse.x < 0) return;
+
+            const { gl } = this;
+            gl.useProgram(this.program);
+            gl.clearColor(0, 0, 0, 0);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+            gl.enable(gl.BLEND);
+            gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+            gl.bindTexture(gl.TEXTURE_2D, this.texture);
+            gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+            try {
+                gl.texImage2D(
+                    gl.TEXTURE_2D,
+                    0,
+                    gl.RGBA,
+                    gl.RGBA,
+                    gl.UNSIGNED_BYTE,
+                    this.sourceCanvas,
+                );
+            } catch {
+                return;
+            }
+            gl.texParameteri(
+                gl.TEXTURE_2D,
+                gl.TEXTURE_MIN_FILTER,
+                gl.LINEAR,
+            );
+            gl.texParameteri(
+                gl.TEXTURE_2D,
+                gl.TEXTURE_MAG_FILTER,
+                gl.LINEAR,
+            );
+            gl.texParameteri(
+                gl.TEXTURE_2D,
+                gl.TEXTURE_WRAP_S,
+                gl.CLAMP_TO_EDGE,
+            );
+            gl.texParameteri(
+                gl.TEXTURE_2D,
+                gl.TEXTURE_WRAP_T,
+                gl.CLAMP_TO_EDGE,
+            );
+
+            gl.uniform2f(
+                this.uniforms.uResolution,
+                this.canvas.width,
+                this.canvas.height,
+            );
+            gl.uniform2f(this.uniforms.uMouse, this.mouse.x, this.mouse.y);
+            gl.uniform1f(this.uniforms.uRadius, 140 * this.dpr);
+
+            gl.drawArrays(gl.TRIANGLES, 0, 3);
+        };
+
+        public stop() {
+            if (this.rafId) cancelAnimationFrame(this.rafId);
+            this.rafId = null;
+            this.gl.deleteTexture(this.texture);
+            this.gl.deleteProgram(this.program);
         }
     }
 
@@ -435,6 +787,24 @@
             // eslint-disable-next-line no-new -- intentional fire-and-forget;
             // disposal is wired through the AbortSignal in the constructor.
             new ExpertiseCanvas(signal);
+
+            const isMobile = window.innerWidth < 768;
+            const glowCanvas = document.getElementById(
+                "expertise-glow-canvas",
+            ) as HTMLCanvasElement | null;
+            if (!isMobile && glowCanvas) {
+                try {
+                    // eslint-disable-next-line no-new -- disposal wired via AbortSignal
+                    new ExpertiseGlowFX(
+                        board as HTMLElement,
+                        canvas as HTMLCanvasElement,
+                        glowCanvas,
+                        signal,
+                    );
+                } catch {
+                    // WebGL unavailable — the plain 2D canvas is unaffected.
+                }
+            }
         });
     });
 </script>
@@ -499,6 +869,21 @@
         inset: 0;
         z-index: 2;
         cursor: none;
+    }
+
+    .expertise-glow-canvas {
+        position: absolute;
+        inset: 0;
+        z-index: 3;
+        pointer-events: none;
+    }
+
+    .icon-sprite-source {
+        position: absolute;
+        width: 0;
+        height: 0;
+        overflow: hidden;
+        pointer-events: none;
     }
 
     .discovery-lens {
@@ -625,38 +1010,30 @@
             gap: 0.75rem;
 
             .skill-pill {
-                padding: 0.6rem 1rem;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 0.75rem;
                 border: 1px solid rgba($color-black, 0.1);
                 border-radius: 4px;
-                font-family: $font-display;
                 background: $color-white;
-                color: $color-black;
-                text-transform: uppercase;
 
                 :global(.dark) & {
                     background: transparent;
                     border-color: rgba($color-white, 0.2);
-                    color: $color-white;
                 }
 
-                &.size-sm {
-                    font-size: 1.1rem;
+                &.size-sm svg {
+                    width: 1.75rem;
+                    height: 1.75rem;
                 }
-                &.size-md {
-                    font-size: 1.5rem;
+                &.size-md svg {
+                    width: 2.25rem;
+                    height: 2.25rem;
                 }
-                &.size-lg {
-                    font-size: 2.2rem;
-                }
-
-                &.weight-300 {
-                    font-weight: 300;
-                }
-                &.weight-600 {
-                    font-weight: 600;
-                }
-                &.weight-800 {
-                    font-weight: 800;
+                &.size-lg svg {
+                    width: 3rem;
+                    height: 3rem;
                 }
             }
         }

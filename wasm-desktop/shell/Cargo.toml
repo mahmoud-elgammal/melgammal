@@ -1,0 +1,31 @@
+[package]
+name = "wasm-desktop"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+eframe = { version = "0.36", default-features = false, features = ["default_fonts", "glow", "persistence"] }
+egui = "0.36"
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+js-sys = "0.3"
+console_error_panic_hook = "0.1"
+web-sys = { version = "0.3", features = ["Window", "Document", "HtmlCanvasElement"] }
+bytemuck = "1"
+
+desktop-sdk = { path = "../sdk" }
+app-about = { path = "../apps/about" }
+app-projects = { path = "../apps/projects" }
+app-blog = { path = "../apps/blog" }
+app-contact = { path = "../apps/contact" }
+app-resume = { path = "../apps/resume" }
+app-playground = { path = "../apps/playground" }
+app-terminal = { path = "../apps/terminal" }
+app-finder = { path = "../apps/finder" }
+app-reader = { path = "../apps/reader" }
+app-monitor = { path = "../apps/monitor" }
+app-calculator = { path = "../apps/calculator" }
+app-textedit = { path = "../apps/textedit" }

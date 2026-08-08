@@ -1,0 +1,96 @@
+---
+import Head from "@components/atoms/Head.astro";
+import { SITE } from "@consts";
+---
+
+<html lang="en">
+    <head>
+        <Head
+            title={`Desktop | ${SITE.NAME}`}
+            description="A fake desktop OS, rendered on canvas and powered by Rust + egui compiled to WebAssembly."
+        />
+    </head>
+    <body>
+        <div id="desktop-root">
+            <canvas id="desktop-canvas"></canvas>
+            <div id="desktop-boot">
+                <span class="boot-label">Booting desktop.wasm…</span>
+            </div>
+            <a href="/" id="desktop-exit" aria-label="Exit desktop mode">
+                ← Exit
+            </a>
+        </div>
+
+        <script type="module" src="/wasm-desktop/boot.js"></script>
+
+        <style lang="scss">
+            @use "../styles/variables" as *;
+
+            #desktop-root {
+                position: fixed;
+                inset: 0;
+                width: 100vw;
+                height: 100vh;
+                overflow: hidden;
+                background: $color-light-bg;
+
+                :global(html.dark) & {
+                    background: $color-dark-bg;
+                }
+            }
+
+            #desktop-canvas {
+                position: absolute;
+                inset: 0;
+                width: 100%;
+                height: 100%;
+                display: block;
+                touch-action: none;
+            }
+
+            #desktop-boot {
+                position: absolute;
+                inset: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                pointer-events: none;
+            }
+
+            .boot-label {
+                font-family: $font-mono;
+                font-size: 0.8rem;
+                letter-spacing: 0.02em;
+                color: $color-light-text;
+
+                :global(html.dark) & {
+                    color: $color-dark-text;
+                }
+            }
+
+            #desktop-exit {
+                position: absolute;
+                top: 16px;
+                left: 16px;
+                z-index: 10;
+                font-family: $font-sans;
+                font-size: 0.8rem;
+                padding: 6px 12px;
+                border-radius: 6px;
+                background: rgba(127, 127, 127, 0.12);
+                color: $color-light-text;
+                text-decoration: none;
+                backdrop-filter: blur(6px);
+                transition: background 0.15s ease;
+
+                &:hover {
+                    background: rgba(127, 127, 127, 0.22);
+                }
+
+                :global(html.dark) & {
+                    color: $color-dark-text;
+                }
+            }
+        </style>
+    </body>
+</html>

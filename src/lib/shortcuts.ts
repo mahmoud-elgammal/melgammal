@@ -30,4 +30,5 @@ export const NAV_SHORTCUTS: ShortcutEntry[] = [
     { keys: "g c", href: "/contact", label: "Contact", hint: "G C", displayKeys: ["G", "C"] },
     { keys: "g b", href: "/blog", label: "Blog", hint: "G B", displayKeys: ["G", "B"] },
     { keys: "g v", href: "/resume", label: "Resume", hint: "G V", displayKeys: ["G", "V"] },
+    { keys: "g d", href: "/desktop", label: "Desktop", hint: "G D", displayKeys: ["G", "D"] },
 ];

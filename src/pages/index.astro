@@ -3,13 +3,13 @@ import { getCollection } from "astro:content";
 import Container from "@components/atoms/Container.astro";
 import PageLayout from "@layouts/PageLayout.astro";
 import Link from "@components/atoms/Link.astro";
+import Button from "@components/atoms/Button.astro";
 import ProjectCard from "@components/molecules/ProjectCard.astro";
 import PostCard from "@components/molecules/PostCard.astro";
 import { SITE, HOME, SOCIALS } from "@consts";
-import StatusCard from "@components/molecules/StatusCard.astro";
 import Expertise from "@components/organisms/Expertise.astro";
 import About from "@components/organisms/About.astro";
-import Testimonials from "@components/organisms/Testimonials.astro";
+import AmbientBackgroundFX from "@components/molecules/AmbientBackgroundFX.astro";
 
 const blog = (await getCollection("blog"))
     .filter((post) => !post.data.draft)
@@ -23,21 +23,22 @@ const projects = (await getCollection("projects"))
 ---
 
 <PageLayout title={HOME.TITLE} description={HOME.DESCRIPTION}>
+    <AmbientBackgroundFX />
     <Container>
         <div class="title-container" data-scroll-personality="cinematic">
-            <div class="status-card-wrapper" id="hero-status-card">
-                <StatusCard
-                    name="Mahmoud Elgammal"
-                    role="Brand Lead"
-                    status="OPEN TO WORK"
-                    description="Crafting digital experiences."
-                />
+            <div class="hero-status" id="hero-status">
+                <span class="status-dot"></span>
+                Open to work — Brand Lead, crafting digital experiences.
             </div>
             <h1 class="display-title" id="hero-title">
                 Transform Your Ideas<br />
                 Into Interactive<br />
                 Masterpieces.
             </h1>
+            <canvas
+                id="hero-title-canvas"
+                class="hero-title-canvas"
+                aria-hidden="true"></canvas>
         </div>
         <div class="content-wrapper">
             <section
@@ -63,9 +64,14 @@ const projects = (await getCollection("projects"))
                         ))
                     }
                 </ul>
+                <div class="view-all-wrapper">
+                    <Button href="/work" variant="outline">
+                        View All Projects
+                    </Button>
+                </div>
             </section>
             <About />
-            <!-- <Expertise /> -->
+            <Expertise />
 
             <section class="animate section" data-scroll-personality="default">
                 <div class="section-header">
@@ -88,10 +94,6 @@ const projects = (await getCollection("projects"))
                     }
                 </ul>
             </section>
-
-            <section data-scroll-personality="cinematic">
-                <Testimonials />
-            </section>
         </div>
     </Container>
 </PageLayout>
@@ -99,120 +101,55 @@ const projects = (await getCollection("projects"))
 <script>
     import { gsap } from "gsap";
     import { ScrollTrigger } from "gsap/ScrollTrigger";
-    import {
-        registerAnimation,
-        prefersReducedMotion,
-    } from "@lib/animation";
+    import { registerAnimation, prefersReducedMotion } from "@lib/animation";
+    import { PixelTextFX } from "@lib/pixelTextFX";
 
     gsap.registerPlugin(ScrollTrigger);
 
-    /* ── Custom GSAP ASCII Scrambler ── */
-    function setupAsciiHoverEffect(
-        wordDivs: HTMLElement[],
-        signal: AbortSignal,
-    ) {
-        if (window.innerWidth < 1024) return; // Skip on mobile/tablet (no hover)
-        if (prefersReducedMotion()) return;
-        const chars = "_+-*/=<>!@#$%^&()[]{}\\/|?".split("");
-
-        wordDivs.forEach((wordDiv) => {
-            const spans = Array.from(
-                wordDiv.querySelectorAll(".char-span"),
-            ) as HTMLElement[];
-            const originalTexts = spans.map((span) => span.textContent || "");
-            let isHovered = false;
-
-            // Lock width AFTER the entrance animation finishes to prevent layout jump during scramble
-            // while preserving strictly natural font spacing.
-            // Using a short timeout to ensure the DOM has fully painted the injected spans
-            // PERFORMANCE: Use requestIdleCallback to batch layout reads during idle periods
-            // to avoid thrashing during the entrance animation.
-            const runWidthBatch = () => {
-                // READ Phase: Batch all width queries first to avoid forced synchronous layouts
-                const widths = spans.map(
-                    (span) => span.getBoundingClientRect().width,
-                );
-
-                // WRITE Phase: Apply all width mutations together
-                spans.forEach((span, i) => {
-                    if (widths[i] > 0) {
-                        span.style.width = `${widths[i]}px`;
-                        span.style.textAlign = "center";
-                    }
-                });
-            };
-
-            if ("requestIdleCallback" in window) {
-                window.requestIdleCallback(runWidthBatch, { timeout: 1000 });
-            } else {
-                setTimeout(runWidthBatch, 200);
-            }
-
-            wordDiv.addEventListener(
-                "mouseenter",
-                () => {
-                    isHovered = true;
-
-                    spans.forEach((span) => {
-                        gsap.killTweensOf(span);
-                        gsap.to(span, {
-                            duration: 1.5,
-                            ease: "none",
-                            repeat: -1,
-                            onUpdate: function () {
-                                if (isHovered && Math.random() > 0.3) {
-                                    span.textContent =
-                                        chars[
-                                            Math.floor(
-                                                Math.random() * chars.length,
-                                            )
-                                        ];
-                                }
-                            },
-                        });
-                    });
-                },
-                { signal },
-            );
-
-            wordDiv.addEventListener(
-                "mouseleave",
-                () => {
-                    isHovered = false;
-
-                    spans.forEach((span, i) => {
-                        const orig = originalTexts[i];
-                        gsap.killTweensOf(span);
-                        gsap.to(span, {
-                            duration: 0.05,
-                            delay: i * 0.02,
-                            onStart: () => {
-                                span.textContent = orig;
-                            },
-                        });
-                    });
-                },
-                { signal },
-            );
-        });
-    }
+    const HERO_LINES = [
+        "Transform Your Ideas",
+        "Into Interactive",
+        "Masterpieces.",
+    ];
 
     document.addEventListener("astro:page-load", () => {
         registerAnimation("home:hero", (gsap, signal) => {
-            const statusCard = document.getElementById("hero-status-card");
+            const statusCard = document.getElementById("hero-status");
             const heroTitle = document.getElementById("hero-title");
+            const titleCanvas = document.getElementById(
+                "hero-title-canvas",
+            ) as HTMLCanvasElement | null;
             const reduced = prefersReducedMotion();
 
+            // The WebGL hover-follow layer only takes over once the DOM
+            // letter reveal has actually finished — trying to run both at
+            // once would fight over the same <h1>.
+            const startTitleHoverFX = () => {
+                if (!heroTitle || !titleCanvas) return;
+                const gl = (titleCanvas.getContext("webgl") ||
+                    titleCanvas.getContext(
+                        "experimental-webgl",
+                    )) as WebGLRenderingContext | null;
+                if (!gl) return;
+                try {
+                    // eslint-disable-next-line no-new -- disposal wired via AbortSignal
+                    new PixelTextFX(
+                        heroTitle,
+                        HERO_LINES,
+                        titleCanvas,
+                        gl,
+                        signal,
+                    );
+                } catch {
+                    // Shader/program setup failed — leave the plain <h1> visible.
+                }
+            };
+
             if (heroTitle) {
-                const lines = [
-                    "Transform Your Ideas",
-                    "Into Interactive",
-                    "Masterpieces.",
-                ];
                 heroTitle.innerHTML = "";
                 const allSpans: HTMLElement[] = [];
 
-                lines.forEach((line) => {
+                HERO_LINES.forEach((line) => {
                     const lineDiv = document.createElement("div");
                     lineDiv.style.display = "flex";
                     lineDiv.style.flexWrap = "wrap";
@@ -221,10 +158,11 @@ const projects = (await getCollection("projects"))
                     words.forEach((word, wordIndex) => {
                         const wordDiv = document.createElement("div");
                         wordDiv.style.display = "flex";
-                        wordDiv.classList.add("hover-word");
-                        wordDiv.style.cursor = "default";
 
                         word.split("").forEach((char) => {
+                            // Outer wrapper clips the letter so it looks
+                            // like it slides up out of a mask, rather than
+                            // fading in mid-air.
                             const wrapper = document.createElement("span");
                             wrapper.style.display = "inline-block";
                             wrapper.style.overflow = "hidden";
@@ -232,7 +170,6 @@ const projects = (await getCollection("projects"))
                             wrapper.style.padding = "0.05em 0";
 
                             const span = document.createElement("span");
-                            span.classList.add("char-span");
                             span.textContent = char;
                             span.style.display = "inline-block";
                             span.style.willChange = "transform, opacity";
@@ -257,67 +194,43 @@ const projects = (await getCollection("projects"))
                 gsap.set(heroTitle, { opacity: 1 });
 
                 if (reduced) {
-                    gsap.set(allSpans, {
-                        opacity: 1,
-                        y: "0%",
-                        rotationZ: 0,
-                        rotationX: 0,
-                        scale: 1,
-                    });
-                    if (statusCard)
-                        gsap.set(statusCard, {
-                            y: 0,
-                            filter: "blur(0px)",
-                        });
+                    gsap.set(allSpans, { opacity: 1, y: "0%" });
+                    startTitleHoverFX();
                 } else {
-                    const tl = gsap.timeline();
-
-                    tl.fromTo(
+                    gsap.fromTo(
                         allSpans,
-                        {
-                            opacity: 0,
-                            y: "110%",
-                            rotationZ: 10,
-                            rotationX: -60,
-                            scale: 0.8,
-                            transformPerspective: 800,
-                        },
+                        { opacity: 0, y: "110%" },
                         {
                             opacity: 1,
                             y: "0%",
-                            rotationZ: 0,
-                            rotationX: 0,
-                            scale: 1,
-                            duration: 0.8,
-                            stagger: 0.01,
-                            ease: "power4.out",
-                            onComplete: () => {
-                                const wordDivs = Array.from(
-                                    heroTitle.querySelectorAll(".hover-word"),
-                                ) as HTMLElement[];
-                                setupAsciiHoverEffect(wordDivs, signal);
-                            },
+                            duration: 0.9,
+                            stagger: 0.02,
+                            ease: "power3.out",
+                            onComplete: startTitleHoverFX,
                         },
-                        "0",
                     );
-
-                    if (statusCard) {
-                        tl.fromTo(
-                            statusCard,
-                            {
-                                y: 10,
-                                filter: "blur(4px)",
-                            },
-                            {
-                                y: 0,
-                                filter: "blur(0px)",
-                                duration: 0.6,
-                                ease: "power2.out",
-                            },
-                            "0",
-                        );
-                    }
                 }
+            }
+
+            if (reduced) {
+                if (statusCard)
+                    gsap.set(statusCard, {
+                        opacity: 1,
+                        y: 0,
+                        filter: "blur(0px)",
+                    });
+            } else if (statusCard) {
+                gsap.fromTo(
+                    statusCard,
+                    { opacity: 0, y: 10, filter: "blur(4px)" },
+                    {
+                        opacity: 1,
+                        y: 0,
+                        filter: "blur(0px)",
+                        duration: 0.6,
+                        ease: "power2.out",
+                    },
+                );
             }
 
             /* ── Scroll Reveals for Sections ── */
@@ -353,7 +266,7 @@ const projects = (await getCollection("projects"))
 
     /* ── Hero Animation Targets ── */
 
-    #hero-status-card,
+    #hero-status,
     #hero-title {
         opacity: 0; // Initially hidden, Motion will animate in
     }
@@ -361,34 +274,49 @@ const projects = (await getCollection("projects"))
     .title-container {
         position: relative;
         width: 100%;
-        margin-top: 6rem; // Increased for extra mobile spacing
-        margin-bottom: 2rem;
+        margin: 0;
+        // margin-top: 2rem; // Increased for extra mobile spacing
+        // margin-bottom: 2rem;
         z-index: 10;
 
-        @include screen(md) {
-            margin-top: 8rem;
-            margin-bottom: 5rem;
-        }
+        // @include screen(md) {
+        //     margin-top: 5rem;
+        //     margin-bottom: 5rem;
+        // }
     }
 
-    .status-card-wrapper {
-        position: absolute;
-        top: -4rem;
-        left: 50%;
-        transform: translateX(-50%);
-        z-index: 20;
-        pointer-events: auto;
+    .hero-status {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        margin-bottom: 1.25rem;
+        font-family: $font-sans;
+        font-size: 0.85rem;
+        font-weight: 500;
+        letter-spacing: -0.01em;
+        color: rgba($color-black, 0.55);
 
         @include screen(md) {
-            top: -5rem;
-            left: 2rem;
-            transform: none;
+            margin-bottom: 1.5rem;
+            font-size: 0.95rem;
+        }
+
+        :global(.dark) & {
+            color: rgba($color-white, 0.55);
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #10b981;
+            flex-shrink: 0;
         }
     }
 
     .display-title {
-        font-size: clamp(2.2rem, 10vw, 3.5rem);
-        line-height: 1.05;
+        font-size: clamp(2.6rem, 13vw, 4.5rem);
+        line-height: 1.02;
         font-weight: 600;
         letter-spacing: -0.04em;
         color: $color-black;
@@ -399,8 +327,15 @@ const projects = (await getCollection("projects"))
         }
 
         @include screen(md) {
-            font-size: clamp(4rem, 8vw, 8.2rem);
+            font-size: clamp(5rem, 10vw, 10rem);
         }
+    }
+
+    .hero-title-canvas {
+        position: absolute;
+        z-index: 1;
+        opacity: 0;
+        pointer-events: auto;
     }
 
     /* ── Layout ── */
@@ -454,6 +389,12 @@ const projects = (await getCollection("projects"))
             grid-template-columns: repeat(2, 1fr);
             gap: 2.5rem;
         }
+    }
+
+    .view-all-wrapper {
+        display: flex;
+        justify-content: center;
+        margin-top: 3rem;
     }
 
     .post-grid {

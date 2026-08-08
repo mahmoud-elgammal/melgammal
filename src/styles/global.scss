@@ -1,13 +1,55 @@
 @use "variables" as *;
 @use "mixins" as *;
 
-
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
 
 html {
     color-scheme: light;
 
     &.dark {
         color-scheme: dark;
+    }
+}
+
+/* ── Page transitions (Astro ClientRouter) ── */
+@keyframes page-fade-out {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-16px);
+    }
+}
+
+@keyframes page-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(16px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+::view-transition-old(root) {
+    animation: 0.45s cubic-bezier(0.16, 1, 0.3, 1) both page-fade-out;
+}
+
+::view-transition-new(root) {
+    animation: 0.45s cubic-bezier(0.16, 1, 0.3, 1) both page-fade-in;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    ::view-transition-old(root),
+    ::view-transition-new(root) {
+        animation: none;
     }
 }
 

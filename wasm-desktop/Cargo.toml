@@ -1,0 +1,21 @@
+[workspace]
+resolver = "2"
+members = [
+    "sdk",
+    "apps/about",
+    "apps/projects",
+    "apps/blog",
+    "apps/contact",
+    "apps/resume",
+    "apps/playground",
+    "apps/terminal",
+    "apps/finder",
+    "apps/reader",
+    "apps/monitor",
+    "apps/calculator",
+    "apps/textedit",
+    "shell",
+]
+
+[profile.release]
+opt-level = 2

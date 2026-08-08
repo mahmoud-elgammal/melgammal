@@ -6,764 +6,763 @@ import Link from "../atoms/Link.astro";
 ---
 
 <footer class="immersive-monolith main-footer">
-  <!-- Immersive Foundation Layer -->
-  <div class="monolith-backdrop">
-    <div class="technical-grid" id="footer-grid"></div>
-  </div>
-
-  <Container>
-    <div class="monolith-content">
-      <!-- BAND A: MASSIVE IMPACT -->
-      <div class="impact-section">
-        <h1 class="display-impact">Elgammal</h1>
-        <div class="engagement-hub">
-          <Link href={`mailto:${SITE.EMAIL}`} class="art-director-pill">
-            {SITE.EMAIL}
-            <span class="pill-icon">→</span>
-          </Link>
-        </div>
-      </div>
-
-      <!-- BAND B: THE TECHNICAL LEDGER -->
-      <div class="ledger-section">
-        <div class="ledger-grid">
-          <!-- Services/Skills Card -->
-          <div class="ledger-col">
-            <div class="bracket-label">[SERVICES]</div>
-            <ul class="meta-list">
-              <li>Creative Development</li>
-              <li>Technical Architecture</li>
-              <li>Design Systems</li>
-              <li>Generative Art</li>
-            </ul>
-          </div>
-
-          <!-- Connect Card -->
-          <div class="ledger-col">
-            <div class="bracket-label">[CONNECT]</div>
-            <ul class="meta-list">
-              {
-                SOCIALS.map((social) => (
-                  <li>
-                    <Link href={social.HREF} external class="meta-link">
-                      {social.NAME}
-                    </Link>
-                  </li>
-                ))
-              }
-            </ul>
-          </div>
-
-          <!-- Location Card -->
-          <div class="ledger-col">
-            <div class="bracket-label">[LOCATION]</div>
-            <div class="technical-stats">
-              <div class="stat-row">
-                <span class="k">CAI / EGY</span>
-              </div>
-              <div class="stat-row">
-                <span class="k">LAT</span>
-                <span class="v">30.0444° N</span>
-              </div>
-              <div class="stat-row">
-                <span class="k">LNG</span>
-                <span class="v">31.2357° E</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Site Info Card -->
-          <div class="ledger-col">
-            <div class="bracket-label">[SITE_DATA]</div>
-            <div class="technical-stats">
-              <div class="stat-row">
-                <span class="k">VER.</span>
-                <span class="v">2026.REL.01</span>
-              </div>
-              <div class="stat-row">
-                <span class="k">TIME</span>
-                <span class="v mono-pulse" id="footer-ticker">00:00:00</span>
-              </div>
-              <div class="stat-row">
-                <span class="k">DOCS</span>
-                <Link href="/resume" class="v">Resume</Link>
-              </div>
-              <div class="stat-row">
-                <span class="k">MAP</span>
-                <Link href="/sitemap" class="v">Site Map</Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </Container>
-
-  <!-- BAND C: THE HUD STRIP -->
-  <div class="hud-strip">
-    <div class="hud-marquee">
-      <div class="marquee-inner">
-        <span
-          >EST. 2024 / ARCHITECTURAL ENGINEERING — SYSTEM_OPTIMIZED_FOR_DEPTH —
-          KINETIC_DISCOVERY_ACTIVE — ELG_FOUNDATION_v2.1 —
-        </span>
-        <span
-          >EST. 2024 / ARCHITECTURAL ENGINEERING — SYSTEM_OPTIMIZED_FOR_DEPTH —
-          KINETIC_DISCOVERY_ACTIVE — ELG_FOUNDATION_v2.1 —
-        </span>
-        <span
-          >EST. 2024 / ARCHITECTURAL ENGINEERING — SYSTEM_OPTIMIZED_FOR_DEPTH —
-          KINETIC_DISCOVERY_ACTIVE — ELG_FOUNDATION_v2.1 —
-        </span>
-      </div>
+    <div class="monolith-backdrop">
+        <div class="technical-grid" id="footer-grid"></div>
     </div>
 
-    <div class="hud-controls">
-      <div class="btt-anchor">
-        <BackToTop />
-      </div>
-    </div>
-  </div>
-
-  <div class="monolith-baseline">
     <Container>
-      <div class="baseline-flex">
-        <span class="copy"
-          >&copy; {new Date().getFullYear()} — Mahmoud S. Elgammal</span
-        >
-        <span class="tag">Designed with grit & grace</span>
-      </div>
+        <div class="monolith-content">
+            <div class="impact-section">
+                <h1 class="display-impact">ElGammal</h1>
+                <canvas
+                    id="footer-wordmark-canvas"
+                    class="footer-wordmark-canvas"
+                    aria-hidden="true"
+                ></canvas>
+                <div class="engagement-hub">
+                    <Link
+                        href={`mailto:${SITE.EMAIL}`}
+                        class="art-director-pill"
+                    >
+                        {SITE.EMAIL}
+                        <span class="pill-icon">→</span>
+                    </Link>
+                </div>
+            </div>
+
+            <!-- BAND B: THE TECHNICAL LEDGER -->
+            <div class="ledger-section">
+                <div class="ledger-grid">
+                    <!-- Services/Skills Card -->
+                    <div class="ledger-col">
+                        <div class="bracket-label">Services</div>
+                        <ul class="meta-list">
+                            <li>Creative Development</li>
+                            <li>Technical Architecture</li>
+                            <li>Design Systems</li>
+                            <li>Generative Art</li>
+                        </ul>
+                    </div>
+
+                    <!-- Connect Card -->
+                    <div class="ledger-col">
+                        <div class="bracket-label">Connect</div>
+                        <ul class="meta-list">
+                            {
+                                SOCIALS.map((social) => (
+                                    <li>
+                                        <Link
+                                            href={social.HREF}
+                                            external
+                                            class="meta-link"
+                                        >
+                                            {social.NAME}
+                                        </Link>
+                                    </li>
+                                ))
+                            }
+                        </ul>
+                    </div>
+
+                    <!-- Location Card -->
+                    <div class="ledger-col">
+                        <div class="bracket-label">Location</div>
+                        <div class="technical-stats">
+                            <div class="stat-row">
+                                <span class="k">CAI / EGY</span>
+                            </div>
+                            <div class="stat-row">
+                                <span class="k">LAT</span>
+                                <span class="v">30.0444° N</span>
+                            </div>
+                            <div class="stat-row">
+                                <span class="k">LNG</span>
+                                <span class="v">31.2357° E</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Site Info Card -->
+                    <div class="ledger-col">
+                        <div class="bracket-label">Site Data</div>
+                        <div class="technical-stats">
+                            <div class="stat-row">
+                                <span class="k">VER.</span>
+                                <span class="v">2026.REL.01</span>
+                            </div>
+                            <div class="stat-row">
+                                <span class="k">TIME</span>
+                                <span class="v mono-pulse" id="footer-ticker"
+                                    >00:00:00</span
+                                >
+                            </div>
+                            <div class="stat-row">
+                                <span class="k">DOCS</span>
+                                <Link href="/resume" class="v">Resume</Link>
+                            </div>
+                            <div class="stat-row">
+                                <span class="k">MAP</span>
+                                <Link href="/sitemap" class="v">Site Map</Link>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </Container>
-  </div>
+
+    <!-- BAND C: THE HUD STRIP -->
+    <div class="hud-strip">
+        <div class="hud-marquee">
+            <div class="marquee-inner">
+                <span
+                    >EST. 2024 / ARCHITECTURAL ENGINEERING —
+                    SYSTEM_OPTIMIZED_FOR_DEPTH — KINETIC_DISCOVERY_ACTIVE —
+                    ELG_FOUNDATION_v2.1 —
+                </span>
+                <span
+                    >EST. 2024 / ARCHITECTURAL ENGINEERING —
+                    SYSTEM_OPTIMIZED_FOR_DEPTH — KINETIC_DISCOVERY_ACTIVE —
+                    ELG_FOUNDATION_v2.1 —
+                </span>
+                <span
+                    >EST. 2024 / ARCHITECTURAL ENGINEERING —
+                    SYSTEM_OPTIMIZED_FOR_DEPTH — KINETIC_DISCOVERY_ACTIVE —
+                    ELG_FOUNDATION_v2.1 —
+                </span>
+            </div>
+        </div>
+
+        <div class="hud-controls">
+            <div class="btt-anchor">
+                <BackToTop />
+            </div>
+        </div>
+    </div>
+
+    <div class="monolith-baseline">
+        <Container>
+            <div class="baseline-flex">
+                <span class="copy"
+                    >&copy; {new Date().getFullYear()} — Mahmoud S. Elgammal</span
+                >
+                <span class="tag">Designed with grit & grace</span>
+            </div>
+        </Container>
+    </div>
 </footer>
 
 <script>
-  import {
-    registerAnimation,
-    prefersReducedMotion,
-  } from "@lib/animation";
+    import { registerAnimation, prefersReducedMotion } from "@lib/animation";
+    import { PixelTextFX } from "@lib/pixelTextFX";
 
-  // Single ticker interval is tracked at module scope so we can clear it
-  // before the next page swap (registerAnimation can't manage timers).
-  let footerTickerInterval: number | undefined;
+    // Single ticker interval is tracked at module scope so we can clear it
+    // before the next page swap (registerAnimation can't manage timers).
+    let footerTickerInterval: number | undefined;
 
-  document.addEventListener("astro:before-swap", () => {
-    if (footerTickerInterval !== undefined) {
-      window.clearInterval(footerTickerInterval);
-      footerTickerInterval = undefined;
-    }
-  });
-
-  document.addEventListener("astro:page-load", () => {
-    registerAnimation("footer", (gsap, signal) => {
-      const reduced = prefersReducedMotion();
-
-      // ── 1. Cairo Time Ticker (always runs, unrelated to motion) ──
-      const ticker = document.getElementById("footer-ticker");
-      if (ticker) {
-        const update = () => {
-          const now = new Date();
-          const cairo = new Date(
-            now.getTime() + (now.getTimezoneOffset() + 120) * 60000,
-          );
-          ticker.textContent = cairo.toLocaleTimeString("en-GB", {
-            hour12: false,
-          });
-        };
-        update();
+    document.addEventListener("astro:before-swap", () => {
         if (footerTickerInterval !== undefined) {
-          window.clearInterval(footerTickerInterval);
+            window.clearInterval(footerTickerInterval);
+            footerTickerInterval = undefined;
         }
-        footerTickerInterval = window.setInterval(update, 1000);
-      }
-
-      // ── 2. Art Director Entrance Animations ──
-      const impactSection = document.querySelector(".impact-section");
-      const displayImpact = document.querySelector(
-        ".display-impact",
-      ) as HTMLElement | null;
-      const footerGrid = document.getElementById("footer-grid");
-
-      if (reduced) {
-        // Snap straight to resolved state
-        if (displayImpact) gsap.set(displayImpact, { opacity: 1 });
-        gsap.set(".ledger-col", { opacity: 1, y: 0, rotationX: 0 });
-        return;
-      }
-
-      if (footerGrid) {
-        gsap.fromTo(
-          footerGrid,
-          { y: "-20%" },
-          {
-            y: "0%",
-            ease: "none",
-            scrollTrigger: {
-              trigger: ".main-footer",
-              start: "top bottom",
-              end: "top top",
-              scrub: true,
-            },
-          },
-        );
-      }
-
-      if (impactSection && displayImpact) {
-        // High-End Brand Typography Reveal (Split Text Effect)
-        const text = displayImpact.textContent || "Elgammal";
-        displayImpact.innerHTML = "";
-        const letters: HTMLElement[] = [];
-
-        text.split("").forEach((char) => {
-          const wrapper = document.createElement("span");
-          wrapper.style.display = "inline-block";
-          wrapper.style.overflow = "hidden";
-          wrapper.style.lineHeight = "0.9";
-          wrapper.style.padding = "0.05em 0";
-
-          const span = document.createElement("span");
-          span.textContent = char === " " ? "\u00A0" : char;
-          span.style.display = "inline-block";
-          span.style.willChange = "transform, opacity";
-
-          wrapper.appendChild(span);
-          displayImpact.appendChild(wrapper);
-          letters.push(span);
-        });
-
-        gsap.set(displayImpact, { opacity: 1 });
-
-        gsap.fromTo(
-          letters,
-          {
-            opacity: 0,
-            y: "110%",
-            rotationZ: 10,
-            rotationX: -60,
-            scale: 0.8,
-            transformPerspective: 800,
-          },
-          {
-            opacity: 1,
-            y: "0%",
-            rotationZ: 0,
-            rotationX: 0,
-            scale: 1,
-            duration: 1.4,
-            stagger: 0.06,
-            ease: "power4.out",
-            scrollTrigger: {
-              trigger: impactSection,
-              start: "top 80%",
-              toggleActions: "play none none none",
-            },
-          },
-        );
-
-        gsap.fromTo(
-          ".ledger-col",
-          {
-            opacity: 0,
-            y: 60,
-            rotationX: -20,
-            transformPerspective: 1000,
-          },
-          {
-            opacity: 1,
-            y: 0,
-            rotationX: 0,
-            duration: 1.2,
-            stagger: 0.15,
-            ease: "power3.out",
-            scrollTrigger: {
-              trigger: ".ledger-grid",
-              start: "top 85%",
-              toggleActions: "play none none reverse",
-            },
-          },
-        );
-
-        // ── 3. Magnetic Impact Cursor (Desktop Only) ──
-        if (window.innerWidth >= 1024) {
-          let impactBounds: DOMRect | null = null;
-
-          displayImpact.addEventListener(
-            "mouseenter",
-            () => {
-              impactBounds = displayImpact.getBoundingClientRect();
-              window.dispatchEvent(
-                new CustomEvent("cursor:enter", {
-                  detail: { text: "TALK", size: 120 },
-                }),
-              );
-              gsap.to(displayImpact, {
-                scale: 0.98,
-                duration: 0.6,
-                ease: "power3.out",
-              });
-            },
-            { signal },
-          );
-
-          displayImpact.addEventListener(
-            "mousemove",
-            (e: Event) => {
-              const mouseEvent = e as MouseEvent;
-              if (!impactBounds)
-                impactBounds = displayImpact.getBoundingClientRect();
-
-              const xNorm =
-                ((mouseEvent.clientX - impactBounds.left) /
-                  impactBounds.width -
-                  0.5) *
-                2;
-              const yNorm =
-                ((mouseEvent.clientY - impactBounds.top) /
-                  impactBounds.height -
-                  0.5) *
-                2;
-
-              gsap.to(displayImpact, {
-                x: xNorm * 20,
-                y: yNorm * 20,
-                duration: 0.6,
-                ease: "power2.out",
-              });
-            },
-            { signal },
-          );
-
-          displayImpact.addEventListener(
-            "mouseleave",
-            () => {
-              window.dispatchEvent(new CustomEvent("cursor:leave"));
-              gsap.to(displayImpact, {
-                scale: 1,
-                x: 0,
-                y: 0,
-                duration: 1,
-                ease: "elastic.out(1, 0.4)",
-              });
-            },
-            { signal },
-          );
-
-          displayImpact.addEventListener(
-            "mousedown",
-            () => {
-              gsap.to(displayImpact, {
-                scale: 0.95,
-                duration: 0.2,
-                ease: "power2.out",
-              });
-            },
-            { signal },
-          );
-
-          displayImpact.addEventListener(
-            "mouseup",
-            () => {
-              gsap.to(displayImpact, {
-                scale: 0.98,
-                duration: 0.4,
-                ease: "back.out(1.5)",
-              });
-            },
-            { signal },
-          );
-        }
-      }
     });
-  });
+
+    document.addEventListener("astro:page-load", () => {
+        registerAnimation("footer", (gsap, signal) => {
+            const reduced = prefersReducedMotion();
+
+            // ── 1. Cairo Time Ticker (always runs, unrelated to motion) ──
+            const ticker = document.getElementById("footer-ticker");
+            if (ticker) {
+                const update = () => {
+                    const now = new Date();
+                    const cairo = new Date(
+                        now.getTime() + (now.getTimezoneOffset() + 120) * 60000,
+                    );
+                    ticker.textContent = cairo.toLocaleTimeString("en-GB", {
+                        hour12: false,
+                    });
+                };
+                update();
+                if (footerTickerInterval !== undefined) {
+                    window.clearInterval(footerTickerInterval);
+                }
+                footerTickerInterval = window.setInterval(update, 1000);
+            }
+
+            // ── 2. Art Director Entrance Animations ──
+            const impactSection = document.querySelector(".impact-section");
+            const displayImpact = document.querySelector(
+                ".display-impact",
+            ) as HTMLElement | null;
+            const footerGrid = document.getElementById("footer-grid");
+
+            if (reduced) {
+                // Snap straight to resolved state
+                if (displayImpact) gsap.set(displayImpact, { opacity: 1 });
+                gsap.set(".ledger-col", { opacity: 1, y: 0, rotationX: 0 });
+                return;
+            }
+
+            if (footerGrid) {
+                gsap.fromTo(
+                    footerGrid,
+                    { y: "-20%" },
+                    {
+                        y: "0%",
+                        ease: "none",
+                        scrollTrigger: {
+                            trigger: ".main-footer",
+                            start: "top bottom",
+                            end: "top top",
+                            scrub: true,
+                        },
+                    },
+                );
+            }
+
+            if (impactSection && displayImpact) {
+                // The WebGL hover-follow layer only takes over once the DOM
+                // letter reveal has actually finished — same handoff
+                // pattern as the hero title.
+                const startWordmarkHoverFX = () => {
+                    const canvas = document.getElementById(
+                        "footer-wordmark-canvas",
+                    ) as HTMLCanvasElement | null;
+                    if (!displayImpact || !canvas) return;
+                    const gl = (canvas.getContext("webgl") ||
+                        canvas.getContext(
+                            "experimental-webgl",
+                        )) as WebGLRenderingContext | null;
+                    if (!gl) return;
+                    try {
+                        // eslint-disable-next-line no-new -- disposal wired via AbortSignal
+                        new PixelTextFX(
+                            displayImpact,
+                            [text],
+                            canvas,
+                            gl,
+                            signal,
+                            {
+                                light: "rgba(10, 10, 10, 0.9)",
+                                dark: "rgba(248, 248, 246, 0.9)",
+                            },
+                        );
+                    } catch {
+                        // Shader/program setup failed — leave the plain wordmark visible.
+                    }
+                };
+
+                // High-End Brand Typography Reveal (Split Text Effect)
+                const text = displayImpact.textContent || "Elgammal";
+                displayImpact.innerHTML = "";
+                const letters: HTMLElement[] = [];
+
+                text.split("").forEach((char) => {
+                    const wrapper = document.createElement("span");
+                    wrapper.style.display = "inline-block";
+                    wrapper.style.overflow = "hidden";
+                    wrapper.style.lineHeight = "0.9";
+                    wrapper.style.padding = "0.05em 0";
+
+                    const span = document.createElement("span");
+                    span.textContent = char === " " ? "\u00A0" : char;
+                    span.style.display = "inline-block";
+                    span.style.willChange = "transform, opacity";
+
+                    wrapper.appendChild(span);
+                    displayImpact.appendChild(wrapper);
+                    letters.push(span);
+                });
+
+                gsap.set(displayImpact, { opacity: 1 });
+
+                gsap.fromTo(
+                    letters,
+                    {
+                        opacity: 0,
+                        y: "110%",
+                        rotationZ: 10,
+                        rotationX: -60,
+                        scale: 0.8,
+                        transformPerspective: 800,
+                    },
+                    {
+                        opacity: 1,
+                        y: "0%",
+                        rotationZ: 0,
+                        rotationX: 0,
+                        scale: 1,
+                        duration: 1.4,
+                        stagger: 0.06,
+                        ease: "power4.out",
+                        onComplete: startWordmarkHoverFX,
+                        scrollTrigger: {
+                            trigger: impactSection,
+                            start: "top 80%",
+                            toggleActions: "play none none none",
+                        },
+                    },
+                );
+
+                gsap.fromTo(
+                    ".ledger-col",
+                    {
+                        opacity: 0,
+                        y: 60,
+                        rotationX: -20,
+                        transformPerspective: 1000,
+                    },
+                    {
+                        opacity: 1,
+                        y: 0,
+                        rotationX: 0,
+                        duration: 1.2,
+                        stagger: 0.15,
+                        ease: "power3.out",
+                        scrollTrigger: {
+                            trigger: ".ledger-grid",
+                            start: "top 85%",
+                            toggleActions: "play none none reverse",
+                        },
+                    },
+                );
+
+                // ── 3. Custom Cursor Hint (Desktop Only) ──
+                // Bound to impactSection, not displayImpact: once
+                // startWordmarkHoverFX() runs, the WebGL canvas overlays
+                // the <h1> and intercepts pointer events, so listeners on
+                // the (now invisible) heading itself would stop firing.
+                if (window.innerWidth >= 1024) {
+                    impactSection.addEventListener(
+                        "mouseenter",
+                        () => {
+                            window.dispatchEvent(
+                                new CustomEvent("cursor:enter", {
+                                    detail: { text: "TALK", size: 120 },
+                                }),
+                            );
+                        },
+                        { signal },
+                    );
+
+                    impactSection.addEventListener(
+                        "mouseleave",
+                        () => {
+                            window.dispatchEvent(
+                                new CustomEvent("cursor:leave"),
+                            );
+                        },
+                        { signal },
+                    );
+                }
+            }
+        });
+    });
 </script>
 
 <style lang="scss">
-  @use "../../styles/variables" as *;
-  @use "../../styles/mixins" as *;
+    @use "../../styles/variables" as *;
+    @use "../../styles/mixins" as *;
 
-  .immersive-monolith {
-    position: relative;
-    margin-top: 5rem;
-    background: $color-light-bg;
-    color: $color-black;
-    overflow: hidden;
-    min-height: 80vh; // Reduced from 100vh for mobile
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: 6rem 0; // Reduced from 10rem
-    will-change: opacity;
+    .immersive-monolith {
+        position: relative;
+        background: $color-light-bg;
+        color: $color-black;
+        overflow: hidden;
+        min-height: 80vh; // Reduced from 100vh for mobile
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 6rem 0; // Reduced from 10rem
+        will-change: opacity;
 
-    @include screen(md) {
-      min-height: 100vh;
-      padding: 10rem 0;
-    }
-
-    :global(.dark) & {
-      background: $color-dark-bg;
-      color: $color-white;
-    }
-  }
-
-  .monolith-backdrop {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-  }
-
-  .technical-grid {
-    position: absolute;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba($color-black, 0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba($color-black, 0.03) 1px, transparent 1px);
-    background-size: 50px 50px;
-    z-index: 0;
-
-    :global(.dark) & {
-      background-image:
-        linear-gradient(rgba($color-white, 0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba($color-white, 0.03) 1px, transparent 1px);
-    }
-  }
-
-  .monolith-content {
-    position: relative;
-    z-index: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 4rem;
-
-    @include screen(md) {
-      gap: 8rem;
-    }
-  }
-
-  /* --- BAND A: MASSIVE IMPACT --- */
-  .impact-section {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    gap: 2rem; // Reduced from 6rem
-    margin-bottom: 4rem;
-
-    @include screen(md) {
-      gap: 6rem;
-      margin-bottom: 5rem;
-    }
-  }
-
-  .display-impact {
-    font-family: $font-display;
-    font-size: clamp(3.5rem, 15vw, 6rem);
-    font-weight: 500;
-    letter-spacing: -0.04em;
-    line-height: 0.85;
-    margin: 0;
-    color: rgba($color-black, 0.9);
-    text-transform: none;
-    user-select: none;
-    cursor: none;
-    will-change: transform, opacity;
-    opacity: 0;
-
-    @include screen(md) {
-      font-size: clamp(6rem, 18vw, 18rem);
-    }
-
-    :global(.dark) & {
-      color: rgba($color-white, 0.9);
-    }
-  }
-
-  .engagement-hub {
-    position: relative; // Changed from absolute on mobile
-    transform: none;
-    z-index: 2;
-    margin-top: -1rem;
-
-    @include screen(md) {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      margin-top: 0;
-    }
-  }
-
-  .art-director-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 1rem 2rem;
-    background: $color-black;
-    color: $color-white;
-    border-radius: 999px;
-    font-size: 0.9rem; // Scaled down for mobile
-    font-weight: 600;
-    font-family: $font-sans;
-    text-decoration: none;
-    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-    box-shadow: 0 0 0 rgba(0, 0, 0, 0);
-
-    @include screen(md) {
-      gap: 2rem;
-      padding: 1.5rem 3.5rem;
-      font-size: 1.25rem;
-    }
-
-    .pill-icon {
-      font-size: 1.2rem;
-      transition: transform 0.4s ease;
-
-      @include screen(md) {
-        font-size: 1.5rem;
-      }
-    }
-
-    &:hover {
-      transform: scale(1.05) translateY(-5px);
-      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.2);
-      .pill-icon {
-        transform: translateX(8px);
-      }
-    }
-
-    :global(.dark) & {
-      background: $color-white;
-      color: $color-black;
-    }
-  }
-
-  /* --- BAND B: THE LEDGER --- */
-  .ledger-section {
-    margin-bottom: 6rem; // Reduced from 12rem
-
-    @include screen(md) {
-      margin-bottom: 12rem;
-    }
-  }
-
-  .ledger-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 3rem;
-
-    @include screen(md) {
-      grid-template-columns: repeat(2, 1fr);
-    }
-    @include screen(lg) {
-      grid-template-columns: repeat(4, 1fr);
-    }
-  }
-
-  .ledger-col {
-    display: flex;
-    flex-direction: column;
-    gap: 2rem;
-    opacity: 0; /* Hidden initially for reveal animation */
-  }
-
-  .bracket-label {
-    font-family: $font-mono;
-    font-size: 0.7rem;
-    font-weight: 700;
-    opacity: 0.4;
-    letter-spacing: 0.2em;
-    color: $color-black;
-
-    :global(.dark) & {
-      color: $color-white;
-    }
-  }
-
-  .meta-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-
-    li {
-      font-size: 1rem;
-      font-weight: 500;
-      opacity: 0.7;
-    }
-
-    .meta-link {
-      color: $color-black;
-      text-decoration: none;
-      transition: all 0.3s ease;
-
-      :global(.dark) & {
-        color: $color-white;
-      }
-
-      &:hover {
-        opacity: 0.4;
-        transform: translateX(5px);
-      }
-    }
-  }
-
-  .technical-stats {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-
-    .stat-row {
-      display: flex;
-      justify-content: space-between;
-      font-family: $font-mono;
-      font-size: 0.8rem;
-
-      .k {
-        opacity: 0.4;
-        font-weight: 600;
-      }
-      .v {
-        font-weight: 800;
-        opacity: 0.8;
-      }
-
-      .mono-pulse {
-        color: #10b981;
-        &::before {
-          content: "";
-          display: inline-block;
-          width: 6px;
-          height: 6px;
-          background: currentColor;
-          border-radius: 50%;
-          margin-right: 8px;
-          animation: pulse 2s infinite;
+        @include screen(md) {
+            min-height: 100vh;
+            padding: 10rem 0;
         }
-      }
-    }
-  }
 
-  /* --- BAND C: HUD STRIP --- */
-  .hud-strip {
-    border-top: 1px solid rgba($color-black, 0.05);
-    border-bottom: 1px solid rgba($color-black, 0.05);
-    padding: 0.75rem 0;
-    display: flex;
-    flex-direction: column; // Stack on mobile
-    align-items: stretch;
-    background: rgba($color-black, 0.01);
-
-    @include screen(md) {
-      padding: 1rem 0;
-      flex-direction: row;
-      align-items: center;
-      justify-content: space-between;
+        :global(.dark) & {
+            background: $color-dark-bg;
+            color: $color-white;
+        }
     }
 
-    :global(.dark) & {
-      border-color: rgba($color-white, 0.08);
-      background: rgba($color-white, 0.02);
+    .monolith-backdrop {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
     }
-  }
 
-  .hud-marquee {
-    flex: 1;
-    overflow: hidden;
-    white-space: nowrap;
-    mask-image: linear-gradient(
-      to right,
-      transparent,
-      black 10%,
-      black 90%,
-      transparent
-    );
-  }
+    .technical-grid {
+        position: absolute;
+        inset: 0;
+        background-image:
+            linear-gradient(rgba($color-black, 0.03) 1px, transparent 1px),
+            linear-gradient(
+                90deg,
+                rgba($color-black, 0.03) 1px,
+                transparent 1px
+            );
+        background-size: 50px 50px;
+        z-index: 0;
 
-  .marquee-inner {
-    display: inline-block;
-    animation: marquee 30s linear infinite;
+        :global(.dark) & {
+            background-image:
+                linear-gradient(rgba($color-white, 0.03) 1px, transparent 1px),
+                linear-gradient(
+                    90deg,
+                    rgba($color-white, 0.03) 1px,
+                    transparent 1px
+                );
+        }
+    }
 
-    span {
-      font-family: $font-mono;
-      font-size: 0.65rem;
-      font-weight: 600;
-      opacity: 0.3;
-      letter-spacing: 0.1em;
-      margin-right: 4rem;
-      color: $color-black;
+    .monolith-content {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 4rem;
 
-      :global(.dark) & {
+        @include screen(md) {
+            gap: 8rem;
+        }
+    }
+
+    /* --- BAND A: MASSIVE IMPACT --- */
+    .impact-section {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 2rem; // Reduced from 6rem
+        margin-bottom: 4rem;
+
+        @include screen(md) {
+            gap: 6rem;
+            margin-bottom: 5rem;
+        }
+    }
+
+    .display-impact {
+        font-family: $font-display;
+        font-size: clamp(3.5rem, 15vw, 6rem);
+        font-weight: 500;
+        letter-spacing: -0.04em;
+        line-height: 0.85;
+        margin: 0;
+        color: rgba($color-black, 0.9);
+        text-transform: none;
+        user-select: none;
+        cursor: none;
+        will-change: transform, opacity;
+        opacity: 0;
+
+        @include screen(md) {
+            font-size: clamp(6rem, 18vw, 18rem);
+        }
+
+        :global(.dark) & {
+            color: rgba($color-white, 0.9);
+        }
+    }
+
+    .footer-wordmark-canvas {
+        position: absolute;
+        z-index: 1;
+        opacity: 0;
+        pointer-events: auto;
+        cursor: none;
+    }
+
+    .engagement-hub {
+        position: relative; // Changed from absolute on mobile
+        transform: none;
+        z-index: 2;
+        margin-top: -1rem;
+
+        @include screen(md) {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            margin-top: 0;
+        }
+    }
+
+    .art-director-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem 2rem;
+        background: $color-black;
         color: $color-white;
-      }
-    }
-  }
+        border-radius: 999px;
+        font-size: 0.9rem; // Scaled down for mobile
+        font-weight: 600;
+        font-family: $font-sans;
+        text-decoration: none;
+        transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        box-shadow: 0 0 0 rgba(0, 0, 0, 0);
 
-  .hud-controls {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 2rem;
-    padding: 1rem 0;
-    border-top: 1px solid rgba($color-black, 0.05);
+        @include screen(md) {
+            gap: 2rem;
+            padding: 1.5rem 3.5rem;
+            font-size: 1.25rem;
+        }
 
-    @include screen(md) {
-      gap: 3rem;
-      padding: 0 4rem;
-      border-top: none;
-      border-left: 1px solid rgba($color-black, 0.05);
+        .pill-icon {
+            font-size: 1.2rem;
+            transition: transform 0.4s ease;
+
+            @include screen(md) {
+                font-size: 1.5rem;
+            }
+        }
+
+        &:hover {
+            transform: scale(1.05) translateY(-5px);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.2);
+            .pill-icon {
+                transform: translateX(8px);
+            }
+        }
+
+        :global(.dark) & {
+            background: $color-white;
+            color: $color-black;
+        }
     }
 
-    :global(.dark) & {
-      border-color: rgba($color-white, 0.08);
-    }
-  }
+    /* --- BAND B: THE LEDGER --- */
+    .ledger-section {
+        margin-bottom: 6rem; // Reduced from 12rem
 
-  .monolith-baseline {
-    padding: 2rem 0;
-    .baseline-flex {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-      justify-content: center;
-      align-items: center;
-      text-align: center;
-      font-family: $font-mono;
-      font-size: 0.6rem;
-      opacity: 0.3;
-      font-weight: 600;
-      color: #000000;
+        @include screen(md) {
+            margin-bottom: 12rem;
+        }
+    }
 
-      @include screen(md) {
-        flex-direction: row;
-        justify-content: space-between;
-        font-size: 0.7rem;
-      }
-    }
-  }
+    .ledger-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 3rem;
 
-  @keyframes marquee {
-    0% {
-      transform: translateX(0);
+        @include screen(md) {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        @include screen(lg) {
+            grid-template-columns: repeat(4, 1fr);
+        }
     }
-    100% {
-      transform: translateX(-50%);
-    }
-  }
 
-  @keyframes pulse {
-    0% {
-      opacity: 1;
-      transform: scale(1);
+    .ledger-col {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+        opacity: 0; /* Hidden initially for reveal animation */
     }
-    50% {
-      opacity: 0.4;
-      transform: scale(0.9);
+
+    .bracket-label {
+        font-family: $font-sans;
+        font-size: 0.8rem;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        opacity: 0.5;
+        color: $color-black;
+
+        :global(.dark) & {
+            color: $color-white;
+        }
     }
-    100% {
-      opacity: 1;
-      transform: scale(1);
+
+    .meta-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+
+        li {
+            font-size: 1rem;
+            font-weight: 500;
+            opacity: 0.7;
+        }
+
+        .meta-link {
+            color: $color-black;
+            text-decoration: none;
+            transition: all 0.3s ease;
+
+            :global(.dark) & {
+                color: $color-white;
+            }
+
+            &:hover {
+                opacity: 0.4;
+                transform: translateX(5px);
+            }
+        }
     }
-  }
+
+    .technical-stats {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            font-family: $font-mono;
+            font-size: 0.8rem;
+
+            .k {
+                opacity: 0.4;
+                font-weight: 600;
+            }
+            .v {
+                font-weight: 800;
+                opacity: 0.8;
+            }
+
+            .mono-pulse {
+                color: #10b981;
+                &::before {
+                    content: "";
+                    display: inline-block;
+                    width: 6px;
+                    height: 6px;
+                    background: currentColor;
+                    border-radius: 50%;
+                    margin-right: 8px;
+                    animation: pulse 2s infinite;
+                }
+            }
+        }
+    }
+
+    /* --- BAND C: HUD STRIP --- */
+    .hud-strip {
+        border-top: 1px solid rgba($color-black, 0.05);
+        border-bottom: 1px solid rgba($color-black, 0.05);
+        padding: 0.75rem 0;
+        display: flex;
+        flex-direction: column; // Stack on mobile
+        align-items: stretch;
+        background: rgba($color-black, 0.01);
+
+        @include screen(md) {
+            padding: 1rem 0;
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        :global(.dark) & {
+            border-color: rgba($color-white, 0.08);
+            background: rgba($color-white, 0.02);
+        }
+    }
+
+    .hud-marquee {
+        flex: 1;
+        overflow: hidden;
+        white-space: nowrap;
+        mask-image: linear-gradient(
+            to right,
+            transparent,
+            black 10%,
+            black 90%,
+            transparent
+        );
+    }
+
+    .marquee-inner {
+        display: inline-block;
+        animation: marquee 30s linear infinite;
+
+        span {
+            font-family: $font-mono;
+            font-size: 0.65rem;
+            font-weight: 600;
+            opacity: 0.3;
+            letter-spacing: 0.1em;
+            margin-right: 4rem;
+            color: $color-black;
+
+            :global(.dark) & {
+                color: $color-white;
+            }
+        }
+    }
+
+    .hud-controls {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 2rem;
+        padding: 1rem 0;
+        border-top: 1px solid rgba($color-black, 0.05);
+
+        @include screen(md) {
+            gap: 3rem;
+            padding: 0 4rem;
+            border-top: none;
+            border-left: 1px solid rgba($color-black, 0.05);
+        }
+
+        :global(.dark) & {
+            border-color: rgba($color-white, 0.08);
+        }
+    }
+
+    .monolith-baseline {
+        padding: 2rem 0;
+        .baseline-flex {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            font-family: $font-mono;
+            font-size: 0.6rem;
+            opacity: 0.3;
+            font-weight: 600;
+            color: #000000;
+
+            @include screen(md) {
+                flex-direction: row;
+                justify-content: space-between;
+                font-size: 0.7rem;
+            }
+        }
+    }
+
+    @keyframes marquee {
+        0% {
+            transform: translateX(0);
+        }
+        100% {
+            transform: translateX(-50%);
+        }
+    }
+
+    @keyframes pulse {
+        0% {
+            opacity: 1;
+            transform: scale(1);
+        }
+        50% {
+            opacity: 0.4;
+            transform: scale(0.9);
+        }
+        100% {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
 </style>

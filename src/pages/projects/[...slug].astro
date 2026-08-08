@@ -1,5 +1,5 @@
 ---
-import { type CollectionEntry, getCollection } from "astro:content";
+import { getCollection, getEntry } from "astro:content";
 import PageLayout from "@layouts/PageLayout.astro";
 import Container from "@components/atoms/Container.astro";
 import BackToPrev from "@components/atoms/BackToPrev.astro";
@@ -7,27 +7,59 @@ import MediaSwiper from "@components/molecules/MediaSwiper.astro";
 import InteractiveMedia from "@components/molecules/InteractiveMedia.astro";
 import CustomVideoPlayer from "@components/molecules/CustomVideoPlayer.astro";
 import ProjectCard from "@components/molecules/ProjectCard.astro";
+import { sha256Hex, createUnlockToken, verifyUnlockToken } from "@lib/nda";
 
-export async function getStaticPaths() {
-  const projects = (await getCollection("projects"))
-    .filter((p) => !p.data.draft)
-    .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
-  return projects.map((project, index) => ({
-    params: { slug: project.slug },
-    props: {
-      project,
-      nextProject: projects[index + 1] ?? projects[0],
-    },
-  }));
+// NDA-locked projects need their case-study content withheld until a
+// password check happens server-side, so this route can no longer be
+// statically prerendered — it must run per-request.
+export const prerender = false;
+
+const { slug } = Astro.params;
+const project = slug ? await getEntry("projects", slug) : undefined;
+
+if (!project || project.data.draft) {
+  return Astro.redirect("/404");
 }
 
-interface Props {
-  project: CollectionEntry<"projects">;
-  nextProject: CollectionEntry<"projects">;
+const allProjects = (await getCollection("projects"))
+  .filter((p) => !p.data.draft)
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+const projectIndex = allProjects.findIndex((p) => p.slug === project.slug);
+const nextProject = allProjects[projectIndex + 1] ?? allProjects[0];
+
+const isLocked = !!project.data.locked;
+const cookieName = `nda_${project.slug}`;
+let unlocked = !isLocked;
+let unlockError = "";
+
+if (isLocked) {
+  const secret = import.meta.env.NDA_SECRET;
+  const cookieToken = Astro.cookies.get(cookieName)?.value;
+  unlocked = await verifyUnlockToken(project.slug, cookieToken, secret);
+
+  if (!unlocked && Astro.request.method === "POST") {
+    const form = await Astro.request.formData();
+    const attempt = String(form.get("password") || "");
+    const attemptHash = attempt ? await sha256Hex(attempt) : "";
+
+    if (attemptHash && attemptHash === project.data.passwordHash) {
+      unlocked = true;
+      Astro.cookies.set(cookieName, await createUnlockToken(project.slug, secret), {
+        httpOnly: true,
+        secure: import.meta.env.PROD,
+        sameSite: "lax",
+        path: `/projects/${project.slug}`,
+        maxAge: 60 * 60 * 24 * 7, // 1 week
+      });
+    } else {
+      unlockError = "Incorrect password.";
+    }
+  }
 }
 
-const { project, nextProject } = Astro.props;
-const { Content } = await project.render();
+// Case-study content only gets rendered server-side once unlocked — never
+// shipped to the client for a locked-and-unauthenticated request.
+const { Content } = unlocked ? await project.render() : { Content: () => null };
 const {
   title,
   description,
@@ -42,11 +74,11 @@ const {
   role,
   duration,
   client,
-  stats,
-  timeline,
-  gallery,
-  inlineMedia,
 } = project.data;
+const stats = unlocked ? project.data.stats : undefined;
+const timeline = unlocked ? project.data.timeline : undefined;
+const gallery = unlocked ? project.data.gallery : undefined;
+const inlineMedia = unlocked ? project.data.inlineMedia : undefined;
 
 const brandColor = color || "#8B5CF6";
 
@@ -70,7 +102,108 @@ const statusConfig: Record<
 const st = statusConfig[status] || statusConfig.shipped;
 ---
 
-<PageLayout title={title} description={description}>
+<PageLayout
+  title={unlocked ? title : "Locked Project"}
+  description={
+    unlocked ? description : "This project is password-protected under NDA."
+  }
+>
+  {
+    isLocked && !unlocked ? (
+      <Container size="sm">
+        <section class="nda-lock-screen">
+          <div class="nda-lock-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none">
+              <rect
+                x="4"
+                y="10"
+                width="16"
+                height="11"
+                rx="2"
+                stroke="currentColor"
+                stroke-width="1.5"
+              />
+              <path
+                d="M8 10V7a4 4 0 0 1 8 0v3"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+              />
+              <circle cx="12" cy="15.5" r="1.5" fill="currentColor" />
+            </svg>
+          </div>
+          <h1 class="nda-lock-title">This project is under NDA</h1>
+          <p class="nda-lock-copy">
+            The client asked that this work stay private. Enter the
+            password to view it, or{" "}
+            <a href="/contact">get in touch</a> if you don't have one.
+          </p>
+          <form method="POST" class="nda-lock-form" id="nda-lock-form">
+            <div class="nda-lock-input-wrap">
+              <svg
+                class="nda-lock-input-icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                aria-hidden="true"
+              >
+                <rect
+                  x="4"
+                  y="10"
+                  width="16"
+                  height="11"
+                  rx="2"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                />
+                <path
+                  d="M8 10V7a4 4 0 0 1 8 0v3"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                />
+              </svg>
+              <input
+                type="text"
+                inputmode="text"
+                id="nda-password-display"
+                placeholder="Password"
+                autocomplete="off"
+                autocapitalize="off"
+                spellcheck="false"
+                autofocus
+              />
+              <input type="hidden" name="password" id="nda-password-real" />
+            </div>
+            <button type="submit">
+              Unlock
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path
+                  d="M5 12h14M12 5l7 7-7 7"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </button>
+          </form>
+          {unlockError && (
+            <div class="nda-lock-error" role="alert">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5" />
+                <path d="M12 8v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                <circle cx="12" cy="16" r="1" fill="currentColor" />
+              </svg>
+              <span>{unlockError}</span>
+            </div>
+          )}
+          <a href="/work" class="nda-lock-back">
+            &larr; Back to all work
+          </a>
+        </section>
+      </Container>
+    ) : (
+      <>
   <!-- ═══════════════ EDITORIAL HERO ═══════════════ -->
   <section class="editorial-hero" data-brand={brandColor}>
     <Container size="lg">
@@ -194,7 +327,7 @@ const st = statusConfig[status] || statusConfig.shipped;
               </div>
             </div>
           </div>
-          
+
           <div class="impact-list">
             <div class="impact-divider"></div>
             {stats.map((s, i) => (
@@ -271,7 +404,6 @@ const st = statusConfig[status] || statusConfig.shipped;
   <!-- ═══════════════ FOOTER ═══════════════ -->
   <Container size="sm">
     <div class="cs-footer animate">
-      <div class="bracket-label">[V_END_OF_CASE]</div>
       <div class="footer-divider"></div>
       <BackToPrev href="/work">Return to work</BackToPrev>
     </div>
@@ -283,7 +415,7 @@ const st = statusConfig[status] || statusConfig.shipped;
       <section class="cs-next-case">
         <!-- Massive background typography -->
         <div class="next-bg-text" aria-hidden="true">next case study</div>
-        
+
         <!-- Standard Project Card -->
         <div class="next-project-wrapper">
           <ProjectCard project={nextProject} />
@@ -391,7 +523,50 @@ const st = statusConfig[status] || statusConfig.shipped;
       </a>
     </div>
   </nav>
+      </>
+    )
+  }
 </PageLayout>
+
+<script>
+  // Custom "*" password masking — native <input type="password"> only
+  // supports the browser's built-in mask glyph (usually a dot), so the
+  // real value lives in a hidden field while the visible field shows
+  // asterisks the user actually typed.
+  document.addEventListener("astro:page-load", () => {
+    const form = document.getElementById(
+      "nda-lock-form",
+    ) as HTMLFormElement | null;
+    const display = document.getElementById(
+      "nda-password-display",
+    ) as HTMLInputElement | null;
+    const real = document.getElementById(
+      "nda-password-real",
+    ) as HTMLInputElement | null;
+    if (!form || !display || !real || display.dataset.maskBound) return;
+    display.dataset.maskBound = "true";
+
+    let actual = "";
+
+    display.addEventListener("input", () => {
+      const val = display.value;
+      if (val.length > actual.length) {
+        actual += val.slice(actual.length);
+      } else {
+        actual = actual.slice(0, val.length);
+      }
+      display.value = "*".repeat(actual.length);
+      real.value = actual;
+    });
+
+    form.addEventListener("submit", (e) => {
+      if (!actual) {
+        e.preventDefault();
+        display.focus();
+      }
+    });
+  });
+</script>
 
 <!-- ══════════════════════════════════════════ -->
 <!-- ═══════════════ STYLES ═══════════════ -->
@@ -399,6 +574,251 @@ const st = statusConfig[status] || statusConfig.shipped;
 <style lang="scss">
   @use "../../styles/variables" as *;
   @use "../../styles/mixins" as *;
+
+  /* ── NDA Lock Screen ── */
+  .nda-lock-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 1.25rem;
+    min-height: 70vh;
+    justify-content: center;
+    padding: 4rem 1rem;
+  }
+
+  .nda-lock-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 4rem;
+    height: 4rem;
+    border-radius: 50%;
+    background: rgba($color-black, 0.05);
+    color: $color-black;
+
+    :global(.dark) & {
+      background: rgba($color-white, 0.08);
+      color: $color-white;
+    }
+
+    svg {
+      width: 1.75rem;
+      height: 1.75rem;
+    }
+  }
+
+  .nda-lock-title {
+    font-size: clamp(1.75rem, 4vw, 2.25rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin: 0;
+    color: $color-black;
+
+    :global(.dark) & {
+      color: $color-white;
+    }
+  }
+
+  .nda-lock-copy {
+    max-width: 380px;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: rgba($color-black, 0.6);
+    margin: 0;
+
+    :global(.dark) & {
+      color: rgba($color-white, 0.6);
+    }
+
+    a {
+      color: inherit;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+  }
+
+  .nda-lock-form {
+    display: flex;
+    gap: 0.6rem;
+    width: 100%;
+    max-width: 340px;
+    margin-top: 0.75rem;
+  }
+
+  .nda-lock-input-wrap {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+  }
+
+  .nda-lock-input-icon {
+    position: absolute;
+    left: 1.1rem;
+    width: 1rem;
+    height: 1rem;
+    color: rgba($color-black, 0.35);
+    pointer-events: none;
+
+    :global(.dark) & {
+      color: rgba($color-white, 0.35);
+    }
+  }
+
+  #nda-password-display {
+    width: 100%;
+    min-width: 0;
+    padding: 0.8rem 1.1rem 0.8rem 2.6rem;
+    border-radius: 100px;
+    border: 1px solid rgba($color-black, 0.12);
+    background: rgba($color-black, 0.03);
+    color: $color-black;
+    font-size: 1rem;
+    letter-spacing: 0.15em;
+    transition:
+      border-color 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+      background-color 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+      box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+
+    &::placeholder {
+      color: rgba($color-black, 0.35);
+      letter-spacing: normal;
+    }
+
+    :global(.dark) & {
+      border-color: rgba($color-white, 0.14);
+      background: rgba($color-white, 0.04);
+      color: $color-white;
+
+      &::placeholder {
+        color: rgba($color-white, 0.35);
+      }
+    }
+
+    &:focus {
+      outline: none;
+      border-color: $color-black;
+      background: transparent;
+      box-shadow: 0 0 0 4px rgba($color-black, 0.06);
+
+      :global(.dark) & {
+        border-color: $color-white;
+        box-shadow: 0 0 0 4px rgba($color-white, 0.08);
+      }
+    }
+  }
+
+  .nda-lock-form button {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.8rem 1.3rem;
+    border-radius: 100px;
+    border: none;
+    background: $color-black;
+    color: $color-white;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+      opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+      transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+
+    svg {
+      width: 0.9rem;
+      height: 0.9rem;
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    &:hover {
+      opacity: 0.85;
+      transform: translateY(-1px);
+
+      svg {
+        transform: translateX(2px);
+      }
+    }
+
+    &:active {
+      transform: translateY(0) scale(0.97);
+    }
+
+    :global(.dark) & {
+      background: $color-white;
+      color: $color-black;
+    }
+  }
+
+  .nda-lock-error {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+    padding: 0.55rem 0.9rem;
+    border-radius: 10px;
+    background: rgba(#e74c3c, 0.08);
+    border: 1px solid rgba(#e74c3c, 0.25);
+    color: #e74c3c;
+    font-size: 0.82rem;
+    font-weight: 500;
+    animation: nda-shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+
+    svg {
+      width: 1rem;
+      height: 1rem;
+      flex-shrink: 0;
+    }
+  }
+
+  .nda-lock-form:has(+ .nda-lock-error) #nda-password-display {
+    border-color: #e74c3c;
+
+    &:focus {
+      border-color: #e74c3c;
+      box-shadow: 0 0 0 4px rgba(#e74c3c, 0.1);
+    }
+  }
+
+  @keyframes nda-shake {
+    10%,
+    90% {
+      transform: translateX(-1px);
+    }
+    20%,
+    80% {
+      transform: translateX(2px);
+    }
+    30%,
+    50%,
+    70% {
+      transform: translateX(-4px);
+    }
+    40%,
+    60% {
+      transform: translateX(4px);
+    }
+  }
+
+  .nda-lock-back {
+    margin-top: 1rem;
+    font-size: 0.8rem;
+    color: rgba($color-black, 0.45);
+    text-decoration: none;
+
+    &:hover {
+      color: $color-black;
+    }
+
+    :global(.dark) & {
+      color: rgba($color-white, 0.45);
+      &:hover {
+        color: $color-white;
+      }
+    }
+  }
 
   /* ── Editorial Hero ── */
   .editorial-hero {
@@ -884,11 +1304,11 @@ const st = statusConfig[status] || statusConfig.shipped;
     align-items: center;
     padding: 3rem 0;
     border-bottom: 1px solid rgba($color-black, 0.1);
-    
+
     :global(.dark) & {
         border-color: rgba($color-white, 0.1);
     }
-    
+
     @media (max-width: $screen-md) {
       grid-template-columns: 1fr;
       gap: 1rem;
@@ -905,7 +1325,7 @@ const st = statusConfig[status] || statusConfig.shipped;
     color: $color-black;
     font-variant-numeric: tabular-nums;
     text-align: left;
-    
+
     :global(.dark) & { color: $color-white; }
   }
 
@@ -916,7 +1336,7 @@ const st = statusConfig[status] || statusConfig.shipped;
     color: rgba($color-black, 0.7);
     max-width: 400px; /* Widened slightly */
     text-align: left; /* Enforce left alignment */
-    
+
     :global(.dark) & { color: rgba($color-white, 0.7); }
   }
 
@@ -1244,14 +1664,6 @@ const st = statusConfig[status] || statusConfig.shipped;
   .cs-footer {
     padding: 5rem 0 12rem;
 
-    .bracket-label {
-      font-family: ui-monospace, monospace;
-      font-size: 0.6rem;
-      font-weight: 700;
-      opacity: 0.3;
-      letter-spacing: 0.2em;
-      margin-bottom: 1rem;
-    }
     .footer-divider {
       height: 1px;
       background: rgba($color-black, 0.1);
@@ -1329,7 +1741,7 @@ const st = statusConfig[status] || statusConfig.shipped;
     transform: translateY(15px) scale(0.95);
     transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     box-shadow: 0 25px 50px rgba(0,0,0,0.5);
-    
+
     &.open {
         opacity: 1;
         pointer-events: auto;
@@ -1371,7 +1783,7 @@ const st = statusConfig[status] || statusConfig.shipped;
     font-size: 0.75rem;
     font-weight: 700;
     transition: all 0.2s ease;
-    
+
     :global(.dark) & { color: rgba(0,0,0,0.7); }
 
     &:hover {
@@ -1448,7 +1860,7 @@ const st = statusConfig[status] || statusConfig.shipped;
         background: rgba(255, 255, 255, 0.1);
         color: #fff;
         transform: translateY(-2px);
-        
+
         :global(.dark) & {
             background: rgba(0, 0, 0, 0.05);
             color: #000;
@@ -1460,7 +1872,7 @@ const st = statusConfig[status] || statusConfig.shipped;
         color: #fff !important;
         box-shadow: 0 10px 20px -5px var(--brand);
         overflow: hidden;
-        
+
         &::before {
             content: "";
             position: absolute;
@@ -1552,7 +1964,7 @@ const st = statusConfig[status] || statusConfig.shipped;
         background: rgba(255, 255, 255, 0.1);
         border-radius: 6px;
         font-size: 0.6rem;
-        
+
         :global(.dark) & {
             background: rgba(0, 0, 0, 0.05);
         }
@@ -1561,7 +1973,7 @@ const st = statusConfig[status] || statusConfig.shipped;
     &:hover {
         background: rgba(255, 255, 255, 0.1);
         color: #fff;
-        
+
         :global(.dark) & {
             background: rgba(0, 0, 0, 0.05);
             color: #000;
@@ -1584,7 +1996,7 @@ const st = statusConfig[status] || statusConfig.shipped;
     border-style: solid;
     border-width: 8px 8px 0 8px;
     border-color: rgba(0, 0, 0, 0.9) transparent transparent transparent;
-    
+
     :global(.dark) & {
         border-color: rgba(255, 255, 255, 0.95) transparent transparent transparent;
     }
@@ -1947,7 +2359,7 @@ const st = statusConfig[status] || statusConfig.shipped;
     // ── Impact Row Stagger ──
     const impactRows = document.querySelectorAll(".impact-row");
     if (impactRows.length > 0) {
-      gsap.fromTo(impactRows, 
+      gsap.fromTo(impactRows,
         { opacity: 0, y: 30 },
         {
           opacity: 1,
@@ -2019,7 +2431,7 @@ const st = statusConfig[status] || statusConfig.shipped;
     // ── Gantt Timeline Reveals ──
     const ganttLineV = document.querySelector(".gantt-line-v");
     if (ganttLineV) {
-      gsap.fromTo(ganttLineV, 
+      gsap.fromTo(ganttLineV,
         { scaleY: 0 },
         {
           scaleY: 1,
@@ -2037,7 +2449,7 @@ const st = statusConfig[status] || statusConfig.shipped;
     document.querySelectorAll(".gantt-row").forEach((row) => {
       const node = row.querySelector(".gantt-node");
       const bar = row.querySelector(".gantt-bar");
-      
+
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: row,
@@ -2047,7 +2459,7 @@ const st = statusConfig[status] || statusConfig.shipped;
       });
 
       if (node) {
-        tl.fromTo(node, 
+        tl.fromTo(node,
           { scale: 0, opacity: 0 },
           { scale: 1, opacity: 1, duration: 0.5, ease: "back.out(2)" }
         );
@@ -2076,7 +2488,7 @@ const st = statusConfig[status] || statusConfig.shipped;
           const isScrollingDown = self.direction === 1;
           const isAtTop = self.scroll() < 400;
           const isAtBottom = self.progress > 0.92; // Show when near footer
-          
+
           if (isAtTop) {
             dock.classList.remove("visible");
           } else if (isAtBottom) {
@@ -2095,7 +2507,7 @@ const st = statusConfig[status] || statusConfig.shipped;
             const offset = circumference - progress * circumference;
             progressFill.style.strokeDasharray = `${circumference}`;
             progressFill.style.strokeDashoffset = `${offset}`;
-            
+
             if (progressPercent) {
                 progressPercent.innerText = Math.round(progress * 100) + "%";
             }
@@ -2111,7 +2523,7 @@ const st = statusConfig[status] || statusConfig.shipped;
       const chaptersTrigger = dock.querySelector("#chapters-trigger");
       const chaptersPopover = dock.querySelector("#chapters-popover");
       const chaptersList = dock.querySelector("#chapters-list");
-      
+
       const sections = [
         { id: "cs-title", label: "Intro" },
         { id: "cs-overview", label: "Overview" },
@@ -2132,10 +2544,10 @@ const st = statusConfig[status] || statusConfig.shipped;
                 e.preventDefault();
                 const target = link.getAttribute("data-target");
                 if (target) {
-                    gsap.to(window, { 
-                        scrollTo: `#${target}`, 
-                        duration: 1.2, 
-                        ease: "power4.inOut" 
+                    gsap.to(window, {
+                        scrollTo: `#${target}`,
+                        duration: 1.2,
+                        ease: "power4.inOut"
                     });
                     chaptersPopover?.classList.remove("open");
                 }
@@ -2154,22 +2566,22 @@ const st = statusConfig[status] || statusConfig.shipped;
       // Share Popover Logic
       const shareTrigger = dock.querySelector(".share-trigger");
       const sharePopover = dock.querySelector(".share-popover");
-      
+
       if (shareTrigger && sharePopover) {
         shareTrigger.addEventListener("click", (e) => {
           e.stopPropagation();
           const isOpen = sharePopover.classList.toggle("open");
-          
+
           if (isOpen) {
-            gsap.fromTo(".share-item", 
+            gsap.fromTo(".share-item",
               { opacity: 0, y: 15, scale: 0.95 },
-              { 
-                opacity: 1, 
-                y: 0, 
-                scale: 1, 
-                stagger: 0.05, 
-                duration: 0.4, 
-                ease: "back.out(1.4)" 
+              {
+                opacity: 1,
+                y: 0,
+                scale: 1,
+                stagger: 0.05,
+                duration: 0.4,
+                ease: "back.out(1.4)"
               }
             );
           }
