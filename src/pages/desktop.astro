@@ -1,5 +1,6 @@
 ---
 import Head from "@components/atoms/Head.astro";
+import TransitionOverlay from "@components/atoms/TransitionOverlay.astro";
 import { SITE } from "@consts";
 ---
 
@@ -11,10 +12,19 @@ import { SITE } from "@consts";
         />
     </head>
     <body>
+        <TransitionOverlay />
         <div id="desktop-root">
             <canvas id="desktop-canvas"></canvas>
             <div id="desktop-boot">
-                <span class="boot-label">Booting desktop.wasm…</span>
+                <div class="boot-content">
+                    <div class="boot-logo">
+                        M<span class="boot-logo-dot"></span>
+                    </div>
+                    <div class="boot-progress">
+                        <div class="boot-progress-fill"></div>
+                    </div>
+                    <span class="boot-label">Booting desktop.wasm…</span>
+                </div>
             </div>
             <a href="/" id="desktop-exit" aria-label="Exit desktop mode">
                 ← Exit
@@ -55,16 +65,96 @@ import { SITE } from "@consts";
                 align-items: center;
                 justify-content: center;
                 pointer-events: none;
+                background: $color-light-bg;
+
+                :global(html.dark) & {
+                    background: $color-dark-bg;
+                }
+            }
+
+            .boot-content {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 1.1rem;
+            }
+
+            .boot-logo {
+                position: relative;
+                font-family: $font-display;
+                font-weight: 800;
+                font-size: 2.25rem;
+                line-height: 1;
+                color: $color-black;
+
+                :global(html.dark) & {
+                    color: $color-white;
+                }
+            }
+
+            .boot-logo-dot {
+                position: absolute;
+                top: -0.15rem;
+                right: -0.55rem;
+                width: 7px;
+                height: 7px;
+                border-radius: 50%;
+                background: #10b981;
+            }
+
+            .boot-progress {
+                width: 11rem;
+                height: 3px;
+                border-radius: 999px;
+                background: rgba($color-black, 0.12);
+                overflow: hidden;
+
+                :global(html.dark) & {
+                    background: rgba($color-white, 0.15);
+                }
+            }
+
+            .boot-progress-fill {
+                width: 0%;
+                height: 100%;
+                border-radius: 999px;
+                background: $color-black;
+                // No real fetch-progress signal to bind to — boot.js just
+                // removes #desktop-boot outright once the wasm module is
+                // ready, so this creeps toward (not to) 100% and lets that
+                // removal be the "done" moment, rather than an inaccurate
+                // bar claiming completion before it's actually true.
+                animation: boot-fake-progress 3.5s cubic-bezier(0.11, 0, 0.5, 0) forwards;
+
+                :global(html.dark) & {
+                    background: $color-white;
+                }
+            }
+
+            @keyframes boot-fake-progress {
+                0% {
+                    width: 0%;
+                }
+                50% {
+                    width: 55%;
+                }
+                80% {
+                    width: 78%;
+                }
+                100% {
+                    width: 90%;
+                }
             }
 
             .boot-label {
                 font-family: $font-mono;
-                font-size: 0.8rem;
-                letter-spacing: 0.02em;
-                color: $color-light-text;
+                font-size: 0.7rem;
+                font-weight: 500;
+                letter-spacing: 0.03em;
+                color: rgba($color-light-text, 0.8);
 
                 :global(html.dark) & {
-                    color: $color-dark-text;
+                    color: rgba($color-dark-text, 0.8);
                 }
             }
 

@@ -116,39 +116,45 @@ impl DesktopApplet for ReaderApp {
                     ui.set_width(150.0);
                     ui.set_min_height(320.0);
 
-                    for (folder, section_label) in SECTIONS {
-                        ui.label(
-                            RichText::new(section_label.to_uppercase())
-                                .size(10.0)
-                                .color(Color32::from_gray(120))
-                                .strong(),
-                        );
-                        ui.add_space(4.0);
+                    // `Frame::show` inherits the layout of wherever it was
+                    // created — this frame lives inside `ui.horizontal_top`,
+                    // so without this its children lay out left-to-right
+                    // instead of stacking into a real sidebar list.
+                    ui.vertical(|ui| {
+                        for (folder, section_label) in SECTIONS {
+                            ui.label(
+                                RichText::new(section_label.to_uppercase())
+                                    .size(10.0)
+                                    .color(Color32::from_gray(120))
+                                    .strong(),
+                            );
+                            ui.add_space(4.0);
 
-                        let entries = actx.vfs.list_dir(folder).unwrap_or_default();
-                        for (name, is_dir) in entries {
-                            if is_dir {
-                                continue;
+                            let entries = actx.vfs.list_dir(folder).unwrap_or_default();
+                            for (name, is_dir) in entries {
+                                if is_dir {
+                                    continue;
+                                }
+                                let path = format!("{folder}/{name}");
+                                let selected = self.selected == path;
+
+                                let row = ui.horizontal(|ui| {
+                                    let (rect, _) = ui.allocate_exact_size(
+                                        Vec2::new(18.0, 18.0),
+                                        egui::Sense::hover(),
+                                    );
+                                    Self::draw_page_icon(ui.painter(), rect, accent);
+                                    ui.selectable_label(selected, &name)
+                                });
+
+                                if row.inner.clicked() {
+                                    self.selected = path;
+                                }
                             }
-                            let path = format!("{folder}/{name}");
-                            let selected = self.selected == path;
 
-                            let row = ui.horizontal(|ui| {
-                                let (rect, _) = ui.allocate_exact_size(
-                                    Vec2::new(18.0, 18.0),
-                                    egui::Sense::hover(),
-                                );
-                                Self::draw_page_icon(ui.painter(), rect, accent);
-                                ui.selectable_label(selected, &name)
-                            });
-
-                            if row.inner.clicked() {
-                                self.selected = path;
-                            }
+                            ui.add_space(12.0);
                         }
-
-                        ui.add_space(12.0);
-                    }
+                    });
                 });
 
             egui::Frame::new()
@@ -167,7 +173,10 @@ impl DesktopApplet for ReaderApp {
                     ui.set_min_height(320.0);
 
                     ui.painter().rect_filled(
-                        Rect::from_min_size(ui.min_rect().min, Vec2::new(ui.available_width().max(1.0), 4.0)),
+                        Rect::from_min_size(
+                            ui.min_rect().min,
+                            Vec2::new(ui.available_width().max(1.0), 4.0),
+                        ),
                         CornerRadius::ZERO,
                         accent,
                     );
@@ -175,37 +184,41 @@ impl DesktopApplet for ReaderApp {
                     egui::Frame::new()
                         .inner_margin(egui::Margin::symmetric(24, 20))
                         .show(ui, |ui| {
-                            ui.visuals_mut().override_text_color = Some(Color32::from_gray(35));
-                            egui::ScrollArea::vertical().show(ui, |ui| {
-                                let name = self
-                                    .selected
-                                    .rsplit('/')
-                                    .next()
-                                    .unwrap_or(&self.selected)
-                                    .to_string();
+                            ui.vertical(|ui| {
+                                ui.visuals_mut().override_text_color = Some(Color32::from_gray(35));
+                                egui::ScrollArea::vertical().show(ui, |ui| {
+                                    let name = self
+                                        .selected
+                                        .rsplit('/')
+                                        .next()
+                                        .unwrap_or(&self.selected)
+                                        .to_string();
 
-                                ui.label(
-                                    RichText::new(&self.selected)
-                                        .monospace()
-                                        .size(10.0)
-                                        .color(Color32::from_gray(150)),
-                                );
-                                ui.add_space(2.0);
-                                ui.heading(name);
-                                ui.add_space(10.0);
+                                    ui.label(
+                                        RichText::new(&self.selected)
+                                            .monospace()
+                                            .size(10.0)
+                                            .color(Color32::from_gray(150)),
+                                    );
+                                    ui.add_space(2.0);
+                                    ui.heading(name);
+                                    ui.add_space(10.0);
 
-                                match actx.vfs.read_file(&self.selected) {
-                                    Ok(content) => {
-                                        ui.label(RichText::new(content).size(13.0));
-                                    }
-                                    Err(e) => {
-                                        ui.label(
-                                            RichText::new(format!("Couldn't open this file: {e}"))
+                                    match actx.vfs.read_file(&self.selected) {
+                                        Ok(content) => {
+                                            ui.label(RichText::new(content).size(13.0));
+                                        }
+                                        Err(e) => {
+                                            ui.label(
+                                                RichText::new(format!(
+                                                    "Couldn't open this file: {e}"
+                                                ))
                                                 .italics()
                                                 .weak(),
-                                        );
+                                            );
+                                        }
                                     }
-                                }
+                                });
                             });
                         });
                 });

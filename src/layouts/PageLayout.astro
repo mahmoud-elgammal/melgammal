@@ -12,6 +12,7 @@ type Props = {
 import CommandMenu from "@components/organisms/CommandMenu.astro";
 import MediaLightbox from "@components/organisms/MediaLightbox.astro";
 import Cursor from "@components/atoms/Cursor.astro";
+import TransitionOverlay from "@components/atoms/TransitionOverlay.astro";
 
 const { title, description } = Astro.props;
 ---
@@ -21,6 +22,7 @@ const { title, description } = Astro.props;
         <Head title={`${title} | ${SITE.NAME}`} description={description} />
     </head>
     <body>
+        <TransitionOverlay />
         <Header />
         <CommandMenu />
         <main id="page-main" class="page-content">

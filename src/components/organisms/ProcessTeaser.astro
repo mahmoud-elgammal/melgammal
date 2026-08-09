@@ -1,0 +1,806 @@
+---
+import Container from "@components/atoms/Container.astro";
+import Link from "@components/atoms/Link.astro";
+
+// Same four phases as /process (src/pages/process.astro) — kept here as a
+// short, stable copy rather than a shared import so this teaser doesn't
+// take on a dependency on that page's image/spec data, which it doesn't use.
+const PHASES = [
+    {
+        index: "01",
+        label: "Discovery",
+        shape: "circle",
+        description:
+            "We begin by stripping away the superficial — understanding the core intent, user mapping, and aligning technical goals with architectural vision.",
+    },
+    {
+        index: "02",
+        label: "Architecture",
+        shape: "diamond",
+        description:
+            "Designing the monolith. We construct the underlying grid, type scales, and visual language that will command attention and ensure structural integrity.",
+    },
+    {
+        index: "03",
+        label: "Engineering",
+        shape: "triangle",
+        description:
+            "Executing the vision with grit. Implementing physics engines, responsive systems, and GPU-accelerated animations for a seamless user journey.",
+    },
+    {
+        index: "04",
+        label: "Evolution",
+        shape: "hexagon",
+        description:
+            "The monolith evolves. Continuous performance audits, interactive discovery refinements, and polishing the void to perfection.",
+    },
+];
+---
+
+<section class="process-teaser" id="process-teaser">
+    <div class="process-teaser-canvas-wrap" id="process-teaser-canvas-wrap">
+        <canvas
+            id="process-teaser-canvas"
+            class="process-teaser-canvas"
+            aria-hidden="true"></canvas>
+    </div>
+
+    <Container>
+        <div class="teaser-content">
+            <h2 class="teaser-heading">
+                Four phases. One architecture.<br />
+                Repeated, not reinvented.
+            </h2>
+            <p class="teaser-description">
+                Every build moves through the same structural sequence —
+                discovery, architecture, engineering, evolution. The phases
+                don't change per project; only the content inside them does.
+            </p>
+        </div>
+
+        <ul class="teaser-list">
+            {
+                PHASES.map((phase) => (
+                    <li class="teaser-item animate" data-shape={phase.shape}>
+                        <div class="item-label">{phase.label}</div>
+                        <p class="item-description">{phase.description}</p>
+                    </li>
+                ))
+            }
+        </ul>
+
+        <Link href="/process" underline={false} class="teaser-link">
+            See the full process →
+        </Link>
+    </Container>
+</section>
+
+<script>
+    import { gsap } from "gsap";
+    import { ScrollTrigger } from "gsap/ScrollTrigger";
+    import { registerAnimation, prefersReducedMotion } from "@lib/animation";
+
+    gsap.registerPlugin(ScrollTrigger);
+
+    const FONT_MONO = "'JetBrains Mono Variable', ui-monospace, monospace";
+
+    // Density-ordered by actually measuring each glyph's average ink
+    // coverage (see buildGlyphAtlas) rather than guessed — real letters
+    // only, not the usual .:-=+*#%@ ramp symbols.
+    const RAMP_CHARS = [
+        " ", "i", "l", "r", "c", "v", "s", "z", "o", "e",
+        "a", "n", "u", "x", "m", "w", "M", "W", "B",
+    ];
+
+    const VERT_SRC = `
+        attribute vec2 position;
+        varying vec2 vUv;
+        void main() {
+            vUv = position * 0.5 + 0.5;
+            gl_Position = vec4(position, 0.0, 1.0);
+        }
+    `;
+
+    // A GPU ASCII-art shader: one shared "main shape" rasterized into a
+    // mask texture, right-anchored so it sits beside the text column, with
+    // every screen-space cell sampling that mask's brightness to pick a
+    // glyph from a density-sorted character atlas — sparse letters where
+    // the mask is dark, dense ones where it is bright. setPhaseGlyph()
+    // rebuilds the mask and crossfades/scrambles into the new shape as the
+    // active card changes while scrolling.
+    const FRAG_SRC = `
+        precision highp float;
+        varying vec2 vUv;
+        uniform float uTime;
+        uniform vec2 uResolution;
+        uniform sampler2D uMaskA;
+        uniform sampler2D uMaskB;
+        uniform float uMaskMix;
+        uniform sampler2D uAtlas;
+        uniform float uAtlasCount;
+        uniform float uCellSize;
+        uniform vec2 uMouse;
+
+        float hash11(float p) {
+            return fract(sin(p) * 43758.5453123);
+        }
+
+        void main() {
+            vec2 fragPx = vUv * uResolution;
+            vec2 cell = floor(fragPx / uCellSize);
+            vec2 cellCenter = (cell + 0.5) * uCellSize;
+            vec2 maskUv = cellCenter / uResolution;
+            float densityA = texture2D(uMaskA, maskUv).r;
+            float densityB = texture2D(uMaskB, maskUv).r;
+            float density = mix(densityA, densityB, uMaskMix);
+
+            float mouseInfluence = 0.0;
+            if (uMouse.x >= 0.0) {
+                float distToMouse = distance(cellCenter, uMouse * uResolution);
+                float radius = uResolution.x * 0.22;
+                mouseInfluence = smoothstep(radius, 0.0, distToMouse);
+            }
+
+            float flickerSpeed = 1.5 + mouseInfluence * 5.0;
+            float seed = hash11(dot(cell, vec2(12.9898, 78.233)) + floor(uTime * flickerSpeed));
+            density = clamp(
+                density + (seed - 0.5) * 0.12 + mouseInfluence * 0.55,
+                0.0,
+                1.0
+            );
+
+            float charIndex = floor(density * (uAtlasCount - 1.0) + 0.5);
+
+            // Mid-transition scramble: cells decode through fast-cycling
+            // random characters instead of a plain crossfade, resolving
+            // back to the real mapped character once the new shape settles.
+            float scramble = 1.0 - abs(uMaskMix * 2.0 - 1.0);
+            scramble = smoothstep(0.0, 1.0, scramble);
+            float scrambleSeed = hash11(dot(cell, vec2(35.17, 91.43)) + floor(uTime * 14.0));
+            float scrambleIndex = floor(scrambleSeed * (uAtlasCount - 1.0));
+            charIndex = mix(charIndex, scrambleIndex, scramble * 0.85);
+
+            vec2 localUv = fract(fragPx / uCellSize);
+            localUv.y = 1.0 - localUv.y;
+            vec2 atlasUv = vec2((charIndex + localUv.x) / uAtlasCount, localUv.y);
+            float glyph = texture2D(uAtlas, atlasUv).r;
+
+            float alpha = glyph * mix(0.12, 1.0, density);
+            gl_FragColor = vec4(vec3(1.0), alpha * 0.9);
+        }
+    `;
+
+    function compileShader(
+        gl: WebGLRenderingContext,
+        type: number,
+        source: string,
+    ): WebGLShader | null {
+        const shader = gl.createShader(type);
+        if (!shader) return null;
+        gl.shaderSource(shader, source);
+        gl.compileShader(shader);
+        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+            gl.deleteShader(shader);
+            return null;
+        }
+        return shader;
+    }
+
+    // Renders each ramp character to its own cell, measures its average
+    // ink coverage, and lays them out left-to-right in that measured
+    // order — so the shader's density-to-character mapping is accurate
+    // for whatever font actually renders, not a hand-guessed ordering.
+    function buildGlyphAtlas(
+        chars: string[],
+        cellPx: number,
+    ): { canvas: HTMLCanvasElement; count: number } {
+        const measured = chars.map((ch) => {
+            const c = document.createElement("canvas");
+            c.width = cellPx;
+            c.height = cellPx;
+            const cctx = c.getContext("2d")!;
+            cctx.fillStyle = "#000";
+            cctx.fillRect(0, 0, cellPx, cellPx);
+            cctx.fillStyle = "#fff";
+            cctx.font = `700 ${cellPx * 0.85}px ${FONT_MONO}`;
+            cctx.textAlign = "center";
+            cctx.textBaseline = "middle";
+            cctx.fillText(ch, cellPx / 2, cellPx / 2 + cellPx * 0.04);
+            const data = cctx.getImageData(0, 0, cellPx, cellPx).data;
+            let sum = 0;
+            for (let i = 0; i < data.length; i += 4) sum += data[i];
+            return { ch, density: sum / (data.length / 4) / 255 };
+        });
+        measured.sort((a, b) => a.density - b.density);
+
+        const atlas = document.createElement("canvas");
+        atlas.width = cellPx * measured.length;
+        atlas.height = cellPx;
+        const actx = atlas.getContext("2d")!;
+        actx.fillStyle = "#000";
+        actx.fillRect(0, 0, atlas.width, atlas.height);
+        actx.fillStyle = "#fff";
+        actx.font = `700 ${cellPx * 0.85}px ${FONT_MONO}`;
+        actx.textAlign = "center";
+        actx.textBaseline = "middle";
+        measured.forEach((m, i) => {
+            actx.fillText(
+                m.ch,
+                i * cellPx + cellPx / 2,
+                cellPx / 2 + cellPx * 0.04,
+            );
+        });
+
+        return { canvas: atlas, count: measured.length };
+    }
+
+    class ProcessTeaserGL {
+        private board: HTMLElement;
+        private canvas: HTMLCanvasElement;
+        private gl: WebGLRenderingContext;
+        private program: WebGLProgram;
+        private uniforms: Record<string, WebGLUniformLocation | null> = {};
+        private maskTextureA: WebGLTexture;
+        private maskTextureB: WebGLTexture;
+        private maskMix = 0;
+        private currentShape = "circle";
+        private atlasTexture: WebGLTexture;
+        private atlasCount: number;
+        private cellPx: number;
+        private dpr = Math.min(window.devicePixelRatio || 1, 2);
+        private rafId: number | null = null;
+        private startTime = performance.now();
+        private mouse = { x: -1, y: -1 };
+        private reduced: boolean;
+
+        constructor(board: HTMLElement, canvas: HTMLCanvasElement) {
+            this.board = board;
+            this.canvas = canvas;
+            this.reduced = prefersReducedMotion();
+            this.cellPx = Math.round(9 * this.dpr);
+
+            const gl = (canvas.getContext("webgl") ||
+                canvas.getContext(
+                    "experimental-webgl",
+                )) as WebGLRenderingContext | null;
+            if (!gl) throw new Error("WebGL unavailable");
+            this.gl = gl;
+
+            const program = this.createProgram();
+            if (!program) throw new Error("shader program failed");
+            this.program = program;
+
+            const maskTextureA = gl.createTexture();
+            const maskTextureB = gl.createTexture();
+            const atlasTexture = gl.createTexture();
+            if (!maskTextureA || !maskTextureB || !atlasTexture) {
+                throw new Error("texture creation failed");
+            }
+            this.maskTextureA = maskTextureA;
+            this.maskTextureB = maskTextureB;
+            this.atlasTexture = atlasTexture;
+
+            const atlas = buildGlyphAtlas(RAMP_CHARS, this.cellPx);
+            this.atlasCount = atlas.count;
+            this.uploadTexture(this.atlasTexture, atlas.canvas);
+
+            this.setupGeometry();
+            this.resize();
+
+            this.renderFrame();
+            if (!this.reduced) this.loop();
+        }
+
+        private createProgram(): WebGLProgram | null {
+            const { gl } = this;
+            const vertexShader = compileShader(gl, gl.VERTEX_SHADER, VERT_SRC);
+            const fragmentShader = compileShader(
+                gl,
+                gl.FRAGMENT_SHADER,
+                FRAG_SRC,
+            );
+            if (!vertexShader || !fragmentShader) return null;
+
+            const program = gl.createProgram();
+            if (!program) return null;
+            gl.attachShader(program, vertexShader);
+            gl.attachShader(program, fragmentShader);
+            gl.linkProgram(program);
+            if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return null;
+
+            gl.useProgram(program);
+            [
+                "uTime",
+                "uResolution",
+                "uMaskA",
+                "uMaskB",
+                "uMaskMix",
+                "uAtlas",
+                "uAtlasCount",
+                "uCellSize",
+                "uMouse",
+            ].forEach((name) => {
+                this.uniforms[name] = gl.getUniformLocation(program, name);
+            });
+            return program;
+        }
+
+        private setupGeometry() {
+            const { gl, program } = this;
+            const positions = new Float32Array([-1, -1, 3, -1, -1, 3]);
+            const buffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+            gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
+
+            const aPosition = gl.getAttribLocation(program, "position");
+            gl.enableVertexAttribArray(aPosition);
+            gl.vertexAttribPointer(aPosition, 2, gl.FLOAT, false, 0, 0);
+        }
+
+        private uploadTexture(
+            texture: WebGLTexture,
+            source: HTMLCanvasElement,
+        ) {
+            const { gl } = this;
+            gl.bindTexture(gl.TEXTURE_2D, texture);
+            gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+            gl.texImage2D(
+                gl.TEXTURE_2D,
+                0,
+                gl.RGBA,
+                gl.RGBA,
+                gl.UNSIGNED_BYTE,
+                source,
+            );
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+            gl.texParameteri(
+                gl.TEXTURE_2D,
+                gl.TEXTURE_WRAP_S,
+                gl.CLAMP_TO_EDGE,
+            );
+            gl.texParameteri(
+                gl.TEXTURE_2D,
+                gl.TEXTURE_WRAP_T,
+                gl.CLAMP_TO_EDGE,
+            );
+        }
+
+        // Right-anchored (not centered) so the shape sits beside the text
+        // column instead of behind it. Blurred deliberately: a crisp glyph
+        // is essentially binary at cell-sampling granularity (almost every
+        // cell reads pure white or pure black), so the density-to-character
+        // mapping would only ever pick the two ramp extremes. The blur
+        // creates a real gradient band around the shape's silhouette for
+        // the ramp's letters to map onto.
+        private buildMask(
+            shapeId: string,
+            width: number,
+            height: number,
+        ): HTMLCanvasElement {
+            const off = document.createElement("canvas");
+            off.width = width;
+            off.height = height;
+            const octx = off.getContext("2d")!;
+            octx.fillStyle = "#000";
+            octx.fillRect(0, 0, width, height);
+            octx.fillStyle = "#fff";
+            octx.filter = `blur(${Math.max(4, width * 0.035)}px)`;
+
+            const cx = width * 0.72;
+            const cy = height * 0.5;
+            const r = Math.min(width, height) * 0.3;
+
+            octx.beginPath();
+            switch (shapeId) {
+                case "circle":
+                    octx.arc(cx, cy, r, 0, Math.PI * 2);
+                    break;
+                case "diamond":
+                    octx.moveTo(cx, cy - r);
+                    octx.lineTo(cx + r, cy);
+                    octx.lineTo(cx, cy + r);
+                    octx.lineTo(cx - r, cy);
+                    octx.closePath();
+                    break;
+                case "triangle":
+                    octx.moveTo(cx, cy - r);
+                    octx.lineTo(cx + r * 0.87, cy + r * 0.5);
+                    octx.lineTo(cx - r * 0.87, cy + r * 0.5);
+                    octx.closePath();
+                    break;
+                case "hexagon":
+                default:
+                    for (let i = 0; i < 6; i++) {
+                        const angle = (Math.PI / 3) * i - Math.PI / 2;
+                        const x = cx + r * Math.cos(angle);
+                        const y = cy + r * Math.sin(angle);
+                        if (i === 0) octx.moveTo(x, y);
+                        else octx.lineTo(x, y);
+                    }
+                    octx.closePath();
+                    break;
+            }
+            octx.fill();
+            octx.filter = "none";
+            return off;
+        }
+
+        resize() {
+            const rect = this.board.getBoundingClientRect();
+            const w = Math.max(1, rect.width);
+            const h = Math.max(1, rect.height);
+            this.canvas.width = Math.round(w * this.dpr);
+            this.canvas.height = Math.round(h * this.dpr);
+            this.canvas.style.width = `${w}px`;
+            this.canvas.style.height = `${h}px`;
+            this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+
+            const { gl } = this;
+            gl.useProgram(this.program);
+            gl.uniform2f(
+                this.uniforms.uResolution,
+                this.canvas.width,
+                this.canvas.height,
+            );
+            gl.uniform1f(this.uniforms.uAtlasCount, this.atlasCount);
+            gl.uniform1f(this.uniforms.uCellSize, this.cellPx);
+
+            const maskW = 320;
+            const maskH = Math.max(1, Math.round(maskW * (h / w)));
+            const mask = this.buildMask(this.currentShape, maskW, maskH);
+            this.uploadTexture(this.maskTextureA, mask);
+            this.uploadTexture(this.maskTextureB, mask);
+            this.maskMix = 0;
+        }
+
+        setMouse(nx: number, ny: number) {
+            if (this.reduced) return;
+            this.mouse.x = nx;
+            this.mouse.y = ny;
+        }
+
+        clearMouse() {
+            this.mouse.x = -1;
+            this.mouse.y = -1;
+        }
+
+        // Morphs the shared shape to a new one — B is rebuilt with the new
+        // shape and mixed in over `duration` (during which FRAG_SRC's
+        // scramble term decodes through random characters rather than a
+        // plain crossfade), then committed into A so the next call starts
+        // clean.
+        setPhaseGlyph(shapeId: string, duration = 0.7) {
+            if (shapeId === this.currentShape) return;
+            const rect = this.board.getBoundingClientRect();
+            const w = Math.max(1, rect.width);
+            const h = Math.max(1, rect.height);
+            const maskW = 320;
+            const maskH = Math.max(1, Math.round(maskW * (h / w)));
+
+            this.currentShape = shapeId;
+            const nextMask = this.buildMask(shapeId, maskW, maskH);
+
+            if (this.reduced) {
+                this.uploadTexture(this.maskTextureA, nextMask);
+                this.uploadTexture(this.maskTextureB, nextMask);
+                this.maskMix = 0;
+                this.renderFrame();
+                return;
+            }
+
+            this.uploadTexture(this.maskTextureB, nextMask);
+
+            gsap.to(this, {
+                maskMix: 1,
+                duration,
+                ease: "power2.inOut",
+                onComplete: () => {
+                    this.uploadTexture(
+                        this.maskTextureA,
+                        this.buildMask(shapeId, maskW, maskH),
+                    );
+                    this.maskMix = 0;
+                },
+            });
+        }
+
+        private renderFrame() {
+            const { gl } = this;
+            gl.useProgram(this.program);
+            gl.uniform1f(
+                this.uniforms.uTime,
+                (performance.now() - this.startTime) / 1000,
+            );
+            gl.uniform1f(this.uniforms.uMaskMix, this.maskMix);
+            gl.uniform2f(this.uniforms.uMouse, this.mouse.x, this.mouse.y);
+
+            gl.activeTexture(gl.TEXTURE0);
+            gl.bindTexture(gl.TEXTURE_2D, this.maskTextureA);
+            gl.uniform1i(this.uniforms.uMaskA, 0);
+
+            gl.activeTexture(gl.TEXTURE1);
+            gl.bindTexture(gl.TEXTURE_2D, this.maskTextureB);
+            gl.uniform1i(this.uniforms.uMaskB, 1);
+
+            gl.activeTexture(gl.TEXTURE2);
+            gl.bindTexture(gl.TEXTURE_2D, this.atlasTexture);
+            gl.uniform1i(this.uniforms.uAtlas, 2);
+
+            gl.clearColor(0, 0, 0, 0);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+            gl.enable(gl.BLEND);
+            gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+            gl.drawArrays(gl.TRIANGLES, 0, 3);
+        }
+
+        private loop = () => {
+            this.rafId = requestAnimationFrame(this.loop);
+            this.renderFrame();
+        };
+
+        stop() {
+            if (this.rafId) cancelAnimationFrame(this.rafId);
+            this.rafId = null;
+            gsap.killTweensOf(this);
+            this.gl.deleteTexture(this.maskTextureA);
+            this.gl.deleteTexture(this.maskTextureB);
+            this.gl.deleteTexture(this.atlasTexture);
+            this.gl.deleteProgram(this.program);
+        }
+    }
+
+    document.addEventListener("astro:page-load", () => {
+        registerAnimation("process-teaser", (_gsap, signal) => {
+            const section = document.getElementById("process-teaser");
+            const canvasWrap = document.getElementById(
+                "process-teaser-canvas-wrap",
+            );
+            const canvas = document.getElementById(
+                "process-teaser-canvas",
+            ) as HTMLCanvasElement | null;
+            const items = document.querySelectorAll<HTMLElement>(
+                ".process-teaser .teaser-item",
+            );
+            if (!section || !canvasWrap || !canvas || !items.length) return;
+
+            const reduced = prefersReducedMotion();
+
+            if (reduced) {
+                gsap.set(items, { opacity: 1, y: 0 });
+            } else {
+                items.forEach((item) => {
+                    gsap.fromTo(
+                        item,
+                        { opacity: 0, y: 24 },
+                        {
+                            opacity: 1,
+                            y: 0,
+                            duration: 0.8,
+                            ease: "power3.out",
+                            scrollTrigger: {
+                                trigger: item,
+                                start: "top 88%",
+                                toggleActions: "play none none none",
+                            },
+                        },
+                    );
+                });
+            }
+
+            let gl: ProcessTeaserGL | null = null;
+            const io = new IntersectionObserver(
+                (entries) => {
+                    entries.forEach((entry) => {
+                        if (entry.isIntersecting && !gl) {
+                            try {
+                                // Sized against the sticky 100vh wrapper,
+                                // not the tall outer section — sizing
+                                // against the tall element was the earlier
+                                // "shape looks distorted" bug.
+                                gl = new ProcessTeaserGL(canvasWrap, canvas);
+                                window.addEventListener(
+                                    "resize",
+                                    () => gl?.resize(),
+                                    { signal, passive: true },
+                                );
+                            } catch {
+                                // WebGL unavailable — the section still
+                                // works with plain DOM content, just no
+                                // background effect.
+                            }
+                        }
+                    });
+                },
+                { rootMargin: "200px" },
+            );
+            io.observe(section);
+            signal.addEventListener("abort", () => io.disconnect());
+
+            // The main shape morphs to match whichever card is currently
+            // most in view — no pinning/scroll-jacking, just a normal
+            // vertical scroll with the shared background reacting to it.
+            if (!reduced) {
+                items.forEach((item) => {
+                    const shapeId = item.dataset.shape;
+                    if (!shapeId) return;
+                    ScrollTrigger.create({
+                        trigger: item,
+                        start: "top center",
+                        end: "bottom center",
+                        onEnter: () => gl?.setPhaseGlyph(shapeId),
+                        onEnterBack: () => gl?.setPhaseGlyph(shapeId),
+                    });
+                });
+            }
+
+            // Listener stays on `section` (canvasWrap has pointer-events:
+            // none so it wouldn't itself receive the event), but the rect
+            // used for the math is canvasWrap's — since it's sticky, that
+            // rect always matches whatever's currently visible on screen,
+            // which is what the shader's coordinates are computed against.
+            section.addEventListener(
+                "mousemove",
+                (e) => {
+                    const rect = canvasWrap.getBoundingClientRect();
+                    const nx = (e.clientX - rect.left) / rect.width;
+                    const ny = 1 - (e.clientY - rect.top) / rect.height;
+                    gl?.setMouse(nx, ny);
+                },
+                { signal, passive: true },
+            );
+            section.addEventListener(
+                "mouseleave",
+                () => gl?.clearMouse(),
+                { signal, passive: true },
+            );
+
+            signal.addEventListener("abort", () => gl?.stop());
+        });
+    });
+</script>
+
+<style lang="scss">
+    @use "../../styles/variables" as *;
+    @use "../../styles/mixins" as *;
+
+    .process-teaser {
+        position: relative;
+        width: 100vw;
+        left: 50%;
+        transform: translateX(-50%);
+        background: $color-black;
+        color: $color-white;
+        padding: 5rem 0;
+        // `clip`, not `hidden`: hidden forces overflow-y to auto (per spec,
+        // when one axis is non-visible the other can't stay visible),
+        // turning this section into its own scroll container and clipping
+        // the sticky canvas-wrap vertically at the section's box edges —
+        // that's the "canvas gets cut off" bug. `clip` still prevents the
+        // horizontal scrollbar from the full-bleed breakout below without
+        // that side effect (same fix as html/body in global.scss).
+        overflow-x: clip;
+
+        @include screen(md) {
+            padding: 8rem 0;
+        }
+    }
+
+    // Sticky + a negative bottom margin equal to its own height: the
+    // standard trick for "background stays pinned in view while content
+    // scrolls past" without the wrapper actually reserving 100vh of space
+    // in the document flow (which would just push the list down by that
+    // much). The canvas fills this wrapper, not the tall outer section —
+    // sizing it against the tall section was the earlier "shape looks
+    // distorted" bug.
+    .process-teaser-canvas-wrap {
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        margin-bottom: -100vh;
+        overflow: hidden;
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    .process-teaser-canvas {
+        position: absolute;
+        inset: 0;
+    }
+
+    .teaser-content,
+    .teaser-list,
+    .teaser-link {
+        position: relative;
+        z-index: 1;
+    }
+
+    .teaser-content {
+        max-width: 34rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+    }
+
+    .teaser-heading {
+        font-family: $font-display;
+        font-weight: 600;
+        font-size: clamp(1.9rem, 5.5vw, 3.25rem);
+        line-height: 1.08;
+        letter-spacing: -0.03em;
+        margin: 0;
+        color: $color-white;
+    }
+
+    .teaser-description {
+        margin: 0;
+        font-family: $font-sans;
+        font-size: clamp(0.95rem, 1.6vw, 1.05rem);
+        line-height: 1.65;
+        color: rgba($color-white, 0.7);
+        max-width: 42ch;
+    }
+
+    // A plain vertical stack — one card per phase, in document order.
+    .teaser-list {
+        list-style: none;
+        margin: 4rem 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 8rem;
+        max-width: 34rem;
+
+        @include screen(md) {
+            margin: 6rem 0;
+            gap: 14rem;
+        }
+    }
+
+    .teaser-item {
+        opacity: 0;
+        padding: 0;
+        border-radius: 0;
+        background: transparent;
+        border: none;
+        backdrop-filter: none;
+    }
+
+    .item-label {
+        font-family: $font-mono;
+        font-size: 0.8rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: rgba($color-white, 0.95);
+        margin-bottom: 0.6rem;
+    }
+
+    .item-description {
+        margin: 0;
+        font-family: $font-sans;
+        font-size: 0.9rem;
+        line-height: 1.65;
+        color: rgba($color-white, 0.6);
+
+        @include screen(md) {
+            font-size: 0.95rem;
+        }
+    }
+
+    .teaser-link {
+        display: inline-block;
+        font-family: $font-mono;
+        font-size: 0.8rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        color: $color-white;
+        text-decoration: none;
+        opacity: 0.85;
+        transition: opacity 0.25s ease;
+        white-space: nowrap;
+
+        &:hover {
+            opacity: 1;
+        }
+    }
+</style>

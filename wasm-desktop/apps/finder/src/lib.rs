@@ -69,7 +69,11 @@ impl FinderApp {
         let p1 = egui::pos2(doc.right() - fold, doc.top());
         let p2 = egui::pos2(doc.right(), doc.top());
         let p3 = egui::pos2(doc.right(), doc.top() + fold);
-        painter.add(Shape::convex_polygon(vec![p1, p2, p3], accent, Stroke::NONE));
+        painter.add(Shape::convex_polygon(
+            vec![p1, p2, p3],
+            accent,
+            Stroke::NONE,
+        ));
 
         for i in 0..3 {
             let y = doc.top() + doc.height() * (0.4 + i as f32 * 0.18);
@@ -105,7 +109,8 @@ impl FinderApp {
             ui.vertical_centered(|ui| {
                 let (rect, response) =
                     ui.allocate_exact_size(Vec2::new(48.0, 42.0), Sense::click());
-                ui.painter().rect_filled(rect, CornerRadius::from(8.0), color);
+                ui.painter()
+                    .rect_filled(rect, CornerRadius::from(8.0), color);
                 draw_glyph(ui.painter(), rect);
                 ui.add_space(2.0);
                 ui.label(RichText::new(display).size(10.0));
@@ -142,7 +147,10 @@ impl FinderApp {
 
         if self.current_path == "/Trash" {
             let has_items = !actx.vfs.list_dir("/Trash").unwrap_or_default().is_empty();
-            if ui.add_enabled(has_items, egui::Button::new("Empty Trash")).clicked() {
+            if ui
+                .add_enabled(has_items, egui::Button::new("Empty Trash"))
+                .clicked()
+            {
                 for (name, _) in actx.vfs.list_dir("/Trash").unwrap_or_default() {
                     let _ = actx.vfs.remove(&format!("/Trash/{name}"));
                 }
@@ -152,8 +160,14 @@ impl FinderApp {
 
         if self.current_path != "/" {
             let key = format!("{}/..", self.current_path);
-            let (opened, _) =
-                self.draw_tile(ui, &key, "..", FOLDER_COLOR, false, Self::draw_generic_folder_glyph);
+            let (opened, _) = self.draw_tile(
+                ui,
+                &key,
+                "..",
+                FOLDER_COLOR,
+                false,
+                Self::draw_generic_folder_glyph,
+            );
             if opened {
                 navigate_to = Some(Vfs::resolve(&self.current_path, ".."));
             }
@@ -267,23 +281,30 @@ impl DesktopApplet for FinderApp {
                 .show(ui, |ui| {
                     ui.set_width(112.0);
                     ui.set_min_height(270.0);
-                    ui.label(RichText::new("FAVORITES").size(10.5).weak());
-                    ui.add_space(6.0);
 
-                    for (path, label) in [
-                        ("/", "Computer"),
-                        ("/Home", "Home"),
-                        ("/Projects", "Projects"),
-                        ("/Blog", "Blog"),
-                        ("/Playground", "Playground"),
-                        ("/System", "System"),
-                        ("/Trash", "Trash"),
-                    ] {
-                        let selected = self.current_path == path;
-                        if ui.selectable_label(selected, label).clicked() {
-                            self.current_path = path.to_string();
+                    // `Frame::show` inherits the layout of wherever it was
+                    // created — this frame lives inside `ui.horizontal_top`,
+                    // so without this its children lay out left-to-right
+                    // instead of stacking into a real sidebar list.
+                    ui.vertical(|ui| {
+                        ui.label(RichText::new("FAVORITES").size(10.5).weak());
+                        ui.add_space(6.0);
+
+                        for (path, label) in [
+                            ("/", "Computer"),
+                            ("/Home", "Home"),
+                            ("/Projects", "Projects"),
+                            ("/Blog", "Blog"),
+                            ("/Playground", "Playground"),
+                            ("/System", "System"),
+                            ("/Trash", "Trash"),
+                        ] {
+                            let selected = self.current_path == path;
+                            if ui.selectable_label(selected, label).clicked() {
+                                self.current_path = path.to_string();
+                            }
                         }
-                    }
+                    });
                 });
 
             egui::Frame::new()

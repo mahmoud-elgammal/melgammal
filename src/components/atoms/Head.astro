@@ -103,6 +103,62 @@ const { title, description, image = "/nano.png" } = Astro.props;
       ),
     ].forEach((link) => link.remove()),
   );
+
+  // Custom GSAP curtain transition for entering/leaving /desktop (the
+  // fake-OS canvas app) — the native view-transition crossfade is
+  // suppressed for this route pair (see global.scss) so this is the only
+  // animation running.
+  //
+  // Rather than guess at CSS animation-delay values to line up with the
+  // actual page swap, astro:before-preparation lets the swap itself be
+  // *awaited*: wrapping event.loader means Astro won't fetch/swap the new
+  // page until our cover animation has actually finished, so the curtain
+  // is always fully opaque before anything changes underneath it — no
+  // race, no guessed timing.
+  document.addEventListener("astro:before-preparation", (event) => {
+    // @ts-ignore - to/from/loader aren't part of TransitionBeforeSwapEvent's
+    // type, but astro:before-preparation's event does carry them.
+    const toPath = event.to?.pathname as string | undefined;
+    // @ts-ignore
+    const fromPath = event.from?.pathname as string | undefined;
+
+    const enteringDesktop = toPath === "/desktop" && fromPath !== "/desktop";
+    const leavingDesktop = fromPath === "/desktop" && toPath !== "/desktop";
+    if (!enteringDesktop && !leavingDesktop) return;
+
+    // Suppresses the default ::view-transition-old/new(root) fade for
+    // this route pair (see global.scss) so it doesn't run underneath —
+    // and, since GSAP can't target native view-transition pseudo-elements
+    // directly, this class is also how that CSS rule knows to back off.
+    document.documentElement.classList.add(
+      enteringDesktop ? "transition-to-desktop" : "transition-from-desktop",
+    );
+
+    // @ts-ignore
+    const originalLoader = event.loader;
+    // @ts-ignore
+    event.loader = async () => {
+      const { coverScreen } = await import("@lib/desktopTransition");
+      await coverScreen(
+        enteringDesktop ? "Booting desktop.wasm…" : "Returning to site…",
+      );
+      // The incoming document needs to start already covered — Astro's
+      // swap is a DOM replacement, not a cross-fade, so without this
+      // there'd be one frame of the new page showing before our reveal
+      // animation (bound on the new document) gets a chance to run.
+      sessionStorage.setItem("transition-precovered", "1");
+      await originalLoader();
+    };
+  });
+
+  document.addEventListener("astro:after-swap", async () => {
+    document.documentElement.classList.remove(
+      "transition-to-desktop",
+      "transition-from-desktop",
+    );
+    const { revealScreen } = await import("@lib/desktopTransition");
+    revealScreen();
+  });
 </script>
 
 <script is:inline>
@@ -140,7 +196,11 @@ const { title, description, image = "/nano.png" } = Astro.props;
       window
         .matchMedia("(prefers-color-scheme: dark)")
         .addEventListener("change", (event) => {
-          toggleTheme(event.matches);
+          // A manual choice from the header toggle should stick even if
+          // the OS preference changes underneath it.
+          if (!localStorage.getItem("theme-override")) {
+            toggleTheme(event.matches);
+          }
         });
     }
   }
@@ -210,8 +270,20 @@ const { title, description, image = "/nano.png" } = Astro.props;
   }
 
   function preloadTheme() {
-    toggleTheme(window.matchMedia("(prefers-color-scheme: dark)").matches);
+    const override = localStorage.getItem("theme-override");
+    const dark =
+      override === "dark" ||
+      (override !== "light" &&
+        window.matchMedia("(prefers-color-scheme: dark)").matches);
+    toggleTheme(dark);
   }
+
+  // Exposed for the header's theme toggle switch — sets an explicit
+  // preference that persists across visits and overrides the OS setting.
+  window.__setThemeOverride = function (dark) {
+    localStorage.setItem("theme-override", dark ? "dark" : "light");
+    toggleTheme(dark);
+  };
 
   document.addEventListener("DOMContentLoaded", () => init());
   document.addEventListener("astro:after-swap", () => init());

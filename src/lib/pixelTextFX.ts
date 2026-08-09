@@ -1,3 +1,4 @@
+import { gsap } from "gsap";
 import { prefersReducedMotion } from "@lib/animation";
 
 /**
@@ -6,9 +7,15 @@ import { prefersReducedMotion } from "@lib/animation";
  * footer wordmark both use this. Falls back to the plain, fully visible
  * source element if WebGL is unavailable or reduced motion is requested.
  *
- * Caller owns the DOM entrance animation (letter reveal, etc.) and only
- * constructs this once that's finished, since the WebGL layer takes over
- * rendering by setting the source element's color to transparent.
+ * Owns its own entrance animation: on construction, each glyph slides up
+ * into place with a slight skew, staggered letter-by-letter, rather than
+ * the whole texture just appearing. This is drawn letter-by-letter into
+ * the offscreen 2D canvas every frame during the entrance (see
+ * drawGlyphs()) — not a shader displacement trick. A shader can only
+ * offset *where it samples* a already-flat texture, and offsets big enough
+ * to read as "sliding up" pulled in neighboring glyphs/blank space and
+ * looked smeared; real per-glyph 2D transforms (translate + shear +
+ * alpha) don't have that problem.
  */
 
 const VERTEX_SRC = `
@@ -77,6 +84,18 @@ function compileShader(
     return shader;
 }
 
+// Standard easeOutBack: overshoots past 1 before settling back — plain
+// smoothstep made the entrance glide to a stop with no snap, which read as
+// flat/robotic. The overshoot is what gives each letter a bit of life as
+// it lands (t > ~0.75 range dips slightly past the target, then eases
+// back), rather than just decelerating into place.
+function backOut(t: number, overshoot = 1.7): number {
+    const c1 = overshoot;
+    const c3 = c1 + 1;
+    const p = t - 1;
+    return 1 + c3 * p * p * p + c1 * p * p;
+}
+
 export class PixelTextFX {
     private el: HTMLElement;
     private lines: string[];
@@ -92,6 +111,28 @@ export class PixelTextFX {
     private targetMouse = { x: -1, y: -1 };
     private prevMouse = { x: -1, y: -1 };
     private velocity = { x: 0, y: 0 };
+    // True once the cursor has actually entered — lets the first move
+    // after entering *snap* mouse/prevMouse straight to that position
+    // instead of easing up from the -1,-1 "not hovering" sentinel. Easing
+    // from -1 is a huge normalized distance (roughly the whole element),
+    // so for several frames the shader was reading a real-looking uMouse
+    // value that didn't correspond to the actual cursor position at all —
+    // it swept in from off-element, which is exactly what reads as "a
+    // hidden cursor moving" on every hover-in.
+    private hasEntered = false;
+    // 0 = not yet revealed, 1 = fully settled — drawGlyphs() is called
+    // every frame the entrance is still in progress (see render()); no
+    // onUpdate callback needed since it's just read live off this object.
+    private entrance = { v: 0 };
+    // Populated by layout() (one entry per character, with its drawn
+    // position) and consumed by drawGlyphs() — kept as fields rather than
+    // recomputed each frame since getComputedStyle()/measureText() are the
+    // expensive part and only need to run when the layout actually changes.
+    private glyphs: { char: string; x: number; y: number }[] = [];
+    private textFont = "";
+    private textColor = "";
+    private textLetterSpacing = "";
+    private textFontSize = 16;
     private rafId: number | null = null;
     private startTime = performance.now();
     private reduced: boolean;
@@ -138,20 +179,38 @@ export class PixelTextFX {
                 "mousemove",
                 (e) => {
                     const rect = canvas.getBoundingClientRect();
-                    this.targetMouse.x = (e.clientX - rect.left) / rect.width;
+                    const nx = (e.clientX - rect.left) / rect.width;
                     // Flipped: gl_Position/vUv are bottom-up in GLSL, but
                     // clientY is top-down — without this the hover offset
                     // lands mirrored vertically from the cursor.
-                    this.targetMouse.y =
-                        1 - (e.clientY - rect.top) / rect.height;
+                    const ny = 1 - (e.clientY - rect.top) / rect.height;
+
+                    if (!this.hasEntered) {
+                        // First move since entering — snap immediately
+                        // rather than letting the position-ease (and, via
+                        // it, the velocity calc) sweep in from -1,-1.
+                        this.mouse.x = nx;
+                        this.mouse.y = ny;
+                        this.prevMouse.x = nx;
+                        this.prevMouse.y = ny;
+                        this.hasEntered = true;
+                    }
+
+                    this.targetMouse.x = nx;
+                    this.targetMouse.y = ny;
                 },
                 { signal, passive: true },
             );
             canvas.addEventListener(
                 "mouseleave",
                 () => {
-                    this.targetMouse.x = -1;
-                    this.targetMouse.y = -1;
+                    // Not reset to -1,-1 — that fed the same sweep-artifact
+                    // back through the position-ease on the way out.
+                    // Leaving targetMouse where it is means `mouse` simply
+                    // stops moving once it catches up, velocity settles to
+                    // 0 on its own, and the hover offset fades out
+                    // naturally instead of sweeping toward a fake point.
+                    this.hasEntered = false;
                 },
                 { signal, passive: true },
             );
@@ -165,17 +224,36 @@ export class PixelTextFX {
 
         signal.addEventListener("abort", () => this.stop());
 
-        // Paint the first frame before revealing the canvas, so there's
-        // never a blank tick between hiding the source element and the
-        // shader actually having something to show.
+        // Paint the first frame (entrance still at 0 — layout() already
+        // drew the glyphs in their fully-unrevealed state) before revealing
+        // the canvas, so there's never a blank tick between hiding the
+        // source element and the shader actually having something to show.
         this.render();
         el.style.color = "transparent";
         canvas.style.opacity = "1";
 
-        // The initial render() above already painted a static frame;
-        // reduced motion stops there. Otherwise, keep rendering for the
-        // idle shimmer and cursor-follow interaction.
-        if (!this.reduced) this.loop();
+        if (this.reduced) {
+            this.entrance.v = 1;
+            this.drawGlyphs(1);
+            this.uploadTexture();
+            this.render();
+        } else {
+            gsap.to(this.entrance, {
+                v: 1,
+                duration: 1.8,
+                ease: "power2.out",
+                onComplete: () => {
+                    // Guarantees a pixel-perfect settled frame — the last
+                    // frame of the tween lands very close to but not
+                    // exactly at progress 1.
+                    this.drawGlyphs(1);
+                    this.uploadTexture();
+                },
+            });
+            // Keep rendering for the entrance, idle shimmer, and
+            // cursor-follow interaction.
+            this.loop();
+        }
     }
 
     private createProgram(): WebGLProgram | null {
@@ -249,8 +327,6 @@ export class PixelTextFX {
         this.textCanvas.height = this.canvas.height;
 
         const ctx = this.textCtx;
-        ctx.clearRect(0, 0, this.textCanvas.width, this.textCanvas.height);
-        ctx.scale(this.dpr, this.dpr);
         ctx.font = `${cs.fontWeight} ${fontSize}px ${cs.fontFamily}`;
         // NOT cs.color: once the source element is hidden (color:
         // transparent, set at the end of the constructor), getComputedStyle()
@@ -260,13 +336,17 @@ export class PixelTextFX {
         // canvas permanently blank. Derive the real color from the current
         // theme instead.
         const isDark = document.documentElement.classList.contains("dark");
-        ctx.fillStyle = isDark ? this.colors.dark : this.colors.light;
         ctx.textBaseline = "alphabetic";
         // Match the element's letter-spacing so measureText() wrap points
         // line up with how the browser actually wraps the real text.
         if ("letterSpacing" in ctx) {
             (ctx as any).letterSpacing = cs.letterSpacing;
         }
+        this.textFont = ctx.font;
+        this.textColor = isDark ? this.colors.dark : this.colors.light;
+        this.textLetterSpacing =
+            "letterSpacing" in ctx ? cs.letterSpacing : "";
+        this.textFontSize = fontSize;
 
         // The source element word-wraps each line with flexbox at whatever
         // the real viewport width is, so a fixed line-break assumption
@@ -293,13 +373,107 @@ export class PixelTextFX {
             if (currentRow) rows.push(currentRow);
         });
 
+        // Per-character positions (not whole-row fillText calls) — this is
+        // what lets drawGlyphs() animate each letter independently rather
+        // than the row as one rigid block.
+        this.glyphs = [];
         rows.forEach((row, i) => {
             const y = lineHeight * (i + 1) - (lineHeight - fontSize) / 2 - 2;
-            ctx.fillText(row, 0, y);
+            let x = 0;
+            for (const char of row) {
+                this.glyphs.push({ char, x, y });
+                x += ctx.measureText(char).width;
+            }
         });
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
 
+        this.drawGlyphs(this.entrance.v);
         gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+        this.uploadTexture();
+
+        gl.uniform2f(
+            this.uniforms.uResolution,
+            this.canvas.width,
+            this.canvas.height,
+        );
+        gl.uniform1f(this.uniforms.uBlockSize, 8 * this.dpr);
+
+        this.render();
+    }
+
+    // Draws every glyph individually — translated up from below, sheared,
+    // and faded in based on its own delay — into the offscreen 2D canvas.
+    // Called once per frame while entrance < 1 (see render()), and once
+    // more after layout() rebuilds glyph positions (e.g. on resize/theme
+    // change), always against whatever `progress` the entrance is
+    // currently at so a resize mid-entrance doesn't snap back to unrevealed.
+    private drawGlyphs(progress: number) {
+        const ctx = this.textCtx;
+        ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+        ctx.clearRect(
+            0,
+            0,
+            this.textCanvas.width / this.dpr,
+            this.textCanvas.height / this.dpr,
+        );
+        ctx.font = this.textFont;
+        ctx.fillStyle = this.textColor;
+        ctx.textBaseline = "alphabetic";
+        if ("letterSpacing" in ctx) {
+            (ctx as any).letterSpacing = this.textLetterSpacing;
+        }
+
+        const count = this.glyphs.length || 1;
+        // How much of the overall progress is spent staggering delays
+        // across letters vs. each letter's own reveal — higher means a
+        // more pronounced letter-by-letter cascade rather than the whole
+        // word settling almost together.
+        const staggerSpan = 0.8;
+        const letterDuration = 1 - staggerSpan;
+        const slideDistance = this.textFontSize * 0.22;
+        const skewAmount = 0.18;
+
+        this.glyphs.forEach((g, i) => {
+            const delay = (i / count) * staggerSpan;
+            const t = Math.min(
+                1,
+                Math.max(0, (progress - delay) / letterDuration),
+            );
+
+            if (t <= 0) return; // hasn't started yet — nothing to draw
+
+            // Alpha and position deliberately use *different* curves. Tying
+            // both to the same eased value made the glyph nearly
+            // transparent for most of its travel (smoothstep is ~0 for a
+            // while near t=0) and only really visible once it had already
+            // arrived — so the slide read as "just a fade," no perceptible
+            // motion. Fading in fast (opaque by t=0.35) while position
+            // keeps easing across the *entire* duration means there's a
+            // long, clearly visible window where the glyph is fully opaque
+            // and still sliding into place.
+            const alphaT = Math.min(1, t / 0.35);
+            const alpha = alphaT * alphaT * (3 - 2 * alphaT);
+            const posEased = backOut(t);
+
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            // Starts above the glyph's real position (smaller y = higher
+            // up) and settles downward into place, from nothing.
+            ctx.translate(g.x, g.y - (1 - posEased) * slideDistance);
+            // Shears the glyph itself (not just its position) — negative
+            // coefficient means the top (negative local y) shifts right
+            // and the bottom (near the baseline) shifts left, i.e. the
+            // slant runs from upper-right down to lower-left. Straightens
+            // out to 0 as it settles.
+            ctx.transform(1, 0, -(1 - posEased) * skewAmount, 1, 0, 0);
+            ctx.fillText(g.char, 0, 0);
+            ctx.restore();
+        });
+
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+    }
+
+    private uploadTexture() {
+        const { gl } = this;
         gl.bindTexture(gl.TEXTURE_2D, this.texture);
         gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
         gl.texImage2D(
@@ -314,19 +488,19 @@ export class PixelTextFX {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-
-        gl.uniform2f(
-            this.uniforms.uResolution,
-            this.canvas.width,
-            this.canvas.height,
-        );
-        gl.uniform1f(this.uniforms.uBlockSize, 8 * this.dpr);
-
-        this.render();
     }
 
     private render() {
         const { gl } = this;
+
+        // Still entering — redraw the glyphs at the current progress and
+        // re-upload before drawing this frame. Bounded to the ~1.4s
+        // entrance, so the extra per-frame canvas/GPU-upload work here
+        // never runs during normal idle/hover playback.
+        if (this.entrance.v < 1) {
+            this.drawGlyphs(this.entrance.v);
+            this.uploadTexture();
+        }
 
         // Two-stage easing, not a single raw lerp: the cursor position is
         // smoothed first, then its frame-to-frame delta (velocity) is
@@ -368,6 +542,7 @@ export class PixelTextFX {
             this.uniforms.uTime,
             (performance.now() - this.startTime) / 1000,
         );
+        gl.uniform1f(this.uniforms.uEntranceProgress, this.entrance.v);
 
         gl.drawArrays(gl.TRIANGLES, 0, 3);
     }
@@ -380,6 +555,7 @@ export class PixelTextFX {
     public stop() {
         if (this.rafId) cancelAnimationFrame(this.rafId);
         this.rafId = null;
+        gsap.killTweensOf(this.entrance);
         this.themeObserver?.disconnect();
         this.themeObserver = null;
         this.gl.deleteTexture(this.texture);

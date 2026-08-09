@@ -1,42 +1,6 @@
 ---
 import { Icon } from "astro-icon/components";
-
-const SKILLS = [
-    { name: "Node.js", slug: "nodejs", icon: "logos:nodejs-icon", size: "lg" },
-    {
-        name: "TypeScript",
-        slug: "typescript",
-        icon: "logos:typescript-icon",
-        size: "md",
-    },
-    { name: "React", slug: "react", icon: "logos:react", size: "sm" },
-    {
-        name: "Prometheus",
-        slug: "prometheus",
-        icon: "logos:prometheus",
-        size: "lg",
-    },
-    { name: "Grafana", slug: "grafana", icon: "logos:grafana", size: "md" },
-    { name: "Docker", slug: "docker", icon: "logos:docker-icon", size: "sm" },
-    { name: "K8s", slug: "k8s", icon: "logos:kubernetes", size: "md" },
-    {
-        name: "k6",
-        slug: "k6",
-        icon: "simple-icons:k6",
-        color: "#7D64FF",
-        size: "sm",
-    },
-    { name: "Three.js", slug: "threejs", icon: "logos:threejs", size: "lg" },
-    {
-        name: "React Native",
-        slug: "react-native",
-        icon: "logos:react",
-        size: "sm",
-    },
-    { name: "Rust", slug: "rust", icon: "logos:rust", size: "md" },
-    { name: "AWS", slug: "aws", icon: "logos:aws", size: "md" },
-    { name: "Astro.js", slug: "astro", icon: "logos:astro-icon", size: "lg" },
-];
+import { SKILLS } from "../../lib/skills";
 ---
 
 <section
@@ -53,9 +17,7 @@ const SKILLS = [
 
         <!-- WebGL glow/chromatic-aberration pass, sampling the 2D canvas
              above and distorting it around the cursor -->
-        <canvas
-            id="expertise-glow-canvas"
-            class="expertise-glow-canvas"
+        <canvas id="expertise-glow-canvas" class="expertise-glow-canvas"
         ></canvas>
 
         <!-- Interactive Technical HUD -->
@@ -97,9 +59,7 @@ const SKILLS = [
                     <Icon
                         name={skill.icon}
                         title={skill.name}
-                        style={
-                            skill.color ? `color:${skill.color}` : undefined
-                        }
+                        style={skill.color ? `color:${skill.color}` : undefined}
                     />
                 </li>
             ))
@@ -110,11 +70,8 @@ const SKILLS = [
 <script>
     import Matter from "matter-js";
     import { gsap } from "gsap";
-    import {
-        registerAnimation,
-        prefersReducedMotion,
-    } from "@lib/animation";
-
+    import { registerAnimation, prefersReducedMotion } from "@lib/animation";
+    import { SKILLS } from "../../lib/skills";
     const {
         Engine,
         Events,
@@ -123,27 +80,6 @@ const SKILLS = [
         Composite,
         Body: MatterBody,
     } = Matter;
-
-    const SKILLS = [
-        { name: "Node.js", slug: "nodejs", depth: 1.25, size: "lg" },
-        { name: "TypeScript", slug: "typescript", depth: 1, size: "md" },
-        { name: "React", slug: "react", depth: 0.75, size: "sm" },
-        { name: "Prometheus", slug: "prometheus", depth: 1.25, size: "lg" },
-        { name: "Grafana", slug: "grafana", depth: 1, size: "md" },
-        { name: "Docker", slug: "docker", depth: 0.75, size: "sm" },
-        { name: "K8s", slug: "k8s", depth: 1.25, size: "md" },
-        { name: "k6", slug: "k6", depth: 1, size: "sm" },
-        { name: "Three.js", slug: "threejs", depth: 0.75, size: "lg" },
-        {
-            name: "React Native",
-            slug: "react-native",
-            depth: 1.25,
-            size: "sm",
-        },
-        { name: "Rust", slug: "rust", depth: 1, size: "md" },
-        { name: "AWS", slug: "aws", depth: 0.75, size: "md" },
-        { name: "Astro.js", slug: "astro", depth: 1.25, size: "lg" },
-    ];
 
     class ExpertiseCanvas {
         private board: HTMLElement;
@@ -159,9 +95,11 @@ const SKILLS = [
         private observer: MutationObserver | null = null;
         private intersectionObserver: IntersectionObserver | null = null;
         private rafId: number | null = null;
+        private gravityTimer: number | null = null;
         private isMobile: boolean = false;
         private signal: AbortSignal;
         private icons: Map<string, HTMLImageElement> = new Map();
+        private bullets: { body: any; spawnedAt: number }[] = [];
 
         constructor(signal: AbortSignal) {
             this.signal = signal;
@@ -175,9 +113,7 @@ const SKILLS = [
                 : "light";
 
             this.observer = new MutationObserver(() => {
-                this.theme = document.documentElement.classList.contains(
-                    "dark",
-                )
+                this.theme = document.documentElement.classList.contains("dark")
                     ? "dark"
                     : "light";
             });
@@ -218,9 +154,13 @@ const SKILLS = [
 
             this.loadIcons();
 
-            // Physics Setup
+            // Physics Setup — gravity starts on so the tags drop in from
+            // above when the section first comes into view (this whole
+            // init() only ever runs once the IntersectionObserver fires),
+            // then switches off once they've settled so the rest of the
+            // simulation (mouse attraction, spacing) behaves as before.
             this.engine = Engine.create();
-            this.engine.gravity.y = 0;
+            this.engine.gravity.y = 1;
 
             const width = this.canvas.width / this.dpr;
             const height = this.canvas.height / this.dpr;
@@ -233,7 +173,10 @@ const SKILLS = [
                 const rectH = iconSize + padding;
 
                 const x = (Math.random() * 0.6 + 0.2) * width;
-                const y = (Math.random() * 0.6 + 0.2) * height;
+                // Staggered start heights above the board — bounded so
+                // they stay inside the top wall (spans y -200..0 below)
+                // rather than spawning above it and getting stuck.
+                const y = -40 - Math.random() * 140;
 
                 const body = Bodies.rectangle(x, y, rectW, rectH, {
                     chamfer: { radius: 10 },
@@ -274,15 +217,28 @@ const SKILLS = [
                 ),
             ]);
 
-            // Reveal Animation
+            // Reveal Animation — fast and lightly staggered so the tags
+            // are actually visible while they're falling, not fading in
+            // after the fact. `i * 0.05` was tuned back when SKILLS had a
+            // dozen entries; with a hundred-plus now, that delay would
+            // take the last tag 5+ seconds to even start appearing, so the
+            // stagger cycles instead of growing with the list length.
             this.bodies.forEach((b, i) => {
                 gsap.to(b, {
                     revealOpacity: 1,
-                    duration: 1.5,
-                    delay: i * 0.05,
-                    ease: "power4.out",
+                    duration: 0.4,
+                    delay: (i % 24) * 0.025,
+                    ease: "power2.out",
                 });
             });
+
+            // Gravity is only for the initial drop-in — once the tags have
+            // had time to fall and settle against the bottom wall, switch
+            // back to the floating/mouse-attraction behavior.
+            this.gravityTimer = window.setTimeout(() => {
+                if (this.engine) this.engine.gravity.y = 0;
+                this.gravityTimer = null;
+            }, 1400);
 
             this.setupInteraction();
 
@@ -376,6 +332,51 @@ const SKILLS = [
                 },
                 { signal: this.signal },
             );
+
+            // Click to shoot: fires a bullet from a fixed "turret" point at
+            // the bottom of the board toward wherever was clicked — real
+            // Matter.js collisions handle knocking the skill tags around,
+            // rather than a manual force hack.
+            this.board.addEventListener(
+                "click",
+                (e) => {
+                    if (!this.engine) return; // physics disabled on mobile
+                    const target = e.target as HTMLElement;
+                    let x: number;
+                    let y: number;
+                    if (target === this.canvas) {
+                        x = e.offsetX;
+                        y = e.offsetY;
+                    } else {
+                        const rect = this.boardRect;
+                        x = e.clientX - rect.left;
+                        y = e.clientY - rect.top;
+                    }
+                    this.shoot(x, y);
+                },
+                { signal: this.signal },
+            );
+        }
+
+        private shoot(targetX: number, targetY: number) {
+            const originX = this.boardRect.width / 2;
+            const originY = this.boardRect.height - 6;
+            const dx = targetX - originX;
+            const dy = targetY - originY;
+            const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+            const speed = 24;
+
+            const bullet = Bodies.circle(originX, originY, 5, {
+                restitution: 0.6,
+                frictionAir: 0.005,
+                label: "bullet",
+            });
+            MatterBody.setVelocity(bullet, {
+                x: (dx / dist) * speed,
+                y: (dy / dist) * speed,
+            });
+            Composite.add(this.engine.world, bullet);
+            this.bullets.push({ body: bullet, spawnedAt: performance.now() });
         }
 
         private draw() {
@@ -490,6 +491,48 @@ const SKILLS = [
                     this.ctx.restore();
                 },
             );
+
+            this.drawBullets();
+        }
+
+        private drawBullets() {
+            const now = performance.now();
+            const w = this.boardRect.width;
+            const h = this.boardRect.height;
+            const margin = 60;
+
+            this.bullets = this.bullets.filter(({ body, spawnedAt }) => {
+                const expired = now - spawnedAt > 1800;
+                const outOfBounds =
+                    body.position.x < -margin ||
+                    body.position.x > w + margin ||
+                    body.position.y < -margin ||
+                    body.position.y > h + margin;
+
+                if (expired || outOfBounds) {
+                    Composite.remove(this.engine.world, body);
+                    return false;
+                }
+                return true;
+            });
+
+            this.bullets.forEach(({ body }) => {
+                this.ctx.save();
+                this.ctx.globalAlpha = 1;
+                this.ctx.fillStyle = "#10b981";
+                this.ctx.shadowColor = "#10b981";
+                this.ctx.shadowBlur = 12;
+                this.ctx.beginPath();
+                this.ctx.arc(
+                    body.position.x,
+                    body.position.y,
+                    5,
+                    0,
+                    Math.PI * 2,
+                );
+                this.ctx.fill();
+                this.ctx.restore();
+            });
         }
 
         public stop() {
@@ -513,7 +556,12 @@ const SKILLS = [
                 cancelAnimationFrame(this.rafId);
                 this.rafId = null;
             }
+            if (this.gravityTimer) {
+                window.clearTimeout(this.gravityTimer);
+                this.gravityTimer = null;
+            }
             this.icons.clear();
+            this.bullets = [];
             // Resize listener is auto-removed via the AbortSignal
         }
     }
@@ -625,8 +673,7 @@ const SKILLS = [
             board.addEventListener(
                 "mousemove",
                 (e) => {
-                    this.mouse.x =
-                        (e.clientX - this.boardRect.left) * this.dpr;
+                    this.mouse.x = (e.clientX - this.boardRect.left) * this.dpr;
                     this.mouse.y =
                         (this.boardRect.height -
                             (e.clientY - this.boardRect.top)) *
@@ -671,14 +718,9 @@ const SKILLS = [
             }
 
             gl.useProgram(program);
-            ["uTexture", "uResolution", "uMouse", "uRadius"].forEach(
-                (name) => {
-                    this.uniforms[name] = gl.getUniformLocation(
-                        program,
-                        name,
-                    );
-                },
-            );
+            ["uTexture", "uResolution", "uMouse", "uRadius"].forEach((name) => {
+                this.uniforms[name] = gl.getUniformLocation(program, name);
+            });
             return program;
         }
 
@@ -728,16 +770,8 @@ const SKILLS = [
             } catch {
                 return;
             }
-            gl.texParameteri(
-                gl.TEXTURE_2D,
-                gl.TEXTURE_MIN_FILTER,
-                gl.LINEAR,
-            );
-            gl.texParameteri(
-                gl.TEXTURE_2D,
-                gl.TEXTURE_MAG_FILTER,
-                gl.LINEAR,
-            );
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
             gl.texParameteri(
                 gl.TEXTURE_2D,
                 gl.TEXTURE_WRAP_S,

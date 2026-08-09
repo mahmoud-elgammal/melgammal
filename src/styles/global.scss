@@ -46,6 +46,19 @@ html {
     animation: 0.45s cubic-bezier(0.16, 1, 0.3, 1) both page-fade-in;
 }
 
+/* ── Entering/leaving /desktop: the transition is a GSAP-driven curtain
+   (TransitionOverlay.astro + @lib/desktopTransition.ts) instead of a CSS
+   view-transition animation, so the native crossfade is suppressed for
+   this specific route pair — nothing here fights the overlay for control
+   of the page. See Head.astro's astro:before-preparation handler. ── */
+html.transition-to-desktop,
+html.transition-from-desktop {
+    &::view-transition-old(root),
+    &::view-transition-new(root) {
+        animation: none;
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
     ::view-transition-old(root),
     ::view-transition-new(root) {
@@ -56,7 +69,13 @@ html {
 html,
 body {
     width: 100%;
-    overflow-x: hidden; // Prevent horizontal scroll from animations
+    // `clip`, not `hidden`: hidden forces overflow-y to auto (per spec,
+    // when one axis is non-visible the other can't stay visible), which
+    // turns body into its own scroll container and silently breaks
+    // `position: sticky` for every descendant on the page. `clip` still
+    // prevents the horizontal scrollbar from full-bleed elements without
+    // that side effect.
+    overflow-x: clip;
 }
 
 body {
@@ -114,8 +133,8 @@ header {
 
 main {
     flex: 1 1 0%;
-    padding-top: 4rem; // Reduced for mobile
-    padding-bottom: 4rem; // Reduced for mobile
+    padding-top: 2rem; // Reduced for mobile
+    padding-bottom: 2rem; // Reduced for mobile
 
     @include screen(md) {
         padding-top: 8rem;

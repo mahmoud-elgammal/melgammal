@@ -7,8 +7,8 @@ import Button from "@components/atoms/Button.astro";
 import ProjectCard from "@components/molecules/ProjectCard.astro";
 import PostCard from "@components/molecules/PostCard.astro";
 import { SITE, HOME, SOCIALS } from "@consts";
-import Expertise from "@components/organisms/Expertise.astro";
 import About from "@components/organisms/About.astro";
+import ProcessTeaser from "@components/organisms/ProcessTeaser.astro";
 import AmbientBackgroundFX from "@components/molecules/AmbientBackgroundFX.astro";
 
 const blog = (await getCollection("blog"))
@@ -23,18 +23,36 @@ const projects = (await getCollection("projects"))
 ---
 
 <PageLayout title={HOME.TITLE} description={HOME.DESCRIPTION}>
-    <AmbientBackgroundFX />
+    <!-- <AmbientBackgroundFX /> -->
     <Container>
         <div class="title-container" data-scroll-personality="cinematic">
             <div class="hero-status" id="hero-status">
                 <span class="status-dot"></span>
-                Open to work — Brand Lead, crafting digital experiences.
+                Open to work — Cross-Functional Developer, crafting digital experiences.
             </div>
-            <h1 class="display-title" id="hero-title">
+            <!-- Real heading kept for SEO/screen readers — the canvas
+                 below is the only visible rendering of it, so a page with
+                 no visible <h1> at all would otherwise lose its heading
+                 entirely. If WebGL/the canvas fails, script below reveals
+                 this as the visible fallback instead of leaving the hero
+                 blank. -->
+            <h1 class="sr-only" id="hero-title-fallback">
+                Transform Your Ideas Into Interactive Masterpieces.
+            </h1>
+            <!-- Invisible (but real, laid-out) source element for
+                 PixelTextFX to read font metrics/position from — it needs
+                 its own element separate from the canvas it overlays, not
+                 the canvas measuring itself (that broke hover: the
+                 velocity math ended up reading a degenerate rect). -->
+            <div
+                id="hero-title-metrics"
+                class="hero-title-metrics"
+                aria-hidden="true"
+            >
                 Transform Your Ideas<br />
                 Into Interactive<br />
                 Masterpieces.
-            </h1>
+            </div>
             <canvas
                 id="hero-title-canvas"
                 class="hero-title-canvas"
@@ -70,8 +88,10 @@ const projects = (await getCollection("projects"))
                     </Button>
                 </div>
             </section>
+
+            <ProcessTeaser />
+
             <About />
-            <Expertise />
 
             <section class="animate section" data-scroll-personality="default">
                 <div class="section-header">
@@ -115,102 +135,50 @@ const projects = (await getCollection("projects"))
     document.addEventListener("astro:page-load", () => {
         registerAnimation("home:hero", (gsap, signal) => {
             const statusCard = document.getElementById("hero-status");
-            const heroTitle = document.getElementById("hero-title");
+            const titleMetrics = document.getElementById(
+                "hero-title-metrics",
+            );
             const titleCanvas = document.getElementById(
                 "hero-title-canvas",
             ) as HTMLCanvasElement | null;
             const reduced = prefersReducedMotion();
 
-            // The WebGL hover-follow layer only takes over once the DOM
-            // letter reveal has actually finished — trying to run both at
-            // once would fight over the same <h1>.
+            // Reveals the sr-only <h1> as real, visible fallback text —
+            // only reached if WebGL/the canvas isn't available, since
+            // otherwise the hero would render nothing at all.
+            const revealFallbackHeading = () => {
+                document
+                    .getElementById("hero-title-fallback")
+                    ?.classList.add("hero-fallback-visible");
+                if (titleCanvas) titleCanvas.style.display = "none";
+                if (titleMetrics) titleMetrics.style.display = "none";
+            };
+
             const startTitleHoverFX = () => {
-                if (!heroTitle || !titleCanvas) return;
+                if (!titleMetrics || !titleCanvas) return;
                 const gl = (titleCanvas.getContext("webgl") ||
                     titleCanvas.getContext(
                         "experimental-webgl",
                     )) as WebGLRenderingContext | null;
-                if (!gl) return;
+                if (!gl) {
+                    revealFallbackHeading();
+                    return;
+                }
                 try {
                     // eslint-disable-next-line no-new -- disposal wired via AbortSignal
                     new PixelTextFX(
-                        heroTitle,
+                        titleMetrics,
                         HERO_LINES,
                         titleCanvas,
                         gl,
                         signal,
                     );
                 } catch {
-                    // Shader/program setup failed — leave the plain <h1> visible.
+                    revealFallbackHeading();
                 }
             };
 
-            if (heroTitle) {
-                heroTitle.innerHTML = "";
-                const allSpans: HTMLElement[] = [];
-
-                HERO_LINES.forEach((line) => {
-                    const lineDiv = document.createElement("div");
-                    lineDiv.style.display = "flex";
-                    lineDiv.style.flexWrap = "wrap";
-
-                    const words = line.split(" ");
-                    words.forEach((word, wordIndex) => {
-                        const wordDiv = document.createElement("div");
-                        wordDiv.style.display = "flex";
-
-                        word.split("").forEach((char) => {
-                            // Outer wrapper clips the letter so it looks
-                            // like it slides up out of a mask, rather than
-                            // fading in mid-air.
-                            const wrapper = document.createElement("span");
-                            wrapper.style.display = "inline-block";
-                            wrapper.style.overflow = "hidden";
-                            wrapper.style.lineHeight = "0.9";
-                            wrapper.style.padding = "0.05em 0";
-
-                            const span = document.createElement("span");
-                            span.textContent = char;
-                            span.style.display = "inline-block";
-                            span.style.willChange = "transform, opacity";
-
-                            wrapper.appendChild(span);
-                            wordDiv.appendChild(wrapper);
-                            allSpans.push(span);
-                        });
-
-                        lineDiv.appendChild(wordDiv);
-
-                        if (wordIndex < words.length - 1) {
-                            const spaceSpan = document.createElement("span");
-                            spaceSpan.innerHTML = "&nbsp;";
-                            lineDiv.appendChild(spaceSpan);
-                        }
-                    });
-
-                    heroTitle.appendChild(lineDiv);
-                });
-
-                gsap.set(heroTitle, { opacity: 1 });
-
-                if (reduced) {
-                    gsap.set(allSpans, { opacity: 1, y: "0%" });
-                    startTitleHoverFX();
-                } else {
-                    gsap.fromTo(
-                        allSpans,
-                        { opacity: 0, y: "110%" },
-                        {
-                            opacity: 1,
-                            y: "0%",
-                            duration: 0.9,
-                            stagger: 0.02,
-                            ease: "power3.out",
-                            onComplete: startTitleHoverFX,
-                        },
-                    );
-                }
-            }
+            startTitleHoverFX();
 
             if (reduced) {
                 if (statusCard)
@@ -266,10 +234,14 @@ const projects = (await getCollection("projects"))
 
     /* ── Hero Animation Targets ── */
 
-    #hero-status,
-    #hero-title {
-        opacity: 0; // Initially hidden, Motion will animate in
+    #hero-status {
+        opacity: 0; // Initially hidden, GSAP animates it in
     }
+
+    // #hero-title stays at its default opacity/color — PixelTextFX hides
+    // it (color: transparent) once the canvas is ready; if WebGL is
+    // unavailable, this is the visible fallback heading, so it must never
+    // start hidden.
 
     .title-container {
         position: relative;
@@ -314,17 +286,21 @@ const projects = (await getCollection("projects"))
         }
     }
 
-    .display-title {
+    // Same typography the removed <h1>.display-title used — invisible
+    // (visibility: hidden, not display: none or the .sr-only clip trick —
+    // both of those collapse or zero out the element's rect, which is
+    // exactly what PixelTextFX needs to read a real size from) but still
+    // fully laid out, so it gives the hero the same height the old visible
+    // heading did and gives PixelTextFX real font metrics to measure text
+    // wrapping against.
+    .hero-title-metrics {
+        visibility: hidden;
+        font-family: $font-display;
         font-size: clamp(2.6rem, 13vw, 4.5rem);
         line-height: 1.02;
         font-weight: 600;
         letter-spacing: -0.04em;
-        color: $color-black;
         margin: 0;
-
-        :global(.dark) & {
-            color: $color-white;
-        }
 
         @include screen(md) {
             font-size: clamp(5rem, 10vw, 10rem);
@@ -336,6 +312,34 @@ const projects = (await getCollection("projects"))
         z-index: 1;
         opacity: 0;
         pointer-events: auto;
+    }
+
+    // Overrides .sr-only's clipping — only applied by script when WebGL/
+    // the canvas isn't available, so the hero still shows real text
+    // instead of rendering nothing.
+    #hero-title-fallback.hero-fallback-visible {
+        position: static;
+        width: auto;
+        height: auto;
+        margin: 0;
+        padding: 0;
+        overflow: visible;
+        clip: auto;
+        white-space: normal;
+        font-family: $font-display;
+        font-size: clamp(2.6rem, 13vw, 4.5rem);
+        line-height: 1.02;
+        font-weight: 600;
+        letter-spacing: -0.04em;
+        color: $color-black;
+
+        :global(.dark) & {
+            color: $color-white;
+        }
+
+        @include screen(md) {
+            font-size: clamp(5rem, 10vw, 10rem);
+        }
     }
 
     /* ── Layout ── */

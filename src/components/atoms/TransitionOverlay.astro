@@ -1,0 +1,116 @@
+---
+// A full-screen curtain used only for the /desktop entry/exit transition
+// (see Head.astro's astro:before-preparation handler, which wraps the
+// navigation loader so this fully covers the screen before the actual
+// page swap happens — not guessed CSS delays). Included on every page
+// (PageLayout.astro + desktop.astro) since the incoming page needs its
+// own instance of this markup already present the moment it swaps in.
+---
+
+<div id="transition-overlay" aria-hidden="true">
+    <div class="transition-content">
+        <div class="boot-logo">
+            M<span class="boot-logo-dot"></span>
+        </div>
+        <div class="boot-progress">
+            <div class="boot-progress-fill" id="transition-progress"></div>
+        </div>
+        <span class="transition-label" id="transition-label"
+            >Booting desktop.wasm…</span
+        >
+    </div>
+</div>
+
+<script is:inline>
+    // Pre-paint FOUC guard: if the previous page finished covering the
+    // screen right before navigating here, this page must start already
+    // covered too — otherwise there'd be a one-frame flash of the new
+    // page's content before Head.astro's reveal animation gets a chance
+    // to run. Read-then-clear so a stale flag can never get stuck.
+    (function () {
+        if (sessionStorage.getItem("transition-precovered") === "1") {
+            sessionStorage.removeItem("transition-precovered");
+            document.documentElement.classList.add("transition-precovered");
+        }
+    })();
+</script>
+
+<style lang="scss">
+    @use "../../styles/variables" as *;
+
+    #transition-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 99999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: $color-black;
+        pointer-events: none;
+        opacity: 0;
+        visibility: hidden;
+        transform: scaleY(0);
+        transform-origin: bottom;
+
+        :global(html.transition-precovered) & {
+            opacity: 1;
+            visibility: visible;
+            transform: scaleY(1);
+        }
+    }
+
+    .transition-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1.1rem;
+        opacity: 0;
+
+        :global(html.transition-precovered) & {
+            opacity: 1;
+        }
+    }
+
+    .boot-logo {
+        position: relative;
+        font-family: $font-display;
+        font-weight: 800;
+        font-size: 2.25rem;
+        line-height: 1;
+        color: $color-white;
+    }
+
+    .boot-logo-dot {
+        position: absolute;
+        top: -0.15rem;
+        right: -0.55rem;
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #10b981;
+    }
+
+    .boot-progress {
+        width: 11rem;
+        height: 3px;
+        border-radius: 999px;
+        background: rgba($color-white, 0.15);
+        overflow: hidden;
+    }
+
+    .boot-progress-fill {
+        width: 0%;
+        height: 100%;
+        border-radius: 999px;
+        background: $color-white;
+    }
+
+    .transition-label {
+        font-family: $font-mono;
+        font-size: 0.7rem;
+        font-weight: 500;
+        letter-spacing: 0.03em;
+        color: rgba($color-white, 0.6);
+        white-space: nowrap;
+    }
+</style>

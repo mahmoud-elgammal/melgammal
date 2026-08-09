@@ -15,40 +15,85 @@ precision highp float;
 varying vec2 vUv;
 uniform float u_time;
 
-vec3 blob_color(vec2 uv, vec2 center, vec3 color, float radius) {
-    float d = distance(uv, center);
-    float falloff = smoothstep(radius, 0.0, d);
-    return color * falloff;
+float hash(vec2 p) {
+    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
 }
 
-float hash(vec2 p) {
-    return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
+float noise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    vec2 u = f * f * (3.0 - 2.0 * f);
+    float a = hash(i);
+    float b = hash(i + vec2(1.0, 0.0));
+    float c = hash(i + vec2(0.0, 1.0));
+    float d = hash(i + vec2(1.0, 1.0));
+    return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
+}
+
+float fbm(vec2 p) {
+    float v = 0.0;
+    float amp = 0.5;
+    for (int i = 0; i < 4; i++) {
+        v += amp * noise(p);
+        p *= 2.0;
+        amp *= 0.5;
+    }
+    return v;
+}
+
+// A gentle rolling ridge line, evoking a grassy hill against open sky —
+// an original procedural landscape, not a reproduction of any specific
+// photograph.
+float hillHeight(float x) {
+    float h = 0.30;
+    h += 0.05 * sin(x * 3.1 + 0.4);
+    h += 0.025 * sin(x * 7.0 + 1.7);
+    h -= 0.07 * smoothstep(0.15, 0.55, x) * smoothstep(1.0, 0.55, x);
+    return h;
 }
 
 void main() {
     vec2 uv = vUv;
-    float t = u_time * 0.06;
+    float hillY = hillHeight(uv.x);
 
-    vec2 c1 = vec2(0.30 + 0.25 * sin(t * 1.3), 0.65 + 0.20 * cos(t * 0.9));
-    vec2 c2 = vec2(0.75 + 0.20 * cos(t * 1.1), 0.30 + 0.25 * sin(t * 1.6));
-    vec2 c3 = vec2(0.50 + 0.30 * sin(t * 0.7 + 2.0), 0.50 + 0.30 * cos(t * 0.5 + 1.0));
-    vec2 c4 = vec2(0.20 + 0.22 * cos(t * 0.9 + 4.0), 0.25 + 0.22 * sin(t * 1.2 + 1.5));
+    vec3 color;
 
-    vec3 col = vec3(0.06, 0.06, 0.10);
-    col += blob_color(uv, c1, vec3(0.35, 0.35, 0.85), 0.85);
-    col += blob_color(uv, c2, vec3(0.85, 0.40, 0.60), 0.85);
-    col += blob_color(uv, c3, vec3(0.95, 0.65, 0.35), 0.75);
-    col += blob_color(uv, c4, vec3(0.30, 0.55, 0.75), 0.60);
+    if (uv.y > hillY) {
+        // Sky: deep blue overhead fading to a soft pale blue near the horizon.
+        float skyT = smoothstep(hillY, 1.0, uv.y);
+        vec3 skyHorizon = vec3(0.74, 0.87, 0.97);
+        vec3 skyTop = vec3(0.18, 0.45, 0.86);
+        vec3 sky = mix(skyHorizon, skyTop, skyT);
 
-    // Soft vignette: flat corners otherwise read as a cheap, unfinished fill.
-    float vign = smoothstep(0.9, 0.25, distance(uv, vec2(0.5)));
-    col *= mix(0.78, 1.0, vign);
+        // Slowly drifting cloud puffs.
+        vec2 cloudUv = vec2(uv.x + u_time * 0.004, uv.y * 1.6);
+        float clouds = fbm(cloudUv * 3.0);
+        clouds = smoothstep(0.55, 0.78, clouds);
+        clouds *= smoothstep(hillY, hillY + 0.35, uv.y);
+        sky = mix(sky, vec3(1.0), clouds * 0.85);
 
-    // Dither to hide banding on the smooth color ramps.
-    float grain = (hash(gl_FragCoord.xy + u_time) - 0.5) * (1.0 / 64.0);
-    col += grain;
+        color = sky;
+    } else {
+        // Grassy hill: brighter near the ridge, deepening toward the bottom.
+        float depth = 1.0 - clamp(uv.y / max(hillY, 0.0001), 0.0, 1.0);
+        vec3 grassLight = vec3(0.47, 0.74, 0.27);
+        vec3 grassDark = vec3(0.11, 0.30, 0.10);
+        vec3 grass = mix(grassLight, grassDark, depth);
 
-    gl_FragColor = vec4(col, 1.0);
+        float texture = fbm(uv * vec2(6.0, 18.0));
+        grass += (texture - 0.5) * 0.05;
+
+        float ridgeGlow = smoothstep(hillY - 0.02, hillY, uv.y);
+        grass = mix(grass, vec3(0.78, 0.90, 0.48), ridgeGlow * 0.35);
+
+        color = grass;
+    }
+
+    // Dither to hide banding on the smooth gradients.
+    float grain = (hash(gl_FragCoord.xy + u_time) - 0.5) * (1.0 / 96.0);
+    color += grain;
+
+    gl_FragColor = vec4(color, 1.0);
 }
 "#;
 

@@ -1,79 +1,83 @@
 <button id="back-to-top" aria-label="Back to top">
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icon">
-    <line x1="5" y1="12" x2="19" y2="12" class="line"></line>
-    <polyline points="12 5 5 12 12 19" class="polyline"></polyline>
-  </svg>
-  <div class="text">Back to top</div>
+  <span class="icon-wrap">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icon">
+      <line x1="12" y1="19" x2="12" y2="5" class="line"></line>
+      <polyline points="5 12 12 5 19 12" class="polyline"></polyline>
+    </svg>
+  </span>
+  <span class="text">Back to top</span>
 </button>
 
 <style lang="scss">
   @use "../../styles/variables" as *;
   @use "../../styles/mixins" as *;
 
+  // Solid pill, matching the site's established black/white button
+  // language (e.g. the About section's "View Resume" button) rather than
+  // the previous transparent/bordered minimal style.
   #back-to-top {
-    position: relative;
-    display: flex;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
     width: fit-content;
-    padding: 0.375rem 0.75rem; /* py-1.5 pr-3 */
-    padding-left: 2rem; /* pl-8 */
-    flex-wrap: nowrap;
-    border-radius: 0.25rem; /* rounded */
-    border: 1px solid rgba(0, 0, 0, 0.15); /* border-black/15 */
-    background-color: transparent;
+    padding: 0.55rem 1.1rem 0.55rem 0.6rem;
+    border-radius: 999px;
+    border: none;
+    background: $color-black;
+    color: $color-white;
     cursor: pointer;
+    font-family: $font-mono;
     text-decoration: none;
-    color: inherit;
     transition:
-      background-color 0.3s ease-in-out,
-      color 0.3s ease-in-out;
-
-    @include hover {
-      background-color: rgba(0, 0, 0, 0.05); /* bg-black/5 */
-      color: $color-black;
-
-      .line {
-        transform: translateX(0) scaleX(1);
-      }
-
-      .polyline {
-        transform: translateX(0);
-      }
-    }
+      transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+      box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 
     @include dark {
-      border-color: rgba(255, 255, 255, 0.2); /* border-white/20 */
+      background: $color-white;
+      color: $color-black;
+    }
 
-      @include hover {
-        background-color: rgba(255, 255, 255, 0.05); /* bg-white/5 */
-        color: $color-white;
+    @include hover {
+      transform: translateY(-3px) scale(1.03);
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.18);
+
+      .icon-wrap {
+        transform: translateY(-1px);
       }
+
+      @include dark {
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
+      }
+    }
+  }
+
+  .icon-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    background: rgba($color-white, 0.15);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+
+    @include dark {
+      background: rgba($color-black, 0.1);
     }
   }
 
   .icon {
-    position: absolute;
-    top: 50%;
-    left: 0.5rem; /* left-2 */
-    transform: translateY(-50%) rotate(90deg); /* -translate-y-1/2 rotate-90 */
-    width: 1rem; /* size-4 */
-    height: 1rem;
-    stroke-width: 2;
+    width: 0.9rem;
+    height: 0.9rem;
+    stroke-width: 2.25;
     fill: none;
     stroke: currentColor;
   }
 
-  .line {
-    transform: translateX(0.5rem) scaleX(0); /* translate-x-2 scale-x-0 */
-    transition: transform 0.3s ease-in-out;
-    transform-origin: center;
-  }
-
-  .polyline {
-    transform: translateX(0.25rem); /* translate-x-1 */
-    transition: transform 0.3s ease-in-out;
-  }
-
   .text {
-    font-size: 0.875rem; /* text-sm */
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
   }
 </style>

@@ -262,7 +262,10 @@ impl Desktop {
         let viewport = ctx.viewport_rect();
         Area::new(Id::new("app-switcher"))
             .order(Order::Foreground)
-            .anchor(Align2::CENTER_CENTER, Vec2::new(0.0, viewport.height() * -0.08))
+            .anchor(
+                Align2::CENTER_CENTER,
+                Vec2::new(0.0, viewport.height() * -0.08),
+            )
             .show(ctx, |ui| {
                 Frame::new()
                     .fill(Color32::from_rgba_unmultiplied(30, 30, 34, 235))
@@ -286,10 +289,8 @@ impl Desktop {
                                 ui.vertical(|ui| {
                                     ui.set_width(56.0);
                                     ui.vertical_centered(|ui| {
-                                        let (rect, _) = ui.allocate_exact_size(
-                                            Vec2::splat(56.0),
-                                            Sense::hover(),
-                                        );
+                                        let (rect, _) = ui
+                                            .allocate_exact_size(Vec2::splat(56.0), Sense::hover());
                                         let badge = egui::Rect::from_center_size(
                                             rect.center(),
                                             Vec2::splat(48.0),
@@ -376,11 +377,31 @@ impl Desktop {
         format!("{weekday} {month} {day}  {hours12}:{minutes:02} {period}")
     }
 
+    /// The label of whichever running app was launched most recently, as a
+    /// stand-in for "frontmost app" — real focus tracking would need to
+    /// hook every window's click/drag response, which isn't worth it for
+    /// a menu-bar label. Falls back to "Finder" (the desktop itself) when
+    /// nothing is open.
+    fn frontmost_app_label(&self) -> &'static str {
+        self.running
+            .keys()
+            .filter(|id| !self.minimized.contains(*id))
+            .max_by(|a, b| {
+                let ta = self.open_time.get(*a).copied().unwrap_or(0.0);
+                let tb = self.open_time.get(*b).copied().unwrap_or(0.0);
+                ta.total_cmp(&tb)
+            })
+            .and_then(|id| self.apps.iter().find(|a| a.id() == *id))
+            .map(|app| app.label())
+            .unwrap_or("Finder")
+    }
+
     fn draw_menu_bar(&mut self, ui: &mut egui::Ui) {
-        let bar_fill = Color32::from_black_alpha(140);
+        let bar_fill = Color32::from_black_alpha(150);
+        let frontmost = self.frontmost_app_label();
 
         egui::Panel::top(Id::new("menubar"))
-            .exact_size(26.0)
+            .exact_size(28.0)
             .frame(
                 Frame::new()
                     .fill(bar_fill)
@@ -392,7 +413,7 @@ impl Desktop {
                     Self::draw_apple_mark(ui.painter(), logo_rect.center(), 13.0, bar_fill);
                     ui.add_space(10.0);
                     ui.label(
-                        RichText::new("Finder")
+                        RichText::new(frontmost)
                             .strong()
                             .color(Color32::WHITE)
                             .size(13.0),
@@ -485,6 +506,13 @@ impl Desktop {
                             self.spotlight_open = false;
                         }
                     });
+
+                    let full_width = ui.ctx().viewport_rect().x_range();
+                    ui.painter().hline(
+                        full_width,
+                        ui.max_rect().bottom(),
+                        Stroke::new(1.0, Color32::from_black_alpha(70)),
+                    );
                 });
             });
     }
@@ -559,7 +587,11 @@ impl Desktop {
 
     fn draw_spotlight_icon(painter: &egui::Painter, center: egui::Pos2, size: f32) {
         let lens_center = center - Vec2::new(size * 0.08, size * 0.08);
-        painter.circle_stroke(lens_center, size * 0.3, Stroke::new(size * 0.09, Color32::WHITE));
+        painter.circle_stroke(
+            lens_center,
+            size * 0.3,
+            Stroke::new(size * 0.09, Color32::WHITE),
+        );
         let dir = Vec2::new(1.0, 1.0).normalized();
         painter.line_segment(
             [
@@ -869,6 +901,40 @@ impl Desktop {
             }
             let radius = if response.hovered() { 6.5 } else { 6.0 };
             painter.circle_filled(center, radius, *color);
+
+            // Real macOS shows a tiny dark glyph inside each dot on hover
+            // (×, −, and an expand icon) — without this they're just three
+            // static colored circles that happen to be clickable.
+            if response.hovered() {
+                let glyph = Stroke::new(1.1, Color32::from_black_alpha(150));
+                let s = 3.0;
+                match i {
+                    0 => {
+                        painter.line_segment(
+                            [center - Vec2::new(s, s), center + Vec2::new(s, s)],
+                            glyph,
+                        );
+                        painter.line_segment(
+                            [center - Vec2::new(s, -s), center + Vec2::new(s, -s)],
+                            glyph,
+                        );
+                    }
+                    1 => {
+                        painter.line_segment(
+                            [center - Vec2::new(s, 0.0), center + Vec2::new(s, 0.0)],
+                            glyph,
+                        );
+                    }
+                    _ => {
+                        painter.rect_stroke(
+                            egui::Rect::from_center_size(center, Vec2::splat(s * 1.3)),
+                            CornerRadius::ZERO,
+                            glyph,
+                            egui::StrokeKind::Inside,
+                        );
+                    }
+                }
+            }
         }
 
         painter.text(
@@ -914,7 +980,9 @@ impl Desktop {
                         ui.separator();
                         ui.add_space(8.0);
                         ui.label("Brightness");
-                        ui.add(egui::Slider::new(&mut self.brightness, 0.0..=1.0).show_value(false));
+                        ui.add(
+                            egui::Slider::new(&mut self.brightness, 0.0..=1.0).show_value(false),
+                        );
                         ui.add_space(6.0);
                         ui.label("Volume");
                         ui.add(egui::Slider::new(&mut self.volume, 0.0..=1.0).show_value(false));
@@ -940,8 +1008,7 @@ impl Desktop {
             .order(Order::Foreground)
             .fixed_pos(viewport.min)
             .show(ctx, |ui| {
-                let (rect, response) =
-                    ui.allocate_exact_size(viewport.size(), Sense::click());
+                let (rect, response) = ui.allocate_exact_size(viewport.size(), Sense::click());
                 ui.painter()
                     .rect_filled(rect, CornerRadius::ZERO, Color32::from_black_alpha(80));
                 if response.clicked() {
@@ -1008,7 +1075,10 @@ impl Desktop {
                                 }
 
                                 for (path, is_dir) in self.vfs.all_paths() {
-                                    if is_dir || path == "/" || !path.to_lowercase().contains(&query) {
+                                    if is_dir
+                                        || path == "/"
+                                        || !path.to_lowercase().contains(&query)
+                                    {
                                         continue;
                                     }
                                     let text = RichText::new(format!("  {path}"))
@@ -1064,10 +1134,8 @@ impl Desktop {
                             }
 
                             ui.add_space(2.0);
-                            let (sep_rect, _) = ui.allocate_exact_size(
-                                Vec2::new(1.0, slot * 0.8),
-                                Sense::hover(),
-                            );
+                            let (sep_rect, _) =
+                                ui.allocate_exact_size(Vec2::new(1.0, slot * 0.8), Sense::hover());
                             ui.painter().line_segment(
                                 [
                                     egui::pos2(sep_rect.center().x, sep_rect.top()),
@@ -1084,11 +1152,18 @@ impl Desktop {
     }
 
     fn draw_dock_tooltip(painter: &egui::Painter, anchor_rect: egui::Rect, label: &str) {
-        let galley =
-            painter.layout_no_wrap(label.to_string(), FontId::proportional(11.0), Color32::WHITE);
+        let galley = painter.layout_no_wrap(
+            label.to_string(),
+            FontId::proportional(11.0),
+            Color32::WHITE,
+        );
         let label_pos = egui::pos2(anchor_rect.center().x, anchor_rect.top() - 16.0);
         let bg_rect = egui::Rect::from_center_size(label_pos, galley.size() + Vec2::new(14.0, 8.0));
-        painter.rect_filled(bg_rect, CornerRadius::from(6.0), Color32::from_black_alpha(210));
+        painter.rect_filled(
+            bg_rect,
+            CornerRadius::from(6.0),
+            Color32::from_black_alpha(210),
+        );
         painter.text(
             label_pos,
             Align2::CENTER_CENTER,
@@ -1123,7 +1198,11 @@ impl Desktop {
             center - Vec2::new(0.0, size * 0.42),
             Vec2::new(size * 0.92, size * 0.1),
         );
-        painter.rect_filled(lid, CornerRadius::from(size * 0.05), Color32::from_white_alpha(225));
+        painter.rect_filled(
+            lid,
+            CornerRadius::from(size * 0.05),
+            Color32::from_white_alpha(225),
+        );
 
         let body = egui::Rect::from_center_size(
             center + Vec2::new(0.0, size * 0.06),
@@ -1156,10 +1235,19 @@ impl Desktop {
         let (rect, response) = ui.allocate_exact_size(Vec2::splat(slot), Sense::click());
         let id = self.apps[index].id();
 
-        let target_scale = if response.hovered() { 1.3 } else { 1.0 };
+        // Real macOS magnifies neighboring icons too, in a falling-off wave
+        // — not just whichever one the cursor happens to be exactly over.
+        let target_scale = match ui.input(|i| i.pointer.hover_pos()) {
+            Some(pos) if (pos.y - rect.center().y).abs() < slot * 1.2 => {
+                let dist = pos.x - rect.center().x;
+                let falloff = (-(dist * dist) / (2.0 * 42.0 * 42.0)).exp();
+                1.0 + 0.3 * falloff
+            }
+            _ => 1.0,
+        };
         let scale =
             ui.ctx()
-                .animate_value_with_time(ui.id().with(("dock-scale", id)), target_scale, 0.15);
+                .animate_value_with_time(ui.id().with(("dock-scale", id)), target_scale, 0.12);
 
         if response.clicked() {
             if self.running.contains_key(id) {
@@ -1171,7 +1259,9 @@ impl Desktop {
                 }
             } else {
                 let now = ui.input(|i| i.time);
-                let pid = self.processes.spawn(WINDOW_SERVER_PID, self.apps[index].label());
+                let pid = self
+                    .processes
+                    .spawn(WINDOW_SERVER_PID, self.apps[index].label());
                 self.running.insert(id, pid);
                 self.open_time.insert(id, now);
             }
@@ -1230,7 +1320,9 @@ impl Desktop {
                 }
             } else if ui.button("Open").clicked() {
                 let now = ui.input(|i| i.time);
-                let pid = self.processes.spawn(WINDOW_SERVER_PID, self.apps[index].label());
+                let pid = self
+                    .processes
+                    .spawn(WINDOW_SERVER_PID, self.apps[index].label());
                 self.running.insert(id, pid);
                 self.open_time.insert(id, now);
                 ui.close();

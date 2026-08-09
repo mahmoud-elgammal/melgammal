@@ -1,5 +1,6 @@
 ---
 import Link from "../atoms/Link.astro";
+import Expertise from "./Expertise.astro";
 ---
 
 <section class="about-section animate section">
@@ -49,6 +50,10 @@ import Link from "../atoms/Link.astro";
             </div>
         </div>
     </div>
+
+    <div class="about-expertise">
+        <Expertise />
+    </div>
 </section>
 
 <style lang="scss">
@@ -79,6 +84,16 @@ import Link from "../atoms/Link.astro";
         @include screen(lg) {
             grid-template-columns: 1fr 2fr;
             gap: 6rem;
+        }
+    }
+
+    // The skills canvas, folded into the About section rather than living
+    // as its own top-level sibling on the landing page.
+    .about-expertise {
+        margin-top: 4rem;
+
+        @include screen(md) {
+            margin-top: 6rem;
         }
     }
 

@@ -1,0 +1,185 @@
+---
+title: "MinHash: Estimating Set Similarity Without Comparing Sets"
+description: "A single clever hashing trick turns an expensive set-intersection problem into a handful of integer comparisons — and it's how search engines deduplicate billions of pages."
+date: "Aug 8 2026"
+color: "#f59e0b"
+---
+
+Say you're building a web crawler and you've indexed a billion pages. You need to know: which of these are near-duplicates of each other? Mirror sites, syndicated articles, boilerplate templates with a paragraph swapped out. Comparing every pair directly is a non-starter — a billion pages is roughly $5 \times 10^{17}$ pairs, and each comparison would itself require intersecting two large sets of words.
+
+MinHash sidesteps both problems. It compresses a set of arbitrary size into a small, fixed-length **signature**, such that comparing two signatures gives you an unbiased estimate of how similar the original sets were — without ever looking at the sets themselves again. It's one of those algorithms that feels like a magic trick the first time you see the proof, and then feels completely obvious the second time.
+
+This post covers:
+
+- The similarity measure MinHash actually estimates (Jaccard similarity), and why the naive way to compute it doesn't scale.
+- The core insight, with the probability argument that makes it work.
+- A real TypeScript implementation, from raw text to a similarity estimate.
+- Locality-Sensitive Hashing (LSH), the technique that turns "find the similar pairs" from an $O(n^2)$ problem into something closer to linear time.
+
+---
+
+## The Measure: Jaccard Similarity
+
+Before estimating similarity, we need to define it. For two sets $A$ and $B$, the Jaccard similarity is the size of their intersection over the size of their union:
+
+$$
+J(A, B) = \frac{|A \cap B|}{|A \cup B|}
+$$
+
+It's 1 when the sets are identical, 0 when they share nothing, and it scales smoothly in between. For documents, $A$ and $B$ are usually sets of **shingles** — overlapping substrings of a fixed length — rather than whole words, since shingles are far more sensitive to near-duplication (swap one sentence's word order and word-sets barely change, but most of the shingles crossing that sentence do).
+
+```typescript name=shingle.ts
+/**
+ * Splits text into overlapping k-character shingles. k=5 is a common
+ * default for prose — long enough to be distinctive, short enough that
+ * small edits don't obliterate every shingle touching them.
+ */
+export function shingle(text: string, k = 5): Set<string> {
+  const normalized = text.toLowerCase().replace(/\s+/g, " ").trim();
+  const shingles = new Set<string>();
+
+  for (let i = 0; i <= normalized.length - k; i++) {
+    shingles.add(normalized.slice(i, i + k));
+  }
+
+  return shingles;
+}
+```
+
+Computing $J(A, B)$ directly means materializing both shingle sets and intersecting them — for a corpus of $n$ documents, checking every pair costs $O(n^2)$ set operations, each of which is itself proportional to document length. For a few hundred documents, fine. For a billion, hopeless.
+
+---
+
+## The Insight
+
+Here's the trick. Take a hash function $h$ that maps each shingle to a number, and define $h_{\min}(S)$ as the minimum hash value over every element of set $S$:
+
+$$
+h_{\min}(S) = \min_{x \in S} h(x)
+$$
+
+**Claim:** for two sets $A$ and $B$, the probability that $h_{\min}(A) = h_{\min}(B)$ is exactly $J(A, B)$.
+
+That's the whole algorithm, really — everything else is engineering around this one fact. It's worth actually seeing why it's true, because the proof is short and it's the kind of thing that makes the rest of the algorithm feel inevitable rather than clever-for-its-own-sake.
+
+### Why it's true
+
+A good hash function scatters its inputs uniformly and independently — for our purposes, treat $h$ as inducing a uniformly random *permutation* over the union $A \cup B$. Every element of $A \cup B$ is equally likely to land in any rank position after hashing.
+
+$h_{\min}(A) = h_{\min}(B)$ exactly when the element with the smallest hash value across the *entire union* $A \cup B$ happens to belong to *both* $A$ and $B$ — i.e., it's in $A \cap B$. (If the minimum-hashed element of the union were in $A$ only, $h_{\min}(A)$ would take that value while $h_{\min}(B)$ would have to look elsewhere for its own minimum, and they'd disagree.)
+
+Since the hash induces a uniformly random ordering, every element of $A \cup B$ is equally likely to be the one holding the minimum. So:
+
+$$
+P\big(h_{\min}(A) = h_{\min}(B)\big) = P\big(\text{argmin element} \in A \cap B\big) = \frac{|A \cap B|}{|A \cup B|} = J(A, B)
+$$
+
+A single hash function only gives you one coin flip's worth of signal, though — you can't distinguish $J = 0.9$ from $J = 0.6$ off one bit. The fix is the obvious one: repeat it.
+
+---
+
+## Building a Signature
+
+Run $k$ independent hash functions over a set, keep the minimum for each, and you get a **signature** — a vector of $k$ numbers standing in for the whole set. The fraction of positions where two signatures agree is an unbiased estimator of $J(A, B)$, and by the law of large numbers, that estimate tightens as $k$ grows (error falls off roughly as $1/\sqrt{k}$, regardless of how big the original sets were).
+
+```typescript name=minhash.ts
+// A small, fast 32-bit hash (Murmur-style) parameterized by a seed, so we
+// can cheaply derive k "independent enough" hash functions from one
+// implementation instead of writing k different hash functions by hand.
+function seededHash(value: string, seed: number): number {
+  let h = seed ^ value.length;
+  for (let i = 0; i < value.length; i++) {
+    h = Math.imul(h ^ value.charCodeAt(i), 2654435761);
+    h ^= h >>> 15;
+  }
+  return (h ^ (h >>> 16)) >>> 0;
+}
+
+export type Signature = Uint32Array;
+
+export function computeSignature(set: Set<string>, k = 128): Signature {
+  const signature = new Uint32Array(k).fill(0xffffffff);
+
+  for (const element of set) {
+    for (let i = 0; i < k; i++) {
+      const h = seededHash(element, i);
+      if (h < signature[i]) signature[i] = h;
+    }
+  }
+
+  return signature;
+}
+
+export function estimateSimilarity(a: Signature, b: Signature): number {
+  let matches = 0;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] === b[i]) matches++;
+  }
+  return matches / a.length;
+}
+```
+
+Put together:
+
+```typescript name=compare.ts
+const docA = shingle("the quick brown fox jumps over the lazy dog");
+const docB = shingle("the quick brown fox leaps over a lazy dog");
+
+const sigA = computeSignature(docA, 128);
+const sigB = computeSignature(docB, 128);
+
+console.log(estimateSimilarity(sigA, sigB)); // ≈ the true Jaccard similarity
+```
+
+Notice what we *didn't* do: at no point did `estimateSimilarity` look at `docA` or `docB` — only at their 128-integer signatures. That's the whole payoff. Two arbitrarily large documents compress down to the same fixed-size fingerprint, and comparing fingerprints is $O(k)$ regardless of how big the originals were.
+
+---
+
+## From Pairwise Comparison to Locality-Sensitive Hashing
+
+Fixed-size signatures make each comparison cheap, but if you still check every pair of documents, you're at $O(n^2 k)$ — better than before, but still quadratic in the number of documents. For a billion documents, that's still not going to finish.
+
+**Locality-Sensitive Hashing (LSH)** fixes this by using the signature itself to decide which pairs are even worth comparing. Split each $k$-length signature into $b$ bands of $r$ rows each ($k = b \times r$), and hash each band to a bucket. Two documents that land in the *same bucket for any band* become **candidates** — everything else is discarded without ever being compared.
+
+```typescript name=lsh.ts
+export function bandBuckets(
+  signature: Signature,
+  bands: number,
+): string[] {
+  const rowsPerBand = signature.length / bands;
+  const buckets: string[] = [];
+
+  for (let b = 0; b < bands; b++) {
+    const start = b * rowsPerBand;
+    const band = signature.slice(start, start + rowsPerBand);
+    // The band's own values, joined, serve as its bucket key — two
+    // documents only collide here if that whole band matches exactly.
+    buckets.push(`${b}:${band.join(",")}`);
+  }
+
+  return buckets;
+}
+```
+
+The banding creates a deliberate threshold effect: a pair with signature agreement $s$ survives (lands in a shared bucket somewhere) with probability
+
+$$
+P(\text{candidate}) = 1 - (1 - s^r)^b
+$$
+
+which is an S-curve in $s$ — pairs above some similarity threshold are caught with high probability, pairs below it are almost always filtered out, and you tune $b$ and $r$ to place that threshold wherever you need it. This is what lets deduplication systems run over web-scale corpora: instead of comparing every pair, you group documents by band-bucket, and only compare within groups.
+
+---
+
+## Where This Actually Gets Used
+
+- **Search engine deduplication** — the original motivating use case (Broder, AltaVista, 1997): collapsing near-duplicate pages before they pollute an index.
+- **Plagiarism / code-clone detection** — shingle on tokens instead of characters, and MinHash finds copied passages even after light editing.
+- **Recommendation systems** — representing users as sets of interacted items, MinHash-based similarity is a cheap first pass before anything more expensive.
+- **Genomics** — tools like [Mash](https://github.com/marbl/Mash) use MinHash to estimate genomic distance between sequences without full alignment.
+
+## Trade-offs Worth Knowing
+
+MinHash trades exactness for speed and space — the estimate has variance, and $k$ is a direct dial on that trade-off (more hash functions, tighter estimate, more computation). It also only estimates Jaccard similarity specifically; it says nothing about semantic similarity, so two documents can share almost no shingles while meaning nearly the same thing (a paraphrase, a translation). And the naive $k$-hash-functions implementation above is a fine way to learn the algorithm, but production systems typically replace "$k$ independent hash functions" with a single hash plus $k$ cheap permutations of the result, since simulating truly independent hashes $k$ times over is wasted work once you understand *why* the algorithm works rather than just *that* it works.
+
+That last point is a good place to end: the entire algorithm is downstream of one probability statement about a random minimum. Everything else — signatures, banding, the production optimizations — is just consequences of taking that statement seriously.

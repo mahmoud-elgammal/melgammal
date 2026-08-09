@@ -9,7 +9,7 @@ type Props = {
 };
 
 const { project, loading = "lazy", fetchpriority = "auto" } = Astro.props;
-const { title, tags, imageWeb, imageMobile, color, locked } = project.data;
+const { title, tags, imageWeb, color, locked } = project.data;
 
 // Default color if none provided
 const brandColor = color || "#8B5CF6";
@@ -74,23 +74,6 @@ const subtitle = tags && tags.length > 0 ? tags[0] : "Project";
                                         loading={loading}
                                         fetchpriority={fetchpriority}
                                     />
-                                </div>
-                            )}
-                            {imageMobile && (
-                                <div class="mobile-mockup">
-                                    <div class="iphone-frame">
-                                        <Picture
-                                            src={imageMobile}
-                                            alt={`${title} Mobile`}
-                                            formats={["avif", "webp"]}
-                                            fallbackFormat="jpg"
-                                            widths={[200, 400]}
-                                            sizes="(max-width: 768px) 25vw, 150px"
-                                            quality={60}
-                                            loading={loading}
-                                            fetchpriority={fetchpriority}
-                                        />
-                                    </div>
                                 </div>
                             )}
                         </>
@@ -412,41 +395,6 @@ const subtitle = tags && tags.length > 0 ? tags[0] : "Project";
         transition: opacity 0.25s ease;
     }
 
-    .mobile-mockup {
-        position: absolute;
-        width: 20%;
-        bottom: -2%;
-        right: 4%;
-        will-change: transform;
-
-        @media (min-width: 768px) {
-            width: 28%;
-            bottom: -10%;
-            right: -2%;
-        }
-
-        .iphone-frame {
-            border: 2px solid #1a1a1a;
-            border-radius: 0.75rem;
-            background: #000;
-            overflow: hidden;
-            aspect-ratio: 9/19;
-            box-shadow: 0 15px 30px -8px rgba(0, 0, 0, 0.5);
-
-            @media (min-width: 768px) {
-                border: 6px solid #1a1a1a;
-                border-radius: 2rem;
-                box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.5);
-            }
-
-            img {
-                width: 100%;
-                height: 100%;
-                object-fit: cover;
-            }
-        }
-    }
-
     /* ── Info Section ── */
     .card-info {
         display: flex;
@@ -531,8 +479,7 @@ const subtitle = tags && tags.length > 0 ? tags[0] : "Project";
         }
     }
 
-    .web-mockup,
-    .mobile-mockup {
+    .web-mockup {
         filter: grayscale(1) contrast(1.1);
         transition: filter 0.8s cubic-bezier(0.23, 1, 0.32, 1);
 
@@ -541,8 +488,7 @@ const subtitle = tags && tags.length > 0 ? tags[0] : "Project";
         }
     }
 
-    .visual-card:hover .web-mockup,
-    .visual-card:hover .mobile-mockup {
+    .visual-card:hover .web-mockup {
         filter: grayscale(0) contrast(1);
     }
 </style>
@@ -840,9 +786,6 @@ const subtitle = tags && tags.length > 0 ? tags[0] : "Project";
                 const webMockup = card.querySelector(
                     ".web-mockup",
                 ) as HTMLElement;
-                const mobileMockup = card.querySelector(
-                    ".mobile-mockup",
-                ) as HTMLElement;
 
                 const brandReveal = card.querySelector(
                     ".brand-reveal-layer",
@@ -968,8 +911,6 @@ const subtitle = tags && tags.length > 0 ? tags[0] : "Project";
 
                     if (webMockup)
                         gsap.to(webMockup, { scale: 1.05, duration: 0.6 });
-                    if (mobileMockup)
-                        gsap.to(mobileMockup, { scale: 1.1, duration: 0.6 });
 
                     if (rippleFX && webMockup) {
                         const img = webMockup.querySelector("img");
@@ -1012,13 +953,7 @@ const subtitle = tags && tags.length > 0 ? tags[0] : "Project";
                     window.dispatchEvent(new CustomEvent("cursor:leave"));
                     rippleFX?.detach();
                     gsap.to(
-                        [
-                            visualHero,
-                            webMockup,
-                            mobileMockup,
-                            parallaxGrid,
-                            glare,
-                        ],
+                        [visualHero, webMockup, parallaxGrid, glare],
                         {
                             x: 0,
                             y: 0,
